@@ -459,6 +459,9 @@ const BANTER = {
   heist: ["Robbing a bank. Our own pension fund is in there.", "Masks on. Badges... also on, apparently.", "In and out. Twenty minutes, tops."],
   war: ["Gang war! Just like the academy never taught us.", "They want the block back? Tell them to file a complaint."],
   turf: ["That block is ours now. Paint it blue.", "Bors Brothers: now in real estate."],
+  recruit: ["Welcome to the crew. Rule one: no paperwork.", "Another mouth to feed. Donuts are on you."],
+  defend: ["They're hitting our block! Nobody touches our real estate.", "Turf under attack. Drop the donut and move."],
+  lost: ["We lost the block. Internal Affairs would be thrilled.", "That block is gone. We'll take it back."],
   streak: ["Easy there, action hero. Leave some for me.", "Save some chaos for the rest of us.", "That's a lot of overtime."]
 };
 function banter(ev, force) {
@@ -524,7 +527,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 17;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 19;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -1019,7 +1022,8 @@ function buildCity(seed) {
     { ...ePt(blockAt(cc + 2, cr + 1), 'left', 0.5), type: 'donut', label: 'Donut Duty' },
     { ...ePt(blockAt(2, rows - 2), 'top', 0.5), type: 'rampage', label: 'Rampage' },
     { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' },
-    { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist' }
+    { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist' },
+    { ...ePt(blockAt(cc, rows - 1), 'top', 0.3), type: 'boss', label: 'Showdown at Bors Arena' }
   ];
   city.territories = [];
   for (const b of city.blocks) {
@@ -1256,9 +1260,11 @@ function damagePed(p, dmg, src) {
   if (!p || !p.alive) return;
   src = src || {};
   const by = src.by;
+  if (p.recruit && isPlayerPed(by)) return;                        // your own crew (anyone's) can't be hurt by players
+  if (p.kind === 'remote' && by && by.kind === 'partner') return;   // crew never hurt players
   if (p.proxy) { netHitNpc(p, dmg, src); addParticles('blood', p.x, p.y, 4, src.ang); return; }
   if (p.kind === 'remote') { netHitPlayer(p, dmg, src); return; }
-  if (p.kind === 'partner' && (p.down || (by && (by.isPlayer || by.kind === 'partner')))) return;
+  if (p.kind === 'partner' && (p.down || (p.recruit && p.car) || (by && (by.isPlayer || by.kind === 'partner')))) return;
   if (p.isPlayer && by && by.kind === 'partner') return;
   if (p.terr && isPlayerPed(by)) p.provoked = true;   // turf lookouts fight back once you attack them
   if (p.isPlayer) {
@@ -1279,7 +1285,7 @@ function damagePed(p, dmg, src) {
     p.target = by; p.lastSeenT = G.time; const bp = posOf(by); p.lastTargetPos = { x: bp.x, y: bp.y };
     if (p.state === 'idle' || p.state === 'wander' || p.state === 'alert') { p.state = 'engage'; p.alertAt = 0; }
   }
-  if (p.kind === 'partner' && p.hp <= 0) { partnerDown(p); return; }
+  if (p.kind === 'partner' && p.hp <= 0) { if (p.recruit) { p.car = null; killPed(p, src); return; } partnerDown(p); return; }
   if (p.hp <= 0) killPed(p, src);
 }
 function killPed(p, src) {
@@ -1289,7 +1295,7 @@ function killPed(p, src) {
   addDecal('blood', p.x, p.y, rand(0, TAU), rand(16, 26));
   addParticles('blood', p.x, p.y, 10, src.ang != null ? src.ang : rand(0, TAU));
   if (p.car) { const c = p.car; if (c.driver === p) c.driver = null; p.car = null; p.x = c.x + Math.sin(c.a) * (c.W / 2 + 14); p.y = c.y - Math.cos(c.a) * (c.W / 2 + 14); c.throttle = 0; c.ai = null; }
-  const by = src.by && src.by.kind === 'partner' ? G.player : src.by;
+  const by = src.by && src.by.kind === 'partner' ? (crewOwner(src.by) || G.player) : src.by;
   if (p.isPlayer) { playerDied(src); return; }
   if (p.kind === 'remote' || p.proxy) return;
   if (isPlayerPed(by)) {
@@ -2287,7 +2293,7 @@ function markersUpdate() {
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
-    for (const m of G.city.missions) if (dist(T.x, T.y, m.x, m.y) < 26 && G.time > (m.cooldownT || 0)) { startMission(m, T); return; }
+    for (const m of G.city.missions) if (dist(T.x, T.y, m.x, m.y) < 26 && G.time > (m.cooldownT || 0) && markerOpen(m)) { startMission(m, T); return; }
   }
 }
 const FLANKS = [-0.9, 0, 0.9, 1.7, -1.7];
@@ -2297,7 +2303,7 @@ function newsAll(text, secs, s) {
 }
 function startMission(m, who) {
   if (m.type === 'heist' && !heistAvailable(m, who)) return;
-  if (m.type === 'war' && G.mission) return;
+  if ((m.type === 'war' || m.type === 'defend') && G.mission) return;
   const C = G.city, Df = D(), wp = posOf(who), nP = allPlayers().length;
   const M = { type: m.type, marker: m, who, startT: G.time, text: '', timer: 0, targets: [], objective: null, waves: 0, nextWaveT: 0, car: null, phase: 0, kills: 0 };
   if (m.type === 'hit') {
@@ -2326,9 +2332,11 @@ function startMission(m, who) {
     M.timer = 30; M.nextWaveT = G.time + 0.5; M.text = 'RAMPAGE: 0 kills';
     M.objective = { x: wp.x, y: wp.y };
   } else if (m.type === 'heist') heistStart(M, nP);
+  else if (m.type === 'boss') bossStart(M, nP);
   else if (m.type === 'war') warStart(M, m, nP);
+  else if (m.type === 'defend') defendStart(M, m, nP);
   G.mission = M; m.cooldownT = G.time + 99999;
-  newsAll(m.label.toUpperCase() + (G.mode === 'mp' ? '\nstarted by ' + (who.name || 'a player') : ''), 1.8, 'mission');
+  if (m.type !== 'defend') newsAll(m.label.toUpperCase() + (G.mode === 'mp' ? '\nstarted by ' + (who.name || 'a player') : ''), 1.8, 'mission');
 }
 function missionOnKill(p) { const M = G.mission; if (M && p.mission === M) M.kills++; }
 function missionPlayersUp() { return allPlayers().filter(p => p.alive && !isBusted(p)); }
@@ -2337,7 +2345,7 @@ function missionUpdate(dt) {
   const P = G.player;
   if (G.mode === 'solo') { if (!P.alive || G.busted) { failMission(P.alive ? 'You got busted' : 'You died'); return; } }
   else if (!missionPlayersUp().length) { failMission('Everyone is down'); return; }
-  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else failMission('Out of time'); return; } }
+  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else if (M.type === 'defend' && M.terr) failMission('The ' + GANGS[M.terr.gang].name + ' took your block'); else failMission('Out of time'); return; } }
   if (M.type === 'hit') {
     const alive = M.targets.filter(g => g.alive);
     M.text = 'Take out the gang crew: ' + alive.length + ' left';
@@ -2384,7 +2392,9 @@ function missionUpdate(dt) {
     M.objective = M.route[Math.min(M.idx, M.route.length - 1)];
     M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
   } else if (M.type === 'heist') { heistUpdate(M); return;
+  } else if (M.type === 'boss') { bossUpdate(M); return;
   } else if (M.type === 'war') { warUpdate(M); return;
+  } else if (M.type === 'defend') { defendUpdate(M); return;
   } else if (M.type === 'rampage') {
     const ups = missionPlayersUp();
     if (G.time >= M.nextWaveT && ups.length) {
@@ -2759,10 +2769,11 @@ function partnerRevive(frac, byPlayer) {
   banter('up', true); if (byPlayer) addText('REVIVED', q.x, q.y - 26, '#7dd3ff');
 }
 function partnerTarget(q, r) {
-  if (G.time < q.tgtT && q.tgt && q.tgt.alive && !q.tgt.car && isEnemy(q.tgt) && dist(q.x, q.y, q.tgt.x, q.tgt.y) < r) return q.tgt;
+  const foe = e => e.kind === 'gang' || ((e.kind === 'cop' || e.kind === 'swat') && wantedOf(crewOwner(q) || G.player).stars > 0);
+  if (G.time < q.tgtT && q.tgt && q.tgt.alive && !q.tgt.car && foe(q.tgt) && dist(q.x, q.y, q.tgt.x, q.tgt.y) < r) return q.tgt;
   q.tgtT = G.time + 0.25; q.tgt = null; let bd = r;
   for (const e of G.peds) {
-    if (!e.alive || e.car || e.proxy || e.kind === 'partner' || !isEnemy(e)) continue;
+    if (!e.alive || e.car || e.proxy || e.kind === 'partner' || !foe(e)) continue;
     const d = dist(q.x, q.y, e.x, e.y); if (d >= bd || !hasLOS(q.x, q.y, e.x, e.y)) continue;
     bd = d; q.tgt = e;
   }
@@ -2772,7 +2783,7 @@ function partnerLineClear(q, a, d) {
   const cs = Math.cos(a), sn = Math.sin(a);
   for (const e of G.peds) {
     if (e === q || !e.alive || e.car) continue;
-    if (!(e.kind === 'civ' || e.isPlayer || ((e.kind === 'cop' || e.kind === 'swat') && G.wanted.stars === 0))) continue;
+    if (!(e.kind === 'civ' || isPlayerPed(e) || e.recruit || ((e.kind === 'cop' || e.kind === 'swat') && wantedOf(crewOwner(q) || G.player).stars === 0))) continue;
     const dx = e.x - q.x, dy = e.y - q.y, f = dx * cs + dy * sn;
     if (f <= 1 || f > d) continue;
     if (Math.abs(-dx * sn + dy * cs) < 18) return false;
@@ -2782,7 +2793,7 @@ function partnerLineClear(q, a, d) {
 function partnerShoot(q, T) {
   if (G.time < q.shotT) return;
   const d = dist(q.x, q.y, T.x, T.y), a = Math.atan2(T.y - q.y, T.x - q.x);
-  if (!partnerLineClear(q, a, d)) { q.shotT = G.time + 0.3; return; }
+  if (!partnerLineClear(q, a, d)) { q.shotT = G.time + 0.3; if (!(q.dodgeT > G.time)) { q.dodgeSide = -(q.dodgeSide || 1); q.dodgeA = a + q.dodgeSide * Math.PI / 2; q.dodgeT = G.time + 0.6; } return; }
   q.a = a; q.fireT = 0;
   fireWeapon(q, a + gauss() * (0.04 + d / 2600));
   if (q.weapon === 'smg') { q.burstN = (q.burstN || 0) + 1; q.shotT = G.time + (q.burstN % 5 === 0 ? rand(0.7, 1.1) : 0.11); }
@@ -2811,7 +2822,8 @@ function partnerUpdate(dt) {
   if (d > 1100 || (d > 650 && !inView(q.x, q.y, 60))) { const sp = freeSpotNear(q, P.x, P.y); q.x = sp.x; q.y = sp.y; q.path = null; }
   if (q.ragT > now) { q.wx = q.wy = 0; movePed(q, dt); unstickPlayer(q); return; }
   const T = partnerTarget(q, 460);
-  if (d > 110) followPathTo(q, { x: P.x, y: P.y }, CFG.ped.run * 1.05, dt, { roadCost: 1.3, maxExp: 3000, repath: 0.8 });
+  if (q.dodgeT > G.time && d < 260) { setWant(q, q.dodgeA, CFG.ped.run * 0.8); q.path = null; }
+  else if (d > 110) followPathTo(q, { x: P.x, y: P.y }, CFG.ped.run * 1.05, dt, { roadCost: 1.3, maxExp: 3000, repath: 0.8 });
   else if (d < 58) setWant(q, Math.atan2(q.y - P.y, q.x - P.x), CFG.ped.walk * 0.7);
   else { q.wx = q.wy = 0; q.path = null; }
   if (T) { q.a = turnToward(q.a, Math.atan2(T.y - q.y, T.x - q.x), CFG.ped.turn * 1.5 * dt); if (Math.abs(angDiff(q.a, Math.atan2(T.y - q.y, T.x - q.x))) < 0.3) partnerShoot(q, T); }
@@ -3151,6 +3163,7 @@ function territoryUpdate() {
     if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + own * TERR.income); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
     if (P && P.alive && !P.car && G.terrBank > 0 && G.city.safehouse && inRect(G.city.safehouse, P.x, P.y)) { const n = Math.round(G.terrBank); G.terrBank = 0; addCash(n, P.x, P.y); toast('PROTECTION MONEY\n+$' + n + ' from your ' + own + ' blocks', 2.2); sfx('cash'); saveTerritories(); }
   }
+  counterAttackTick();
   if (G.frame % 20) return;
   for (const T of L) {                                         // a few gang members hang around enemy blocks near a player
     if (T.owner === 'bors' || G.time < T.spawnT) continue;
@@ -3167,15 +3180,16 @@ function territoryUpdate() {
 function saveTerritories() {
   if (G.mode !== 'solo') return;
   const own = G.city.territories.filter(T => T.owner === 'bors' && !T.cheat).map(T => T.key);
-  try { localStorage[TERR_KEY] = JSON.stringify({ v: 1, own, bank: Math.round(G.terrBank || 0) }); } catch (e) {}
+  try { localStorage[TERR_KEY] = JSON.stringify({ v: 1, own, bank: Math.round(G.terrBank || 0), fin: G.finaleDone && !G.finaleCheat ? 1 : 0 }); } catch (e) {}
 }
 function loadTerritories() {
-  G.terrBank = 0; G.incomeT = 0; G.lastTerr = null;
+  G.terrBank = 0; G.incomeT = 0; G.lastTerr = null; G.finaleDone = false; G.finaleCheat = false;
   if (G.mode !== 'solo' || !G.city.territories) return;
   let d = null; try { d = JSON.parse(localStorage[TERR_KEY] || 'null'); } catch (e) { d = null; }
   if (!d || d.v !== 1 || !Array.isArray(d.own)) return;
   const keys = new Set(d.own.filter(k => typeof k === 'string'));
   for (const T of G.city.territories) if (keys.has(T.key)) T.owner = 'bors';
+  G.finaleDone = d.fin === 1;
   const b = Number(d.bank); G.terrBank = isFinite(b) ? clamp(Math.round(b), 0, TERR.bankCap) : 0;
 }
 function applyTerrState(v) {
@@ -3185,7 +3199,7 @@ function applyTerrState(v) {
 function terrColor(T) { return T.owner === 'bors' ? '#3b7bff' : GANGS[T.gang].color; }
 function drawTerritories(V) {
   const L = G.city.territories; if (!L || G.game !== 'roam') return;
-  const war = G.mission && G.mission.type === 'war' ? G.mission.terr : null;
+  const war = G.mission && (G.mission.type === 'war' || G.mission.type === 'defend') ? G.mission.terr : null;
   for (const T of L) {
     const r = terrRect(T); if (r.x > V.x1 || r.x + r.w < V.x0 || r.y > V.y1 || r.y + r.h < V.y0) continue;
     ctx.globalAlpha = war === T ? 0.45 + 0.3 * Math.sin(G.time * 6) : 0.55;
@@ -3197,6 +3211,225 @@ function drawTerritoriesMini(m, k) {
   const L = G.city.territories; if (!L) return;
   for (const T of L) { const b = T.blk; m.globalAlpha = T.owner === 'bors' ? 0.6 : 0.4; m.fillStyle = terrColor(T); m.fillRect(b.x, b.y, b.w, b.h); }
   m.globalAlpha = 1;
+}
+// ---- v18/v19: Bors crew on your blocks. Solo and multiplayer (host runs them; each player recruits their own, up to 3)
+const CREW = { max: 3, hangPerBlock: 2, hangMax: 8, hp: 160, color: '#3b7bff', names: ['Big Tony', 'Lil Bors', 'Donut Dave', 'Rookie Rick', 'Sgt. Sal', 'Knuckles', 'Vinnie', 'Two-Tone', 'Meatball', 'Slim'] };
+function crewOwner(q) {
+  if (!q || !q.recruit || !q.following) return null;
+  if (G.mode === 'solo' || q.ownerUid === 'host' || q.ownerUid == null) return q.ownerUid == null && G.mode !== 'solo' ? null : G.player;
+  const r = G.remotes[q.ownerUid]; return r ? r.ped : null;
+}
+function crewCount(owner) { owner = owner || G.player; let n = 0; for (const q of G.peds) if (q.recruit && q.following && q.alive && !q.proxy && crewOwner(q) === owner) n++; return n; }
+function crewDress(q) { q.recruit = true; q.color = CREW.color; q.name = CREW.names[q.id % CREW.names.length]; q.look = Object.assign({}, lookFor('gang', q.id), { shirt: '#2a5bd7', pants: '#16213d' }); q.maxHp = CREW.hp; }
+function nearCrew(P) {
+  if (G.game !== 'roam' || !P || !P.alive || P.car || G.busted) return null;
+  let best = null, bd = 44; for (const q of G.peds) { if (!q.recruit || !q.alive || q.car) continue; const d = dist(q.x, q.y, P.x, P.y); if (d < bd) { bd = d; best = q; } }
+  return best;
+}
+function tellPlayer(who, text) { if (who.isPlayer) toast(text, 1.8); else if (who.uid) sendMsg(who.uid, { t: 'note', x: text }); }
+function toggleRecruit(q, who) {
+  who = who || G.player;
+  if (!G.isSim) { netEvent({ t: 'recruit', id: q.id }); return; }       // the host decides
+  const owner = crewOwner(q);
+  if (q.following) {
+    if (owner !== who) { tellPlayer(who, q.name + ' rolls with someone else\nFind your own crew on a blue block.'); return; }
+    q.following = false; q.ownerUid = null; q.homeTerr = terrAt(q.x, q.y); q.home = { x: q.x, y: q.y }; q.path = null; tellPlayer(who, q.name + ' heads home\nSee you on the block.'); return;
+  }
+  if (crewCount(who) >= CREW.max) { tellPlayer(who, 'Your crew is full (' + CREW.max + '/' + CREW.max + ')\nDismiss someone first.'); return; }
+  q.following = true; q.ownerUid = who.isPlayer ? (G.mode === 'solo' ? 'solo' : 'host') : who.uid; q.homeTerr = null; q.path = null;
+  tellPlayer(who, 'RECRUITED: ' + q.name + '\nCrew ' + crewCount(who) + '/' + CREW.max);
+  if (who.isPlayer) { sfx('pickup'); banter('recruit'); }
+}
+function spawnCrewMember(x, y, T) {
+  const q = makePed('partner', x, y, { weapon: chance(0.5) ? 'smg' : 'pistol', hp: CREW.hp });
+  crewDress(q); q.following = false; q.ownerUid = null; q.homeTerr = T; q.home = { x, y }; q.ammo.smg = 9999;
+  q.shotT = 0; q.burstN = 0; q.tgt = null; q.tgtT = 0; q.stayA = rand(0, TAU); q.a = q.stayA;
+  G.peds.push(q); return q;
+}
+function crewScatter(owner) {
+  let n = 0;
+  for (let i = G.peds.length - 1; i >= 0; i--) { const q = G.peds[i]; if (q.recruit && q.following && !q.proxy && crewOwner(q) === owner) { G.peds.splice(i, 1); n++; } }
+  if (n && owner && owner.isPlayer) toast('Your crew scattered\nRecruit them again on your blocks.', 1.6);
+}
+function crewUpdate(dt) {
+  if (G.game !== 'roam' || !G.isSim) return;
+  const L = G.city.territories || [];
+  let hang = 0;
+  const slots = new Map();
+  for (let i = G.peds.length - 1; i >= 0; i--) {                                   // clean-up
+    const q = G.peds[i]; if (!q.recruit || q.proxy) continue;
+    if (!q.alive) { if (G.time - (q.deadT || 0) > 8) G.peds.splice(i, 1); continue; }
+    if (q.following) {
+      const o = crewOwner(q);
+      if (!o || !o.alive || isBusted(o)) { if (!inView(q.x, q.y, 80) || !o) { G.peds.splice(i, 1); continue; } q.following = false; q.ownerUid = null; q.homeTerr = terrAt(q.x, q.y); q.home = { x: q.x, y: q.y }; }
+    }
+    if (!q.following) {
+      const lost = !q.homeTerr || q.homeTerr.owner !== 'bors';
+      if ((lost || minPlayerDist(q.x, q.y) > 1400) && !inView(q.x, q.y, 80)) { q.car = null; G.peds.splice(i, 1); continue; }
+      hang++;
+    }
+  }
+  for (const q of G.peds) {
+    if (!q.recruit || !q.alive || q.proxy) continue;
+    if (!q.following) {                                                            // hanging out on the block: guard it
+      q.car = null;
+      if (q.ragT > G.time) { q.wx = q.wy = 0; movePed(q, dt); unstickPlayer(q); continue; }
+      const T = partnerTarget(q, 400);
+      if (T) { q.a = turnToward(q.a, Math.atan2(T.y - q.y, T.x - q.x), CFG.ped.turn * 1.5 * dt); if (Math.abs(angDiff(q.a, Math.atan2(T.y - q.y, T.x - q.x))) < 0.3) partnerShoot(q, T); }
+      else q.a = turnToward(q.a, q.stayA || 0, dt);
+      if (q.dodgeT > G.time) setWant(q, q.dodgeA, CFG.ped.walk); else { q.wx = q.wy = 0; }
+      movePed(q, dt); unstickPlayer(q);
+      continue;
+    }
+    const P = crewOwner(q), slot = slots.get(P) || 0; slots.set(P, slot + 1);
+    if (P.car && P.car.kind !== 'bike' && P.car.kind !== 'tank' && G.cars.indexOf(P.car) >= 0) {       // riding along
+      q.car = P.car; q.x = P.car.x; q.y = P.car.y; q.vx = q.vy = q.wx = q.wy = 0; q.path = null;
+      const T = partnerTarget(q, 400); if (T) partnerShoot(q, T);
+      continue;
+    }
+    if (q.car) { q.car = null; const sp = freeSpotNear(q, P.x, P.y); q.x = sp.x; q.y = sp.y; q.vx = q.vy = q.wx = q.wy = 0; q.path = null; }
+    const pp = posOf(P), d = dist(q.x, q.y, pp.x, pp.y);
+    if (d > 1100 || (d > 650 && !nearPlayerView(q.x, q.y, 60))) { const sp = freeSpotNear(q, pp.x, pp.y); q.x = sp.x; q.y = sp.y; q.path = null; }
+    if (q.ragT > G.time) { q.wx = q.wy = 0; movePed(q, dt); unstickPlayer(q); continue; }
+    const T = partnerTarget(q, 460), keep = 100 + slot * 30;
+    if (q.dodgeT > G.time && d < 260) { setWant(q, q.dodgeA, CFG.ped.run * 0.8); q.path = null; }
+    else if (d > keep) followPathTo(q, { x: pp.x, y: pp.y }, CFG.ped.run * 1.05, dt, { roadCost: 1.3, maxExp: 3000, repath: 0.8 });
+    else if (d < 50) setWant(q, Math.atan2(q.y - pp.y, q.x - pp.x), CFG.ped.walk * 0.7);
+    else { q.wx = q.wy = 0; q.path = null; }
+    if (T) { q.a = turnToward(q.a, Math.atan2(T.y - q.y, T.x - q.x), CFG.ped.turn * 1.5 * dt); if (Math.abs(angDiff(q.a, Math.atan2(T.y - q.y, T.x - q.x))) < 0.3) partnerShoot(q, T); }
+    else faceMove(q, dt);
+    movePed(q, dt); unstickPlayer(q);
+  }
+  if (G.frame % 30 || G.peds.length > CFG.world.maxPeds - 20) return;                // hangouts on your own blocks near a player
+  for (const T of L) {
+    if (T.owner !== 'bors' || hang >= CREW.hangMax || minPlayerDist(T.x, T.y) > 900 || G.time < (T.crewT || 0)) continue;
+    T.crewT = G.time + 15;
+    let here = 0; for (const q of G.peds) if (q.recruit && !q.following && q.alive && q.homeTerr === T) here++;
+    for (let n = here; n < CREW.hangPerBlock && hang < CREW.hangMax; n++) for (let t = 0; t < 20; t++) {
+      const pt = edgePoint(T.blk, pick(['top', 'bottom', 'left', 'right']), rand(0.15, 0.85));
+      if (G.city.cellCost(pt.x, pt.y) !== 1 || hitStatic(pt.x, pt.y, 13, false) || minPlayerDist(pt.x, pt.y) < 160) continue;
+      spawnCrewMember(pt.x, pt.y, T); hang++; break;
+    }
+  }
+}
+// ---- v19: the finale. Own half the city and the rival bosses call you out at Bors Arena.
+const BOSS = { need: 9, hp: 1400, secs: 300, leave: 950, reward: 10000 };
+function markerOpen(m) { if (m.type !== 'boss') return true; const L = G.city && G.city.territories; return !!L && terrOwned() >= BOSS.need && terrOwned() < L.length; }
+function bossDress(p) { p.boss = true; p.maxHp = BOSS.hp; p.name = p.gang === 'rats' ? 'RAT KING' : 'SAINT PETER'; p.look = Object.assign({}, p.look, { hat: 'cap', glasses: true, scale: 1.2, build: 'muscle' }); }
+function bossStart(M, nP) {
+  const S = G.city.blocks.find(b => b.district === 'stadium'), cx = S.x + S.w / 2, cy = S.y + S.h / 2;
+  M.center = { x: cx, y: cy }; M.phase = 0; M.timer = BOSS.secs; M.waves = 0; M.nextWaveT = G.time + 3; M.nP = nP; M.objective = { x: cx, y: cy }; M.bosses = [];
+  M.text = 'SHOWDOWN AT BORS ARENA: here they come';
+  newsAll('THE FINAL SHOWDOWN\nThe Harbour Rats and the Old Town Saints joined forces. Their bosses want Bors City back.', 3.2, 'alarm');
+  if (G.player) banter('war', true);
+}
+function bossSpawnAt(M, gang, weapon, boss) {
+  const C = M.center; let pt = null;
+  for (let t = 0; t < 30 && !pt; t++) { const c = randomSidewalkPoint(C.x, C.y, 200, 420); if (c && minPlayerDist(c.x, c.y) > 180) pt = c; }
+  if (!pt || G.peds.length >= CFG.world.maxPeds - 3) return null;
+  const g = spawnGang(pt.x, pt.y, null, FLANKS[M.targets.length % 5], weapon);
+  g.gang = gang; g.look = Object.assign({}, g.look, { shirt: GANGS[gang].shirt, pants: GANGS[gang].pants });
+  g.mission = M; g.sight = 800; g.home = { x: pt.x, y: pt.y };
+  const ups = missionPlayersUp(); if (ups.length) { const tg = ups[M.targets.length % ups.length], tp = posOf(tg); g.state = 'engage'; g.target = tg; g.lastSeenT = G.time; g.lastTargetPos = { x: tp.x, y: tp.y }; }
+  if (boss) { bossDress(g); g.hp = g.maxHp = Math.round(BOSS.hp * (1 + 0.4 * (M.nP - 1))); M.bosses.push(g); }
+  M.targets.push(g); return g;
+}
+function bossUpdate(M) {
+  const ups = missionPlayersUp(), C = M.center;
+  let near = false; for (const q of ups) { const qp = posOf(q); if (dist(qp.x, qp.y, C.x, C.y) < BOSS.leave) near = true; }
+  if (!near) { if (!M.awayT) M.awayT = G.time; else if (G.time - M.awayT > 8) { failMission('You ran from the showdown'); return; } } else M.awayT = 0;
+  const alive = M.targets.filter(g => g.alive);
+  if (M.phase === 0) {
+    if (!alive.length && G.time >= M.nextWaveT) {
+      if (M.waves >= 2) {
+        M.phase = 1; bossSpawnAt(M, 'rats', 'shotgun', true); bossSpawnAt(M, 'saints', 'smg', true);
+        for (let i = 0; i < 2 + ups.length; i++) bossSpawnAt(M, i % 2 ? 'rats' : 'saints', null, false);
+        for (const q of ups) { if (q.isPlayer) { q.hp = q.maxHp; q.armor = 100; } else sendMsg(q.uid, { t: 'pickup', ty: 'armor', n: 0 }); }
+        newsAll('THE BOSSES ARE HERE\nTake down the RAT KING and SAINT PETER!', 2.6, 'alarm');
+      } else {
+        M.waves++;
+        const n = Math.max(3, Math.round((2 + M.waves) * D().count * (1 + 0.35 * (ups.length - 1))));
+        for (let i = 0; i < n; i++) bossSpawnAt(M, i % 2 ? 'rats' : 'saints', null, false);
+        for (const q of ups) { if (q.isPlayer) q.hp = Math.min(q.maxHp, q.hp + 150); else sendMsg(q.uid, { t: 'pickup', ty: 'health', n: 0 }); }
+        M.nextWaveT = G.time + 6; newsAll('WAVE ' + M.waves + '/2', 1);
+      }
+    }
+    M.text = 'SHOWDOWN AT BORS ARENA: wave ' + Math.max(1, M.waves) + '/2' + (alive.length ? ', ' + alive.length + ' left' : '') + ' (' + Math.ceil(M.timer) + 's)';
+  } else {
+    const bl = M.bosses.filter(g => g.alive);
+    if (!bl.length) { bossWon(M); return; }
+    M.text = 'SHOWDOWN: ' + bl.map(g => g.name + ' ' + Math.ceil(g.hp / g.maxHp * 100) + '%').join(', ') + ' (' + Math.ceil(M.timer) + 's)';
+  }
+  const q0 = ups[0] ? posOf(ups[0]) : C, pool = M.phase === 1 ? M.bosses.filter(g => g.alive) : alive;
+  const tgt = pool.slice().sort((a, b) => dist(a.x, a.y, q0.x, q0.y) - dist(b.x, b.y, q0.x, q0.y))[0];
+  M.objective = tgt ? { x: tgt.x, y: tgt.y } : { x: C.x, y: C.y };
+}
+function bossWon(M) {
+  const L = G.city.territories, cheat = !!(G.cheats.god || G.cheats.guns);
+  for (const T of L) if (T.owner !== 'bors') { T.owner = 'bors'; T.cheat = cheat; }
+  for (const p of G.peds) if (p.terr) p.terr = null;
+  G.finaleDone = true; G.finaleCheat = cheat; saveTerritories();
+  if (G.player && G.player.isPlayer) addRep(1000);
+  completeMission(BOSS.reward, 'BORS CITY IS OURS! All ' + L.length + ' blocks are Bors blue.\nTHE END... or is it?');
+  if (G.player) banter('turf', true);
+}
+// ---- v18: rival gangs counter-attack your blocks (host/solo). Lose the fight and the block goes back to them.
+const DEFEND = { firstMin: 240, firstMax: 360, nextMin: 300, nextMax: 480, arriveSec: 75, fightSec: 120, reward: 200, near: 520, leave: 800 };
+function counterAttackTick() {
+  if (G.finaleDone) return;
+  if (!terrOwned()) { G.attackT = Math.max(G.attackT || 0, G.time + DEFEND.firstMin); return; }
+  if (!G.attackT) G.attackT = G.time + rand(DEFEND.firstMin, DEFEND.firstMax);
+  if (G.time < G.attackT || G.mission) return;
+  const ups = missionPlayersUp(); if (!ups.length) { G.attackT = G.time + 30; return; }
+  let best = null, bd = 2200, who = null;
+  for (const T of G.city.territories) { if (T.owner !== 'bors') continue; for (const q of ups) { const qp = posOf(q), d = dist(qp.x, qp.y, T.x, T.y); if (d < bd) { bd = d; best = T; who = q; } } }
+  if (!best) { G.attackT = G.time + 60; return; }
+  G.attackT = G.time + rand(DEFEND.nextMin, DEFEND.nextMax);
+  startMission({ type: 'defend', label: 'Turf under attack', x: best.x, y: best.y, terr: best, cooldownT: 0 }, who);
+}
+function defendSpawn(M, onBlock) {
+  const T = M.terr, ups = missionPlayersUp(), n = Math.max(2, Math.round((1 + M.waves) * D().count * (1 + 0.35 * (ups.length - 1))));
+  for (let i = 0; i < n; i++) {
+    if (G.peds.length >= CFG.world.maxPeds - 5) break;
+    let pt = null;
+    for (let t = 0; t < 20 && !pt; t++) { const c = onBlock ? edgePoint(T.blk, pick(['top', 'bottom', 'left', 'right']), rand(0.1, 0.9)) : randomSidewalkPoint(T.x, T.y, 380, 640); if (c && G.city.cellCost(c.x, c.y) === 1 && !hitStatic(c.x, c.y, 13, false) && minPlayerDist(c.x, c.y) > 200) pt = c; }
+    if (!pt) continue;
+    const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]);
+    g.gang = T.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[T.gang].shirt, pants: GANGS[T.gang].pants });
+    g.mission = M; g.home = { x: pt.x, y: pt.y }; g.sight = 700; M.targets.push(g);
+    if (M.phase === 1 && ups.length) { const tg = ups[i % ups.length], tp = posOf(tg); g.state = 'engage'; g.target = tg; g.lastSeenT = G.time; g.lastTargetPos = { x: tp.x, y: tp.y }; }
+  }
+}
+function defendStart(M, m, nP) {
+  const T = m.terr; M.terr = T; M.phase = 0; M.waves = 1; M.timer = DEFEND.arriveSec; M.nextWaveT = 0; M.objective = { x: T.x, y: T.y };
+  defendSpawn(M, true);
+  M.text = 'TURF UNDER ATTACK by the ' + GANGS[T.gang].name + ': get to your block';
+  newsAll('TURF UNDER ATTACK!\nThe ' + GANGS[T.gang].name + ' are hitting one of your blocks. Get there or lose it!', 2.8, 'alarm');
+  if (G.player) banter('defend', true);
+}
+function defendUpdate(M) {
+  const T = M.terr, ups = missionPlayersUp(), G2 = GANGS[T.gang].name;
+  let near = false; for (const q of ups) { const qp = posOf(q); if (dist(qp.x, qp.y, T.x, T.y) < (M.phase ? DEFEND.leave : DEFEND.near)) near = true; }
+  if (M.phase === 0) {
+    M.text = 'TURF UNDER ATTACK by the ' + G2 + ': get to your block (' + Math.ceil(M.timer) + 's)'; M.objective = { x: T.x, y: T.y };
+    if (near) { M.phase = 1; M.timer = DEFEND.fightSec; newsAll('DEFEND YOUR BLOCK!\nTake out the ' + G2 + '.', 1.6, 'mission'); }
+    return;
+  }
+  if (!near) { if (!M.awayT) M.awayT = G.time; else if (G.time - M.awayT > 6) { failMission('You abandoned your block'); return; } } else M.awayT = 0;
+  const alive = M.targets.filter(g => g.alive);
+  if (!alive.length && G.time >= M.nextWaveT) {
+    if (M.nextWaveT) { if (M.waves >= 2) { completeMission(DEFEND.reward, 'TURF DEFENDED! The ' + G2 + ' ran home.'); return; } M.waves++; for (const q of ups) { if (q.isPlayer) { q.hp = Math.min(q.maxHp, q.hp + 100); addText('+100 HP', q.x, q.y - 22, '#ff6b6b'); } else sendMsg(q.uid, { t: 'pickup', ty: 'health', n: 0 }); } defendSpawn(M, false); newsAll('WAVE 2/2', 1); }
+    M.nextWaveT = G.time + 5;
+  }
+  const left = M.targets.filter(g => g.alive), q0 = ups[0] ? posOf(ups[0]) : T;
+  M.objective = left.length ? (() => { const n = left.slice().sort((a, b) => dist(a.x, a.y, q0.x, q0.y) - dist(b.x, b.y, q0.x, q0.y))[0]; return { x: n.x, y: n.y }; })() : { x: T.x, y: T.y };
+  M.text = 'DEFEND YOUR BLOCK vs ' + G2 + ': wave ' + M.waves + '/2' + (left.length ? ', ' + left.length + ' left' : '') + ' (' + Math.ceil(M.timer) + 's)';
+}
+function turfLost(T, why) {
+  T.owner = null; T.kills = 0; T.coolT = G.time + 60; T.spawnT = G.time + 20;
+  saveTerritories();
+  newsAll('BLOCK LOST' + (why ? ' (' + why + ')' : '') + '\nThe ' + GANGS[T.gang].name + ' took it back. ' + terrOwned() + '/' + G.city.territories.length + ' blocks left.', 2.4, 'fail');
+  if (G.player) banter('lost', true);
 }
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
@@ -3213,8 +3446,8 @@ function completeMission(reward, extra) {
 function failMission(why) {
   const M = G.mission; if (!M) return;
   if (M.type === 'war' && M.terr) { M.terr.kills = 0; M.terr.coolT = G.time + 30; }
-  G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : 8);
-  newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
+  G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : M.type === 'boss' ? 45 : 8);
+  if (M.type === 'defend' && M.terr) turfLost(M.terr, why); else newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
   if (M.car) M.car.marked = false;
   for (const g of M.targets) if (g.alive) g.mission = null;
 }
@@ -3512,6 +3745,7 @@ function updatePlayerFoot(dt) {
   if (IN.interact && nearBed(P)) { sleepInSafehouse(); IN.interact = false; }
   if (IN.interact && nearCounter(P)) { buyBrew(); IN.interact = false; }
   if (IN.interact && nearVault(P)) { startDrill(P); IN.interact = false; }
+  if (IN.interact) { const cm = nearCrew(P); if (cm) { toggleRecruit(cm); IN.interact = false; } }
   if (IN.interact) {
     const c = nearestEnterableCar(P, 70);
     if (c) tryEnterCar(c);
@@ -3843,7 +4077,7 @@ function drawMarkers(V) {
     ctx.globalAlpha = 0.2; ctx.fillStyle = color; circle(ctx, x, y, r); ctx.globalAlpha = 1;
     if (label) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y); }
   };
-  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0)) { if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
+  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0) && markerOpen(m)) { if (m.type === 'boss') { ring(m.x, m.y, 30, '#ffd24d', 'BOSS'); ring(m.x, m.y, 38 + 4 * Math.sin(t * 3), '#ff3b3b', ''); } else if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
   const gs = C.places.gunshop; if (inV(V, gs.x, gs.y)) ring(gs.x, gs.y, 20, '#7dff4d', 'GUNS');
   const S = C.safehouse; if (S && G.mode === 'solo') { if (inV(V, S.garage.x, S.garage.y)) ring(S.garage.x, S.garage.y, 34, '#4dc3ff', 'GARAGE'); if (inV(V, S.bed.x, S.bed.y) && (G.roofA || 0) < 0.5) ring(S.bed.x, S.bed.y, 16, '#7dd3ff', ''); }
   const sp = C.places.spray; if (inV(V, sp.x, sp.y)) ring(sp.x, sp.y, 32, '#d24dff', 'SPRAY');
@@ -3878,7 +4112,7 @@ function drawPed(p) {
   let a = p.a; if (p.swingT > G.time - 0.18) a += Math.sin((G.time - p.swingT) / 0.18 * Math.PI) * 0.7;
   if (p.ragT > G.time) a += (p.ragT - G.time) * 6;
   ctx.save(); ctx.translate(p.x, p.y);
-  if (p.isPlayer || p.kind === 'remote' || p.kind === 'partner') { ctx.strokeStyle = p.color || '#ffd24d'; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 19, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
+  if (p.isPlayer || p.kind === 'remote' || (p.kind === 'partner' && (!p.recruit || p.following))) { ctx.strokeStyle = p.color || '#ffd24d'; ctx.globalAlpha = 0.9; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(0, 0, 19, 0, TAU); ctx.stroke(); ctx.globalAlpha = 1; }
   ctx.fillStyle = 'rgba(0,0,0,.3)'; ellipse(ctx, 3, 4, 12, 9);
   const s = 28 * (p.look.scale || 1);
   ctx.rotate(a); ctx.drawImage(spr, -s, -s, s * 2, s * 2); ctx.restore();
@@ -3898,7 +4132,8 @@ function drawLabel(x, y, name, col, frac) {
 function drawOverheads(V) {
   for (const p of G.peds) {
     if (!p.alive || p.car || !inV(V, p.x, p.y, 40) || p.isPlayer) continue;
-    if (p.kind === 'partner') { drawLabel(p.x, p.y - 22, p.down ? p.name + ' (down)' : p.name, p.color, p.hp / p.maxHp); continue; }
+    if (p.boss) { drawLabel(p.x, p.y - 26, p.name || 'BOSS', '#ffd24d', p.hp / p.maxHp); continue; }
+    if (p.kind === 'partner') { if (!p.recruit || p.following) drawLabel(p.x, p.y - 22, p.down ? p.name + ' (down)' : p.name, p.color, p.hp / p.maxHp); continue; }
     if (p.kind === 'remote') drawLabel(p.x, p.y - 22, p.name, p.color || '#fff', p.hp / p.maxHp);
     else if (p.state === 'acquire') { ctx.fillStyle = '#ff3b3b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText('!', p.x, p.y - 28); ctx.fillText('!', p.x, p.y - 28); }
     else if ((p.kind === 'gang' || p.kind === 'cop' || p.kind === 'swat') && G.time - p.lastHitT < 3) { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(p.x - 14, p.y - 26, 28, 4); ctx.fillStyle = '#ff4d4d'; ctx.fillRect(p.x - 14, p.y - 26, 28 * clamp(p.hp / p.maxHp, 0, 1), 4); }
@@ -3993,7 +4228,7 @@ function drawMini() {
   const R = 4.5 * ms / k, dot = (x, y, color, r) => { m.fillStyle = color; m.beginPath(); m.arc(x, y, r || R, 0, TAU); m.fill(); };
   const pp = playerPos();
   if (G.game === 'roam') {
-    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
+    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0) && markerOpen(mm)) dot(mm.x, mm.y, mm.type === 'boss' ? '#ffffff' : mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
     drawTerritoriesMini(m, k);
@@ -4009,6 +4244,7 @@ function drawMini() {
     if (p.kind === 'gang') dot(p.x, p.y, '#ff3b3b'); else if (p.kind === 'cop' || p.kind === 'swat') dot(p.x, p.y, '#4d8bff');
   }
   if (G.partner && !G.partner.car) dot(G.partner.x, G.partner.y, G.partner.color, R * 1.3);
+  for (const q of G.peds) if (q.recruit && q.following && q.alive && !q.car) dot(q.x, q.y, '#3b7bff', R);
   for (const h of G.helis) dot(h.x, h.y, '#4d8bff', R * 2);
   for (const c of G.cars) if ((c.kind === 'police' || c.kind === 'tank') && ((c.driver && !isPlayerPed(c.driver)) || c.npcDrv)) dot(c.x, c.y, '#4d8bff', R * 1.3);
   dot(pp.x, pp.y, '#fff', R * 1.7); dot(pp.x, pp.y, G.player.color || '#ffd24d', R);
@@ -4107,6 +4343,7 @@ function updateHUD() {
     if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : (P.car.kind === 'bike' ? 'E: get off  ·  G: shoot' : 'E: get out  ·  G: drive-by'));
     else if (nearBed(P)) hint = isTouch ? '' : 'E: sleep (heal + save)';
     else if (nearVault(P)) hint = isTouch ? '' : 'E: drill the vault (sets off the alarm)';
+    else if (nearCrew(P)) hint = isTouch ? '' : (nearCrew(P).following ? 'E: dismiss ' + nearCrew(P).name : 'E: recruit' + (G.isSim ? ' (' + crewCount() + '/' + CREW.max + ')' : ''));
     else if (nearCounter(P)) hint = isTouch ? '' : 'E: Bors Brew ($' + BREW_PRICE + ', +200 HP)';
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
@@ -4116,8 +4353,8 @@ function updateHUD() {
   skillHUD();
   if (isTouch) {
     const inCar = !!P.car;
-    const bed = !inCar && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P);
-    $('btnAct').hidden = !(P.alive && (inCar || nearCar || bed || brew || drill)); $('btnAct').textContent = inCar ? 'EXIT' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
+    const bed = !inCar && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P);
+    $('btnAct').hidden = !(P.alive && (inCar || nearCar || bed || brew || drill || crewM)); $('btnAct').textContent = inCar ? 'EXIT' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
     $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar; $('btnShoot').hidden = !(inCar && P.alive);
     $('btnWpn').hidden = inCar || playerWeaponList(P).length < 2;
     $('btnPause').hidden = false;
@@ -4568,7 +4805,7 @@ function netHUD() {
     $('board').innerHTML = rankedIds().map(id => '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(dispName(id)) + '</span><span>' + (players[id].kills || 0) + '/' + (players[id].deaths || 0) + '</span></div>').join('');
   } else {
     const ids = Object.keys(players).sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0));
-    $('board').innerHTML = ids.map(id => { const s = starsOfUid(id), cash = id === uid ? G.stats.cash : (players[id].cash || 0); return '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(dispName(id)) + (s ? ' <span style="color:#ffd24d">' + '★'.repeat(s) + '</span>' : '') + '</span><span>$' + cash + '</span></div>'; }).join('');
+    $('board').innerHTML = (G.city && G.city.territories ? '<div><span class="dot" style="background:#3b7bff"></span><span>Bors turf</span><span>' + terrOwned() + '/' + G.city.territories.length + '</span></div>' : '') + ids.map(id => { const s = starsOfUid(id), cash = id === uid ? G.stats.cash : (players[id].cash || 0); return '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(dispName(id)) + (s ? ' <span style="color:#ffd24d">' + '★'.repeat(s) + '</span>' : '') + '</span><span>$' + cash + '</span></div>'; }).join('');
   }
 }
 
@@ -4742,6 +4979,7 @@ function onMsg(m) {
     case 'deny': P.pendingCar = null; break;
     case 'reward': if (m.cash) addCash(m.cash, m.x != null ? m.x : P.x, m.y != null ? m.y : P.y); G.stats.score += m.score || 0; if (m.kill) { G.stats.kills++; streakKill(); } if (m.mission) { G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); } break;
     case 'pickup': pickupEffect(P, m.ty, m.n); break;
+    case 'note': if (typeof m.x === 'string') toast(m.x.slice(0, 120), 1.8); break;
     case 'sugar': sugarRush(); break;
     case 'bust': bustPlayer(); break;
     case 'cardmg': if (P.car && !P.car.dead) damageCar(P.car, m.d, { kind: 'gun' }); break;
@@ -4763,6 +5001,7 @@ function hostOnEvent(e) {
   const r = G.remotes[e.u]; const who = r ? r.ped : null; if (!who) return;
   switch (e.t) {
     case 'drill': startDrill(who); break;
+    case 'recruit': { const q = G.peds.find(p => p.id === e.id && p.recruit && p.alive); if (q && dist(q.x, q.y, who.x, who.y) < 80) toggleRecruit(q, who); break; }
     case 'hit': {
       const p = pedById(e.id); if (!p || !p.alive || isPlayerPed(p)) break;
       if (e.kx != null && !p.car) { p.ragT = G.time + clamp(e.rag || 0.6, 0.2, 1.1); p.vx = e.kx; p.vy = e.ky; }
@@ -4816,7 +5055,7 @@ function hostWorldTick(dt) {
   const ps = [], cs = [];
   for (const p of G.peds) {
     if (isPlayerPed(p) || p.car || !near(p.x, p.y)) continue;
-    const k = PED_KINDS.indexOf(p.kind); if (k < 0) continue;
+    const k = p.recruit ? (p.following ? 5 : 4) : p.boss ? 6 : PED_KINDS.indexOf(p.kind); if (k < 0) continue;
     const f = (p.alive ? 1 : 0) | (p.moving ? 2 : 0) | (p.state === 'acquire' ? 4 : 0) | (G.time - p.lastHitT < 3 ? 8 : 0) | (p.ragT > G.time ? 16 : 0) | (G.time - p.swingT < 0.2 ? 32 : 0);
     ps.push(p.id + ',' + Math.round(p.x) + ',' + Math.round(p.y) + ',' + Math.round(p.a * 100) + ',' + k + ',' + Math.max(0, WEAPON_LIST.indexOf(p.weapon)) + ',' + f + ',' + Math.round(clamp(p.hp / p.maxHp, 0, 1) * 100));
   }
@@ -4878,8 +5117,10 @@ function updateProxies(dt) {
   const seen = new Set();
   for (const [id, b] of B.peds) {
     let p = proxPeds.get(id);
-    const kind = PED_KINDS[b[4]] || 'civ';
-    if (!p) { p = makePed(kind, b[1], b[2], { id, a: b[3] / 100 }); p.proxy = true; if (kind === 'swat') p.maxHp = 150; if (kind === 'gang') gangDress(p); proxPeds.set(id, p); G.peds.push(p); }
+    const code = b[4], kind = code === 4 || code === 5 ? 'partner' : code === 6 ? 'gang' : (PED_KINDS[code] || 'civ');
+    if (p && p.kind !== kind) { p = null; }
+    if (!p) { const old = proxPeds.get(id); if (old) { const j = G.peds.indexOf(old); if (j >= 0) G.peds.splice(j, 1); } p = makePed(kind, b[1], b[2], { id, a: b[3] / 100 }); p.proxy = true; if (kind === 'swat') p.maxHp = 150; if (kind === 'gang') gangDress(p); if (kind === 'partner') crewDress(p); if (code === 6) bossDress(p); proxPeds.set(id, p); G.peds.push(p); }
+    if (kind === 'partner') p.following = code === 5;
     const a = A && A.peds.get(id);
     const nx = a ? lerp(a[1], b[1], t) : b[1], ny = a ? lerp(a[2], b[2], t) : b[2];
     const moved = Math.hypot(nx - p.x, ny - p.y);
@@ -5015,7 +5256,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = brotherLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0;
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0;
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
@@ -5082,7 +5323,7 @@ function update(dt) {
   const P = G.player;
   if (!P.alive) { if (G.time >= G.deadT) respawnPlayer(false); }
   else if (G.busted) { if (G.time >= G.deadT) respawnPlayer(true); }
-  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); partnerUpdate(dt);
+  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); partnerUpdate(dt); crewUpdate(dt);
   netPre(dt);
   if (G.isSim) helisUpdate(dt); else helisMirror(dt);
   if (G.isSim) {
@@ -5127,6 +5368,7 @@ function respawnPlayer(busted) {
   const pt = busted ? G.city.places.police : G.city.places.hospital;
   P.x = pt.x; P.y = pt.y; P.a = rand(0, TAU); P.hp = P.maxHp; if (busted) P.armor = 0; P.alive = true; P.car = null; P.vx = P.vy = 0; P.goal = null; P.path = null; P.lastHitT = -99; P.ragT = 0;
   G.busted = false; G.wanted.heat = 0; G.wanted.stars = 0; G.cam.snap = true;
+  crewScatter(G.player);
   if (G.partner) { const q = G.partner, sp = freeSpotNear(q, P.x, P.y); q.down = false; q.hp = q.maxHp; q.car = null; q.x = sp.x; q.y = sp.y; q.vx = q.vy = q.wx = q.wy = 0; q.path = null; q.ragT = 0; }
   if (G.isSim) for (const p of G.peds) if ((p.kind === 'gang' || p.kind === 'cop' || p.kind === 'swat') && !p.proxy && (p.target === P || G.mode === 'solo') && (p.state === 'engage' || p.state === 'cover' || p.state === 'arrest' || p.state === 'acquire')) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.target = null; }
   if (G.mode === 'mp') { lastSentHp = Math.round(P.hp); roomRef.child('players/' + uid).update({ hp: lastSentHp, alive: true }); lastSent = ''; }
