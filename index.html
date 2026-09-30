@@ -456,6 +456,7 @@ const BANTER = {
   down: ["I'm hit! Get over here, partner!", "Man down! And the man is me!", "Little help? I'm lying in a puddle."],
   up: ["Back on my feet. Thanks, partner.", "Walked it off. The beard is fine."],
   hop: ["Scoot over, I'm riding shotgun.", "Shotgun! Literally.", "You drive, I shoot. Classic."],
+  heist: ["Robbing a bank. Our own pension fund is in there.", "Masks on. Badges... also on, apparently.", "In and out. Twenty minutes, tops."],
   streak: ["Easy there, action hero. Leave some for me.", "Save some chaos for the rest of us.", "That's a lot of overtime."]
 };
 function banter(ev, force) {
@@ -521,7 +522,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 14;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 15;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -1003,7 +1004,8 @@ function buildCity(seed) {
     { ...ePt(blockAt(cols - 3, 1), 'bottom', 0.5), type: 'survive', label: 'Turf war' },
     { ...ePt(blockAt(cc + 2, cr + 1), 'left', 0.5), type: 'donut', label: 'Donut Duty' },
     { ...ePt(blockAt(2, rows - 2), 'top', 0.5), type: 'rampage', label: 'Rampage' },
-    { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' }
+    { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' },
+    { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist' }
   ];
   city.turfs = [blockAt(0, 0), blockAt(cols - 1, 0), blockAt(0, rows - 1), blockAt(cols - 1, rows - 1)];
   city.start = ePt(blockAt(cc - 1, cr), 'bottom', 0.5);
@@ -1022,9 +1024,18 @@ function buildCity(seed) {
     else if (ry) c = (v < sw || v >= road - sw) ? 1 : 2;
     cost[y * nc + x] = c;
   }
+  const navBase = cost.slice();
   const blockCells = (x0, y0, x1, y1) => { const cx0 = clamp(Math.floor(x0 / cs), 0, nc - 1), cx1 = clamp(Math.floor(x1 / cs), 0, nc - 1), cy0 = clamp(Math.floor(y0 / cs), 0, nr - 1), cy1 = clamp(Math.floor(y1 / cs), 0, nr - 1); for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) cost[y * nc + x] = 0; };
   for (const b of city.buildings) { const m = 12; blockCells(b.x - m, b.y - m, b.x + b.w + m, b.y + b.h + m); }
   for (const p of city.props) if (p.pedBlock) blockCells(p.x - p.r - 8, p.y - p.r - 8, p.x + p.r + 8, p.y + p.r + 8);
+  city.navRefresh = (x0, y0, x1, y1) => {
+    const cx0 = clamp(Math.floor(x0 / cs), 0, nc - 1), cx1 = clamp(Math.floor(x1 / cs), 0, nc - 1), cy0 = clamp(Math.floor(y0 / cs), 0, nr - 1), cy1 = clamp(Math.floor(y1 / cs), 0, nr - 1);
+    for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) cost[y * nc + x] = navBase[y * nc + x];
+    const clip = (a0, b0, a1, b1) => { if (a0 > x1 || a1 < x0 || b0 > y1 || b1 < y0) return; blockCells(Math.max(a0, x0), Math.max(b0, y0), Math.min(a1, x1), Math.min(b1, y1)); };
+    for (const b of city.buildings) { if (b.open) continue; const m = 12; clip(b.x - m, b.y - m, b.x + b.w + m, b.y + b.h + m); }
+    for (const p of city.props) if (p.pedBlock) clip(p.x - p.r - 8, p.y - p.r - 8, p.x + p.r + 8, p.y + p.r + 8);
+  };
+  city.navOpen = (x, y0, y1) => { const cx = clamp(Math.floor(x / cs), 0, nc - 1); for (let y = clamp(Math.floor(y0 / cs), 0, nr - 1); y <= clamp(Math.floor(y1 / cs), 0, nr - 1); y++) cost[y * nc + cx] = 1; };
   city.nav = { cs, cols: nc, rows: nr, cost, g: new Float32Array(nc * nr), came: new Int32Array(nc * nr), seen: new Int32Array(nc * nr), closed: new Int32Array(nc * nr), stamp: 0 };
   city.cellCost = (wx, wy) => { const x = Math.floor(wx / cs), y = Math.floor(wy / cs); return (x < 0 || y < 0 || x >= nc || y >= nr) ? 0 : cost[y * nc + x]; };
   // make sure special points sit on free sidewalk cells (a dumpster or tree may have landed there)
@@ -2260,6 +2271,7 @@ function newsAll(text, secs, s) {
   if (G.mode === 'mp') netNews(text, secs, s);
 }
 function startMission(m, who) {
+  if (m.type === 'heist' && !heistAvailable(m, who)) return;
   const C = G.city, Df = D(), wp = posOf(who), nP = allPlayers().length;
   const M = { type: m.type, marker: m, who, startT: G.time, text: '', timer: 0, targets: [], objective: null, waves: 0, nextWaveT: 0, car: null, phase: 0, kills: 0 };
   if (m.type === 'hit') {
@@ -2287,7 +2299,7 @@ function startMission(m, who) {
   } else if (m.type === 'rampage') {
     M.timer = 30; M.nextWaveT = G.time + 0.5; M.text = 'RAMPAGE: 0 kills';
     M.objective = { x: wp.x, y: wp.y };
-  }
+  } else if (m.type === 'heist') heistStart(M, nP);
   G.mission = M; m.cooldownT = G.time + 99999;
   newsAll(m.label.toUpperCase() + (G.mode === 'mp' ? '\nstarted by ' + (who.name || 'a player') : ''), 1.8, 'mission');
 }
@@ -2344,6 +2356,7 @@ function missionUpdate(dt) {
     }
     M.objective = M.route[Math.min(M.idx, M.route.length - 1)];
     M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
+  } else if (M.type === 'heist') { heistUpdate(M); return;
   } else if (M.type === 'rampage') {
     const ups = missionPlayersUp();
     if (G.time >= M.nextWaveT && ups.length) {
@@ -2392,7 +2405,9 @@ function throwDist(p, aim, W) {
     const d = dist(p.x, p.y, q.x, q.y); if (d > W.range || d < 60) continue;
     if (Math.abs(angDiff(aim, Math.atan2(q.y - p.y, q.x - p.x))) < 0.35 && (!best || d < best)) best = d;
   }
-  return best || Math.min(260, W.range);
+  if (best) return best;
+  const h = hitscan(p.x, p.y, aim, W.range, p), wallD = h.kind === 'building' ? dist(p.x, p.y, h.x, h.y) : 1e9;   // phones: land in front of the first wall instead of bouncing back
+  return Math.max(60, Math.min(260, W.range, wallD - 14));
 }
 function launchProj(p, aim, W) {
   const sx = p.x + Math.cos(aim) * 20, sy = p.y + Math.sin(aim) * 20;
@@ -2868,26 +2883,35 @@ function startDrill(who) {
 function bankAlarm(who, heat) {
   const B = G.city.bank;
   if (who && isPlayerPed(who)) addHeat(heat, who);
+  B.alarmT = G.time;
   if (!B.alarm) { B.alarm = true; newsAll('ALARM AT BORS NATIONAL BANK\nSo much for a quiet withdrawal.', 2.2, 'alarm'); }
+}
+function vaultNav() {   // keep the pedestrian map in sync with the vault door (partner, cops and click-to-walk use it)
+  const C = G.city, B = C && C.bank; if (!B || !C.navRefresh) return; const d = B.vaultDoor;
+  C.navRefresh(d.x - 40, d.y - 40, d.x + d.w + 40, d.y + d.h + 40);
+  if (d.open) C.navOpen(d.x + d.w / 2, d.y - 34, d.y + d.h + 34);
 }
 function openVault(by) {
   const B = G.city.bank; if (B.vaultDoor.open) return;
-  B.vaultDoor.open = true; B.drill = null; B.openT = G.time;
+  B.vaultDoor.open = true; B.drill = null; B.openT = G.time; vaultNav();
   for (const L of B.loot) L.taken = false;
   newsAll('THE VAULT IS OPEN\nGrab the cash and run!', 2.2, 'mission');
   addParticles('spark', B.drillSpot.x, B.drillSpot.y + 26, 14);
   if (by && isPlayerPed(by)) addHeat(60, by);
 }
 function bankBlast(x, y, radius, by) {
-  const B = G.city && G.city.bank; if (!B || !G.isSim || B.vaultDoor.open) return;
+  const B = G.city && G.city.bank; if (!B || !G.isSim || B.vaultDoor.open || !isPlayerPed(by) || !inRect(B, x, y)) return;
   const d = B.vaultDoor; if (dist(x, y, d.x + d.w / 2, d.y + d.h / 2) > Math.min(90, radius)) return;
   bankAlarm(by, 110); openVault(by);
 }
 function bankUpdate() {
   const B = G.city && G.city.bank; if (!B || !G.isSim || G.game !== 'roam') return;
+  B.drillPct = -1;                                          // only clients use this (it may be left over after a host change)
+  if (B.vaultDoor.open && !B.openT) B.openT = G.time;
+  if (B.alarm && !B.vaultDoor.open && !B.drill && G.time - (B.alarmT || 0) > 60) B.alarm = false;
   if (B.drill) {
     const w = B.drill.who;
-    if (!w || !w.alive || isBusted(w) || (w.kind === 'remote' && !G.remotes[w.uid])) B.drill = null;
+    if (!w || !w.alive || isBusted(w) || (w.kind === 'remote' && !G.remotes[w.uid])) { B.drill = null; B.alarmT = G.time; }
     else { const step = clamp(G.time - B.drill.lastT, 0, 0.1); B.drill.lastT = G.time; if (!w.car && dist(w.x, w.y, B.drillSpot.x, B.drillSpot.y) < 110) { B.drill.done += step; if (chance(0.3)) addParticles('spark', B.drillSpot.x + rand(-6, 6), B.drillSpot.y + 22, 1); if (B.drill.done >= BANK.drillSec) openVault(w); } }
   }
   if (B.vaultDoor.open) {
@@ -2900,8 +2924,9 @@ function bankUpdate() {
       }
     }
     if (G.time - B.openT > BANK.resetSec) {           // bank restocks after a while, once nobody is inside the vault
-      let busy = false; for (const p of G.peds) if (p.alive && inRect(B.vault, p.x, p.y)) busy = true;
-      if (!busy) { B.vaultDoor.open = false; B.alarm = false; for (const L of B.loot) L.taken = true; }
+      let busy = false; for (const p of G.peds) if (p.alive && (isPlayerPed(p) || p.kind === 'partner') && inRect(B.vault, p.x, p.y)) busy = true;   // only players (and the partner) hold the door open
+      if (!busy) for (const p of G.peds) if (p.alive && !p.car && !p.proxy && inRect(B.vault, p.x, p.y)) { p.x = B.drillSpot.x + rand(-40, 40); p.y = B.drillSpot.y - rand(0, 16); p.path = null; p.wx = p.wy = 0; p.home = { x: p.x, y: p.y }; }   // NPCs step out before it closes
+      if (!busy) { B.vaultDoor.open = false; B.alarm = false; for (const L of B.loot) L.taken = true; vaultNav(); }
     }
   }
   if (G.time > (B.tellT || 0)) {                       // tellers behind the counter
@@ -2917,10 +2942,10 @@ function bankState() {
 }
 function applyBankState(v) {
   const B = G.city && G.city.bank; if (G.isSim || !B) return;
-  if (v == null) { if (B.vaultDoor.open) { B.vaultDoor.open = false; } B.drillPct = -1; return; }
+  if (v == null) { if (B.vaultDoor.open) { B.vaultDoor.open = false; vaultNav(); } B.drillPct = -1; return; }
   const a = String(v).split(','), open = a[0] === '1', pct = Number(a[1]), bits = String(a[2] || '');
-  if (open && !B.vaultDoor.open) toast('THE VAULT IS OPEN\nGrab the cash and run!', 2);
-  B.vaultDoor.open = open; B.drillPct = isFinite(pct) ? pct : -1;
+  const changed = open !== B.vaultDoor.open;
+  B.vaultDoor.open = open; if (changed) vaultNav(); B.drillPct = isFinite(pct) ? pct : -1;
   B.loot.forEach((L, i) => { L.taken = bits[i] !== '0'; });
 }
 function drawBankOverlay(V) {
@@ -2932,10 +2957,67 @@ function drawBankOverlay(V) {
   ctx.fillStyle = '#fff'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top'; ctx.fillText('DRILLING ' + Math.round(clamp(pct, 0, 1) * 100) + '%', B.drillSpot.x, y + 10);
   ctx.fillStyle = '#333'; ctx.fillRect(B.drillSpot.x - 6, B.drillSpot.y + 14, 12, 10);
 }
+// ---- v15: The Bors Heist (host/solo runs it; everyone in free roam can join)
+const HEIST = { reward: 2000, fastBonus: 600, fastSec: 150, minStacks: 2, escapeSec: 150, totalSec: 300 };
+function heistAvailable(m, who) {
+  const B = G.city.bank;
+  if (B && !B.vaultDoor.open && !B.drill) return true;
+  m.cooldownT = G.time + 15;
+  if (who && who.isPlayer) toast('The vault is being restocked\nCome back a bit later.', 1.8);
+  return false;
+}
+function guardLook() { return { skin: pick(['#f1c7a5', '#d9a066', '#8d5a3b', '#e8b996']), hair: '#2b2b2b', shirt: '#5b6470', pants: '#22262c', glasses: false, hat: 'cap', beard: null, build: null, scale: 1, epaulette: false }; }
+function heistStart(M, nP) {
+  const B = G.city.bank;
+  M.timer = HEIST.totalSec; M.phase = 0; M.objective = { x: B.drillSpot.x, y: B.drillSpot.y };
+  const spots = [{ x: B.x + B.w - 46, y: B.y + 46 }, { x: B.x + B.w - 56, y: B.y + 120 }, { x: B.x + B.w / 2 - 6, y: B.y + 118 }, { x: B.x + 44, y: B.y + 36 }, { x: B.x + B.w / 2 + 40, y: B.y + 60 }];
+  const n = Math.min(spots.length, 3 + Math.max(0, nP - 1));
+  for (let i = 0; i < n; i++) {
+    const sp = spots[i]; if (pedBlocked({ r: 13 }, sp.x, sp.y)) continue;
+    const g = spawnGang(sp.x, sp.y, null, FLANKS[i % 5], i === 0 ? 'shotgun' : 'pistol');
+    g.look = guardLook(); g.guard = true; g.mission = M; g.home = { x: sp.x, y: sp.y }; g.sight = 420; g.hp = g.maxHp = 130; M.targets.push(g);
+  }
+  M.text = 'HEIST: get to the vault and drill or blast it';
+  const P = G.player; if (P && P.isPlayer) banter('heist', true);
+  newsAll('THE BORS HEIST\nGuards inside. Vault at the back. The drop-off is marked once you have the cash.', 3, 'mission');
+}
+function heistUpdate(M) {
+  const B = G.city.bank, ups = missionPlayersUp(), left = Math.ceil(M.timer);
+  if (M.phase === 0) {
+    M.objective = { x: B.drillSpot.x, y: B.drillSpot.y };
+    const guards = M.targets.filter(g => g.alive).length;
+    M.text = 'HEIST: crack the vault' + (B.drill ? ' (drilling ' + Math.round(B.drill.done / BANK.drillSec * 100) + '%)' : '') + (guards ? ', ' + guards + ' guard' + (guards > 1 ? 's' : '') + ' left' : '') + ' (' + left + 's)';
+    if (B.vaultDoor.open) { M.phase = 1; newsAll('VAULT OPEN\nGrab at least ' + HEIST.minStacks + ' stacks of cash.', 1.8, 'mission'); }
+    return;
+  }
+  const taken = B.loot.filter(L => L.taken).length;
+  if (M.phase === 1) {
+    const L = B.loot.find(q => !q.taken); M.objective = L ? { x: L.x, y: L.y } : { x: B.door.x, y: B.door.y };
+    M.text = 'HEIST: grab the cash ' + taken + '/' + B.loot.length + ' (at least ' + HEIST.minStacks + ') (' + left + 's)';
+    if (taken >= HEIST.minStacks) {
+      M.phase = 2; M.timer = HEIST.escapeSec;
+      let drop = null; for (let i = 0; i < 6 && !drop; i++) drop = randomRoadSpawn(B.door.x, B.door.y, 1500, 2700);
+      if (!drop) drop = randomRoadSpawn(B.door.x, B.door.y, 800, 5000) || { x: G.city.places.garage.x, y: G.city.places.garage.y };
+      M.drop = { x: drop.x, y: drop.y }; M.objective = M.drop;
+      for (const q of ups) { const qp = posOf(q); if (dist(qp.x, qp.y, B.x + B.w / 2, B.y + B.h / 2) > 700) continue; const W = wantedOf(q); if (W.heat < 330) addHeat(330 - W.heat, q); }   // only the crew at the bank gets the 5 stars
+      newsAll('GET TO THE DROP-OFF!\n5 stars. Every cop in Bors City is coming.', 2.4, 'alarm');
+    }
+    return;
+  }
+  M.objective = M.drop;
+  M.text = 'HEIST: reach the green DROP-OFF (' + left + 's)';
+  for (const q of ups) {
+    const qp = posOf(q); if (dist(qp.x, qp.y, M.drop.x, M.drop.y) > 64) continue;
+    for (const r of ups) { const rp = posOf(r); if (dist(rp.x, rp.y, M.drop.x, M.drop.y) < 260) { clearWanted(r); for (const p of G.peds) if ((p.kind === 'cop' || p.kind === 'swat') && p.alive && p.target === r) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.home = { x: p.x, y: p.y }; } } }
+    const fast = G.time - M.startT < HEIST.fastSec, reward = HEIST.reward + (fast ? HEIST.fastBonus : 0);
+    completeMission(reward, (fast ? 'Speedy getaway bonus +$' + HEIST.fastBonus + '\n' : '') + 'The getaway driver swapped your ride. Heat is off.');
+    return;
+  }
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
-  G.mission = null; M.marker.cooldownT = G.time + 20;
+  G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 180 : 20);
   const ps = allPlayers(), share = ps.length > 1 ? Math.ceil(reward / ps.length / 10) * 10 : reward;
   for (const q of ps) {
     if (q.isPlayer) { addCash(share, q.x, q.y); G.stats.score += 100; G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); }
@@ -2946,7 +3028,7 @@ function completeMission(reward, extra) {
 }
 function failMission(why) {
   const M = G.mission; if (!M) return;
-  G.mission = null; M.marker.cooldownT = G.time + 8;
+  G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : 8);
   newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
   if (M.car) M.car.marked = false;
   for (const g of M.targets) if (g.alive) g.mission = null;
@@ -3559,12 +3641,13 @@ function drawMarkers(V) {
     ctx.globalAlpha = 0.2; ctx.fillStyle = color; circle(ctx, x, y, r); ctx.globalAlpha = 1;
     if (label) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y); }
   };
-  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0)) { if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
+  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0)) { if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
   const gs = C.places.gunshop; if (inV(V, gs.x, gs.y)) ring(gs.x, gs.y, 20, '#7dff4d', 'GUNS');
   const S = C.safehouse; if (S && G.mode === 'solo') { if (inV(V, S.garage.x, S.garage.y)) ring(S.garage.x, S.garage.y, 34, '#4dc3ff', 'GARAGE'); if (inV(V, S.bed.x, S.bed.y) && (G.roofA || 0) < 0.5) ring(S.bed.x, S.bed.y, 16, '#7dd3ff', ''); }
   const sp = C.places.spray; if (inV(V, sp.x, sp.y)) ring(sp.x, sp.y, 32, '#d24dff', 'SPRAY');
   const hs = C.places.hospital; if (inV(V, hs.x, hs.y)) { ctx.fillStyle = '#fff'; ctx.fillRect(hs.x - 3, hs.y - 10, 6, 20); ctx.fillRect(hs.x - 10, hs.y - 3, 20, 6); ctx.fillStyle = '#ff3b3b'; ctx.fillRect(hs.x - 2, hs.y - 9, 4, 18); ctx.fillRect(hs.x - 9, hs.y - 2, 18, 4); }
   const ps = C.places.police; if (inV(V, ps.x, ps.y)) { ctx.fillStyle = '#2b6bff'; circle(ctx, ps.x, ps.y, 9); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', ps.x, ps.y); }
+  if (G.mission && G.mission.type === 'heist' && G.mission.phase === 2 && G.mission.objective) { const o = G.mission.objective; if (inV(V, o.x, o.y, 60)) ring(o.x, o.y, 44, '#7dff4d', 'DROP-OFF'); }
   if (G.mission && G.mission.type === 'delivery' && G.mission.phase === 1) { const g = C.places.garage; if (inV(V, g.x, g.y)) ring(g.x, g.y, 36, '#ffd24d', 'GARAGE'); }
 }
 function drawCar(c) {
@@ -3708,7 +3791,7 @@ function drawMini() {
   const R = 4.5 * ms / k, dot = (x, y, color, r) => { m.fillStyle = color; m.beginPath(); m.arc(x, y, r || R, 0, TAU); m.fill(); };
   const pp = playerPos();
   if (G.game === 'roam') {
-    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
+    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
     if (C.bank) dot(C.bank.x + C.bank.w / 2, C.bank.y + C.bank.h / 2, '#e8c547', R * 1.5);
@@ -4388,7 +4471,7 @@ function netFire(x, y, x2, y2, w) { if (!roomRef) return; shotN++; roomRef.child
 function onFx(s) {
   if (s.key === uid || G.phase !== 'playing') return;
   const f = s.val(); if (!f) return;
-  if (f.w === 'boom') { explosionFx(f.x, f.y, clamp(f.x2 || 120, 40, 200)); if (G.isSim && G.game === 'roam') alertPeds(f.x, f.y, 700, 'explosion'); return; }
+  if (f.w === 'boom') { explosionFx(f.x, f.y, clamp(f.x2 || 120, 40, 200)); if (G.isSim && G.game === 'roam') { alertPeds(f.x, f.y, 700, 'explosion'); const r = G.remotes[s.key]; if (r && isFinite(f.x) && isFinite(f.y)) bankBlast(f.x, f.y, clamp(f.x2 || 120, 40, 200), r.ped); } return; }
   if (f.w === 'fire') { addFire(f.x, f.y, clamp(f.x2 || 70, 30, 120), clamp(f.y2 || 6, 1, 10), null, true); sfx('glass', f.x, f.y); return; }
   if (WEAPONS[f.w] && WEAPONS[f.w].proj) {
     const pr = { kind: WEAPONS[f.w].proj, x: f.x, y: f.y, vx: (f.x2 || 0) / 100, vy: (f.y2 || 0) / 100, t0: G.time, by: null, fx: true, fuse: WEAPONS[f.w].fuse || 0 };
