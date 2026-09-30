@@ -336,7 +336,8 @@ const CAR_KINDS = {
   van:     { L: 72, W: 34, perf: 0.82, hpMul: 1.4, colors: ['#ecf0f1', '#7f8c8d', '#2c3e50', '#c8a165', '#5d6d7e'] },
   taxi:    { L: 60, W: 30, perf: 1.0, hpMul: 1, colors: ['#f7c948'] },
   police:  { L: 62, W: 30, perf: 1.15, hpMul: 1.2, colors: ['#f4f6f7'] },
-  tank:    { L: 74, W: 42, perf: 0.5, hpMul: 11, colors: ['#4b5a32'] }
+  tank:    { L: 74, W: 42, perf: 0.5, hpMul: 11, colors: ['#4b5a32'] },
+  bike:    { L: 40, W: 14, perf: 1.22, hpMul: 0.8, colors: ['#d62828', '#111111', '#f4a300', '#1d6fd8', '#e9e9e9', '#2a9d3f'] }
 };
 // The playable Bors Brothers (start screen and in game)
 const BROTHERS = {
@@ -385,7 +386,7 @@ function skillUpdate(dt) {
   const a = G.skill.ang, steps = 3, st = 640 * dt / steps;
   for (let i = 0; i < steps; i++) {
     const nx = P.x + Math.cos(a) * st, ny = P.y + Math.sin(a) * st;
-    if (hitStatic(nx, ny, P.r, false)) { G.skill.endT = G.time; break; }
+    if (pedBlocked(P, nx, ny)) { G.skill.endT = G.time; break; }
     P.x = nx; P.y = ny;
   }
   for (const q of G.peds) {
@@ -441,6 +442,7 @@ const BANTER = {
   pass: ["Case closed. First round of donuts is on you.", "Clean work. Well, cleanish.", "That's what I call community policing."],
   fail: ["We'll call that a training exercise.", "Nobody saw that. Right? Right.", "Filing that under 'creative policing'."],
   jack: ["Nice ride. Did you fill in the rental form?", "Buckle up. Actually, don't, we never do."],
+  bike: ["A motorcycle? Mid-life crisis, partner?", "Two wheels, zero paperwork. I like it."],
   copcar: ["You stole a squad car. From our own lot.", "Sirens on, conscience off."],
   heli: ["A helicopter? We're not even on the budget for that.", "Wave at the chopper. Politely."],
   tank: ["Is that a TANK? For two cops and some consultants?", "Great. Now it's a war crime."],
@@ -509,7 +511,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank'];
+const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
 
@@ -769,7 +771,7 @@ function drawPedInto(ctx, L, arms, frame) {
 function getCarSprite(kind, color) {
   const key = kind + '|' + color;
   let c = SPR.car.get(key); if (c) return c;
-  const K = CAR_KINDS[kind];
+  const K = CAR_KINDS[kind] || CAR_KINDS.sedan;
   c = document.createElement('canvas'); c.width = (K.L + 20) * 3; c.height = (K.W + 20) * 3;
   drawCarInto(c.getContext('2d'), kind, color, K.L, K.W, c.width / 2, c.height / 2);
   SPR.car.set(key, c); return c;
@@ -1093,7 +1095,7 @@ function makePed(kind, x, y, o) {
     uid: o.uid || null, name: o.name || '', color: o.color || null, isPlayer: false, turf: o.turf || null, proxy: false };
 }
 function makeCar(kind, x, y, a, o) {
-  o = o || {}; const K = CAR_KINDS[kind] || CAR_KINDS.sedan;
+  o = o || {}; if (!CAR_KINDS[kind]) kind = 'sedan'; const K = CAR_KINDS[kind];
   let ci = o.colorIdx != null ? o.colorIdx : (o.color ? K.colors.indexOf(o.color) : Math.floor(Math.random() * K.colors.length));
   if (ci < 0 || ci >= K.colors.length) ci = 0;
   return { id: o.id || G.nextId++, type: 'car', kind, x, y, a, vx: 0, vy: 0, vf: 0, steer: 0, throttle: 0, handbrake: false, hp: CFG.car.hp * K.hpMul, maxHp: CFG.car.hp * K.hpMul,
@@ -1207,7 +1209,7 @@ function updateCarLife(c) {
   if (c.dead && c.burnT && G.time >= c.burnT) {
     c.burnT = 0; c.wreckT = G.time + CFG.world.wreckSeconds; c.color = '#1a1a1a'; c.colorIdx = -1;
     const d = c.driver; if (d) { if (d.isPlayer) { d.car = null; c.driver = null; damagePed(d, 250, { by: c.byKill, kind: 'explosion' }); } else if (!isPlayerPed(d)) { d.car = null; c.driver = null; } }
-    explodeAt(c.x, c.y, 140, 110, c.byKill);
+    if (c.kind === 'bike') explodeAt(c.x, c.y, 80, 60, c.byKill); else explodeAt(c.x, c.y, 140, 110, c.byKill);
     return;
   }
   carFx(c);
@@ -1231,7 +1233,7 @@ function carPhysics(c, dt) {
   const grip = c.handbrake ? C.gripLo : (Math.abs(vl) > 140 ? C.gripHi * 0.6 : C.gripHi);
   vl -= vl * Math.min(1, grip * dt);
   const sp = Math.abs(vf);
-  const turn = C.turn * pk.steer * (1 - 0.45 * clamp((sp - 200) / 360, 0, 1)) * clamp(sp / 110, 0, 1);
+  const turn = C.turn * pk.steer * (c.kind === 'bike' ? 1.35 : 1) * (1 - 0.45 * clamp((sp - 200) / 360, 0, 1)) * clamp(sp / 110, 0, 1);
   const yaw = c.steer * turn * (vf < 0 ? -1 : 1) * dt;
   c.a = normAng(c.a + yaw);
   c.vx = cs * vf - sn * vl; c.vy = sn * vf + cs * vl; c.vf = vf;
@@ -1502,7 +1504,7 @@ function spawnCop(x, y, swat, target) {
   G.peds.push(p); return p;
 }
 function spawnTrafficCar(sp) {
-  const kind = pick(['sedan', 'sedan', 'sedan', 'compact', 'compact', 'sport', 'van', 'taxi']);
+  const kind = pick(['sedan', 'sedan', 'sedan', 'compact', 'compact', 'sport', 'van', 'taxi', 'bike']);
   const c = makeCar(kind, sp.x, sp.y, sp.a, { ai: 'traffic' }); c.prevNode = sp.from; c.nextNode = sp.to;
   const d = makePed('civ', sp.x, sp.y); d.car = c; d.state = 'drive'; c.driver = d;
   c.vx = Math.cos(sp.a) * 120; c.vy = Math.sin(sp.a) * 120;
@@ -2045,9 +2047,9 @@ function fireWeapon(p, aim) {
   const netNpc = G.mode === 'mp' && G.isSim && !isPlayerPed(p);
   for (let i = 0; i < W.pellets; i++) {
     const ang0 = aim + (Math.random() - 0.5) * 2 * W.spread * (p.moving ? 1.5 : 1) * perkOf(p).spread;
-    if (p.isPlayer && G.helis.length && bulletHitsHeli(p, mx, my, ang0, W)) continue;
-    const ang = aim + (Math.random() - 0.5) * 2 * W.spread * (p.moving ? 1.5 : 1) * perkOf(p).spread;
+    const ang = ang0;
     const h = hitscan(mx, my, ang, W.range, p);
+    if (p.isPlayer && G.helis.length && bulletHitsHeli(p, mx, my, ang, W, h.t)) continue;
     addTracer(mx, my, h.x, h.y, W.key);
     if (i === 0 && p.isPlayer && G.mode === 'mp') netFire(mx, my, h.x, h.y, W.key);
     if (netNpc && i < 3) G.netShots.push([mx, my, h.x, h.y, WEAPON_LIST.indexOf(W.key), h.kind === 'ped' ? 1 : h.kind === 'car' ? 2 : 0]);
@@ -2055,10 +2057,11 @@ function fireWeapon(p, aim) {
     else if (h.kind === 'car') {
       const c = h.ent;
       addParticles('spark', h.x, h.y, 3); if (chance(0.35)) addParticles('glass', h.x, h.y, 3);
-      if (c.proxy) { netHitCar(c, W.dmg * 0.55, { by: p, kind: 'gun', dd: W.dmg * 0.3 }); continue; }
+      const exp = c.kind === 'bike' ? 0.8 : 0.3;
+      if (c.proxy) { netHitCar(c, W.dmg * 0.55, { by: p, kind: 'gun', dd: W.dmg * exp }); continue; }
       damageCar(c, W.dmg * 0.55, { by: p, kind: 'gun', x: h.x, y: h.y });
       const d = c.driver || (c.netDriver && G.remotes[c.netDriver] ? G.remotes[c.netDriver].ped : null);
-      if (d && d !== p) { damagePed(d, W.dmg * 0.3, { by: p, kind: 'gun', ang }); if (!isPlayerPed(d) && d.kind === 'civ' && c.driver === d) c.panicked = true; }
+      if (d && d !== p) { damagePed(d, W.dmg * exp, { by: p, kind: 'gun', ang }); if (!isPlayerPed(d) && d.kind === 'civ' && c.driver === d) c.panicked = true; }
     }
     else if (h.kind === 'building') addParticles('dust', h.x, h.y, 3, ang + Math.PI);
     else if (h.kind === 'prop') addParticles('leaf', h.x, h.y, 3);
@@ -2249,7 +2252,7 @@ function driveBy(P, c) {
       const d = dist(c.x, c.y, q.x, q.y); if (d > 460 || d >= bs || !hasLOS(c.x, c.y, q.x, q.y)) continue;
       bs = d; best = q;
     }
-    aim = best ? Math.atan2(best.y - c.y, best.x - c.x) : c.a + Math.PI / 2;
+    aim = best ? Math.atan2(best.y - c.y, best.x - c.x) : c.a + (c.kind === 'bike' ? 0 : Math.PI / 2);
   }
   const keepW = P.weapon, keepA = P.a;
   P.weapon = w; P.a = aim;
@@ -2439,11 +2442,11 @@ function heliDamage(h, d, by) {
   addDecal('scorch', h.x, h.y, 0, 60);
   if (isPlayerPed(by)) { bigReward(by, 500, 'CHOPPER DOWN! +$500\nThat comes out of the police budget.', 80); addHeat(40, by); }
 }
-function bulletHitsHeli(p, mx, my, ang, W) {
-  const dx = Math.cos(ang), dy = Math.sin(ang);
+function bulletHitsHeli(p, mx, my, ang, W, maxT) {
+  const dx = Math.cos(ang), dy = Math.sin(ang), lim = Math.min(W.range, maxT != null ? maxT : W.range);
   for (const h of G.helis) {
     const t = rayCircle(mx, my, dx, dy, h.x, h.y, 24);
-    if (t > W.range) continue;
+    if (!(t <= lim)) continue;
     addTracer(mx, my, mx + dx * t, my + dy * t, W.key);
     if (p.isPlayer && G.mode === 'mp') netFire(mx, my, mx + dx * t, my + dy * t, W.key);
     heliDamage(h, W.dmg, p);
@@ -2527,6 +2530,39 @@ function drawTank(c) {
   ctx.restore();
   if (c.dead) { ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.fillRect(c.x - 30, c.y - 18, 60, 36); }
   else if (c.hp < c.maxHp) { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(c.x - 26, c.y - 36, 52, 5); ctx.fillStyle = '#ff4d4d'; ctx.fillRect(c.x - 26, c.y - 36, 52 * clamp(c.hp / c.maxHp, 0, 1), 5); }
+}
+// ---- Step 7: motorcycles (same physics as cars, narrower and twitchier; the rider is visible)
+function bikeRiderLook(c) {
+  if (c.driver && c.driver.look) return c.driver.look;
+  if (G.player && G.player.car === c) return G.player.look;
+  for (const id in G.remotes) { const q = G.remotes[id].ped; if (q.car === c) return q.look; }
+  return (c.npcDrv || c.pdrv) ? { skin: '#d9a066', hair: '#1a1a1a', shirt: '#2b2b2b', pants: '#1b1b2a', glasses: false, hat: 'helmet' } : null;
+}
+function drawBike(c) {
+  ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
+  const hl = c.L / 2;
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ellipse(ctx, 3, 4, hl + 2, 7);
+  ctx.fillStyle = '#111'; roundRect(ctx, hl - 12, -3, 12, 6, 3); ctx.fill(); roundRect(ctx, -hl, -3, 12, 6, 3); ctx.fill();
+  ctx.fillStyle = c.dead ? '#222' : c.color; roundRect(ctx, -hl + 8, -4.5, c.L - 16, 9, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.25)'; ctx.fillRect(-hl + 12, -2, c.L - 26, 2);
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 2; line(ctx, hl - 12, -7, hl - 12, 7);
+  ctx.fillStyle = '#fff3b0'; circle(ctx, hl - 1, 0, 2);
+  if (c.brake) { ctx.fillStyle = '#ff2020'; circle(ctx, -hl + 1, 0, 2); }
+  ctx.restore();
+  const L = bikeRiderLook(c);
+  if (L && !c.dead) {
+    const spr = getPedSprite(L, 'none', 0);
+    ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a); ctx.drawImage(spr, -22, -22, 44, 44); ctx.restore();
+  }
+  if (c.marked) { ctx.strokeStyle = 'rgba(255,210,77,' + (0.5 + 0.5 * Math.sin(G.time * 5)) + ')'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(c.x, c.y, 34, 0, TAU); ctx.stroke(); }
+}
+// Safety net: if anything ever pushes the player inside a wall, tree or parked car, move them to the nearest free spot
+function unstickPlayer(P) {
+  const hit = hitStatic(P.x, P.y, P.r - 5, false); if (!hit || hit === 'bounds') return;
+  for (let r = 6; r <= 120; r += 6) for (let k = 0; k < 16; k++) {
+    const a = k / 16 * TAU, x = P.x + Math.cos(a) * r, y = P.y + Math.sin(a) * r;
+    if (!pedBlocked(P, x, y)) { P.x = x; P.y = y; P.vx = P.vy = 0; return; }
+  }
 }
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
@@ -2773,6 +2809,7 @@ function tryEnterCar(c) {
     addHeat(wasCop ? 35 : 12, P); toast(wasCop ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3); banter(wasCop ? 'copcar' : 'jack');
   } else if (c.kind === 'police') addHeat(20, P);
   enterCar(P, c);
+  if (c.kind === 'bike') banter('bike');
 }
 function enterCar(P, c) {
   P.car = c; c.driver = P; c.ai = null; c.route = null; c.panicked = false; c.siren = false; c.parked = false; c.proxy = false;
@@ -2843,6 +2880,7 @@ function updatePlayerFoot(dt) {
   }
   if (P.car) return;
   movePed(P, dt);
+  unstickPlayer(P);
   const R = CFG.player;
   if (G.game === 'roam' && G.time - P.lastHitT > R.regenAfter && P.hp < R.regenTo) P.hp = Math.min(R.regenTo, P.hp + R.regenRate * dt);
   if (G.cheats.god) P.hp = P.maxHp;
@@ -2854,10 +2892,12 @@ function updatePlayerCar(dt) {
   else if (IN.heading != null) carSteerToward(c, IN.heading);
   else c.steer = approach(c.steer, 0, 8 * dt);
   if (IN.interact) { const fast = Math.abs(c.vf) > 200; playerExitCar(); if (fast) { P.ragT = G.time + 0.7; damagePed(P, 12, { kind: 'fall' }); toast('Bailed out!', 0.8); } return; }
+  const preSp = Math.hypot(c.vx, c.vy);
   carPhysics(c, dt);
   if (G.isSim) updateCarLife(c); else carFx(c);
   if (!P.car) return;
   P.x = c.x; P.y = c.y; P.a = c.a;
+  if (c.kind === 'bike' && c.lastCrashT === G.time && preSp > 300 && !G.cheats.god) { playerExitCar(); P.ragT = G.time + 1; P.vx = Math.cos(c.a) * preSp * 0.5; P.vy = Math.sin(c.a) * preSp * 0.5; damagePed(P, 20, { kind: 'fall' }); toast('WIPEOUT!\nHelmet: optional. Regret: mandatory.', 1.6); return; }
   if (G.cheats.god) P.hp = P.maxHp;
   if ((keys.KeyG || btn.shoot) && !c.dead && c.driver === P && !G.busted) driveBy(P, c);
   if (c.dead && !G.isSim && G.mode === 'mp') { playerExitCar(); toast('Bailed out!', 0.8); return; }
@@ -3033,6 +3073,7 @@ function drawMarkers(V) {
 }
 function drawCar(c) {
   if (c.kind === 'tank') { drawTank(c); return; }
+  if (c.kind === 'bike') { drawBike(c); return; }
   const spr = getCarSprite(c.kind, c.color);
   ctx.save(); ctx.translate(c.x, c.y); ctx.rotate(c.a);
   ctx.fillStyle = 'rgba(0,0,0,.35)'; roundRect(ctx, -c.L / 2 + 4, -c.W / 2 + 5, c.L, c.W, 6); ctx.fill();
@@ -3081,7 +3122,7 @@ function drawOverheads(V) {
   }
   for (const id in G.remotes) { const q = G.remotes[id].ped; if (q.alive && q.car && inV(V, q.car.x, q.car.y, 40)) drawLabel(q.car.x, q.car.y - 30, q.name, q.color || '#fff', q.hp / q.maxHp); }
   const P = G.player;
-  if (P && P.alive && !P.car) drawLabel(P.x, P.y - 22, P.name, P.color || '#fff', P.hp / P.maxHp);
+  if (P && P.alive && (!P.car || P.car.kind === 'bike')) drawLabel(P.x, P.y - 22, P.name, P.color || '#fff', P.hp / P.maxHp);
   if (G.mission && G.mission.objective) { const o = G.mission.objective; if (inV(V, o.x, o.y, 0)) { ctx.strokeStyle = 'rgba(255,210,77,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x, o.y, 22 + 4 * Math.sin(G.time * 5), 0, TAU); ctx.stroke(); } }
 }
 function drawEffects(V) {
@@ -3265,7 +3306,7 @@ function updateHUD() {
   let hint = '';
   const nearCar = P.alive && !P.car ? nearestEnterableCar(P, 90) : null;
   if (P.alive && !G.busted) {
-    if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : 'E: get out  ·  G: drive-by');
+    if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : (P.car.kind === 'bike' ? 'E: get off  ·  G: shoot' : 'E: get out  ·  G: drive-by'));
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
@@ -3683,7 +3724,7 @@ function hostStart() {
   const mode = (meta && meta.mode) || 'roam';
   const upd = { hits: null, fx: null, feed: null, state: null, ev: null, msg: null, news: null, world: null, pickups: null, cars: null };
   if (mode === 'dm') {
-    const cars = {}, kinds = ['sedan', 'compact', 'sport', 'van', 'taxi'];
+    const cars = {}, kinds = ['sedan', 'compact', 'sport', 'van', 'taxi', 'bike'];
     for (let i = 0; i < 16; i++) { const sp = randomRoadSpawn(G.city.W / 2, G.city.H / 2, 0, 9000); if (!sp) continue; const k = pick(kinds); cars['c' + i] = { x: Math.round(sp.x), y: Math.round(sp.y), a: Math.round(sp.a * 100) / 100, k, col: pick(CAR_KINDS[k].colors) }; }
     upd.cars = cars;
   }
@@ -3890,7 +3931,7 @@ function onMsg(m) {
       c.x = m.x; c.y = m.y; c.a = m.a; c.hp = m.hp; c.vx = c.vy = c.vf = 0; c.npcDrv = false; c.pdrv = false;
       if (!P.alive || P.car || G.busted) { netReleaseCar(c); break; }
       enterCar(P, c); lastSent = '';
-      if (m.jack) toast(m.jack === 2 ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3); banter(m.jack === 2 ? 'copcar' : 'jack');
+      if (m.jack) { toast(m.jack === 2 ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3); banter(m.jack === 2 ? 'copcar' : 'jack'); }
       break;
     }
     case 'deny': P.pendingCar = null; break;
@@ -4177,6 +4218,8 @@ function populateWorld() {
   for (const blk of C.turfs) { const ts = { blk, n: Math.max(2, Math.round(R.gangPerGroup * D().count)), respawnT: 0 }; G.turfState.push(ts); spawnGangGroup(ts, ts.n); }
   for (let i = 0; i < 26; i++) { const lp = randomRoadSpawn(P.x, P.y, 0, 9000); if (lp && !carNear(lp.x, lp.y, 130)) { spawnParkedCar(lp); rebuildHash(); } }
   for (let i = 0; i < 12; i++) { const lp = randomRoadSpawn(P.x, P.y, 110, 260); if (lp && !carNear(lp.x, lp.y, 130)) { spawnParkedCar(lp, 'sedan'); rebuildHash(); break; } }
+  for (let i = 0; i < 20; i++) { const lp = randomRoadSpawn(P.x, P.y, 150, 360); if (lp && !carNear(lp.x, lp.y, 100)) { spawnParkedCar(lp, 'bike'); rebuildHash(); break; } }
+  for (let i = 0, n = 0; i < 30 && n < 6; i++) { const lp = randomRoadSpawn(P.x, P.y, 400, 9000); if (lp && !carNear(lp.x, lp.y, 100)) { spawnParkedCar(lp, 'bike'); rebuildHash(); n++; } }
   for (let i = 0; i < R.civTarget; i++) { const pt = randomSidewalkPoint(P.x, P.y, 120, R.spawnRadius); if (pt) spawnCiv(pt.x, pt.y); }
   for (let i = 0, n = 0; i < R.trafficTarget * 3 && n < R.trafficTarget; i++) { const sp = randomRoadSpawn(P.x, P.y, 200, R.spawnRadius); if (sp && !carNear(sp.x, sp.y, 140)) { spawnTrafficCar(sp); rebuildHash(); n++; } }
   placePickups();
