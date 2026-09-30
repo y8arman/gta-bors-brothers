@@ -140,6 +140,42 @@
   #btnAct { right: 18px; bottom: 150px; } #btnWpn { right: 96px; bottom: 170px; width: 54px; height: 54px; font-size: 12px; }
   #btnBrake { right: 96px; bottom: 150px; } #btnHand { right: 18px; bottom: 230px; }
   #btnPause { left: 14px; top: 90px; width: 40px; height: 40px; font-size: 16px; border-radius: 8px; }
+  /* compact HUD: phones held sideways only (body.phoneL is set in resize). Desktop never gets this class. */
+  body.phoneL #brand { top: 4px; left: 6px; padding: 2px 7px 3px; font-size: 10px; gap: 5px; border-radius: 7px; border-bottom-width: 2px; box-shadow: none; }
+  body.phoneL #brand .gta { font-size: 15px; letter-spacing: 2px; -webkit-text-stroke: 1px #1a0902; }
+  body.phoneL #cheatsOn { font-size: 9px; }
+  body.phoneL .bar { left: 8px; width: 120px; }
+  body.phoneL #hpwrap { top: 28px; height: 8px; } body.phoneL #arwrap { top: 38px; height: 5px; }
+  body.phoneL #hpText { top: 24px; left: 134px; font-size: 11px; }
+  body.phoneL #btnPause { top: 48px; left: 8px; width: 34px; height: 34px; font-size: 13px; }
+  body.phoneL #topc { top: 3px; } body.phoneL #stars { font-size: 15px; height: 19px; letter-spacing: 2px; } body.phoneL #timer { font-size: 17px; }
+  body.phoneL #objective { font-size: 11px; padding: 3px 8px; margin-top: 2px; max-width: 46vw; }
+  body.phoneL #topr { top: 4px; right: 8px; font-size: 11px; } body.phoneL #cash { font-size: 14px; }
+  body.phoneL #mini { top: 42px; right: 8px; bottom: auto; width: 88px; opacity: .78; border-width: 1px; }
+  body.phoneL #board { top: auto; bottom: 6px; right: auto; left: 50%; transform: translateX(-50%); font-size: 10px; min-width: 0; padding: 3px 7px; }
+  body.phoneL #feed { top: 118px; right: 8px; font-size: 11px; }
+  body.phoneL #hint { bottom: 6px; font-size: 11px; padding: 4px 9px; }
+  body.phoneL #toast { font-size: 18px; top: 26%; }
+  body.phoneL #big { font-size: 38px; letter-spacing: 4px; } body.phoneL #big small { font-size: 13px; }
+  body.phoneL .tbtn { width: 56px; height: 56px; font-size: 11px; background: rgba(255,255,255,.12); }
+  body.phoneL #btnAct { right: 14px; bottom: 16px; } body.phoneL #btnHand { right: 14px; bottom: 84px; }
+  body.phoneL #btnBrake { right: 82px; bottom: 16px; } body.phoneL #btnWpn { right: 82px; bottom: 22px; width: 46px; height: 46px; }
+  body.phoneL .charCard { font-size: 10.5px; line-height: 1.3; margin: -2px 0 0; }
+  .charCard { margin: -4px 0 0; font-size: 12px; line-height: 1.4; text-align: center; color: rgba(255,255,255,.8); font-family: system-ui, -apple-system, sans-serif; }
+  .charCard b { color: var(--gold); }
+  #streak { position: absolute; top: 19%; left: 50%; transform: translateX(-50%); font-family: var(--display); font-size: 30px; letter-spacing: 3px; color: #ffd24d; text-shadow: 0 0 14px rgba(255,160,0,.9), 0 3px 6px #000; white-space: nowrap; pointer-events: none; opacity: 0; }
+  #streak.go { animation: stPop 1.7s ease-out forwards; }
+  @keyframes stPop { 0% { opacity: 0; transform: translateX(-50%) scale(.4); } 12% { opacity: 1; transform: translateX(-50%) scale(1.25); } 25% { transform: translateX(-50%) scale(1); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-18px); } }
+  #radio { position: absolute; left: 14px; bottom: 14px; max-width: 360px; background: rgba(8,12,30,.78); border-left: 3px solid #4a8bff; border-radius: 6px; padding: 6px 10px; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; color: #fff; pointer-events: none; opacity: 0; }
+  #radio b { color: #ffd24d; } #radio.go { animation: rdIn 4.6s ease-out forwards; }
+  @keyframes rdIn { 0% { opacity: 0; transform: translateY(8px); } 8% { opacity: 1; transform: none; } 85% { opacity: 1; } 100% { opacity: 0; } }
+  #skillTxt { font-size: 12px; opacity: .85; margin-top: 2px; } #skillTxt.rdy { color: #7dff4d; }
+  #slowFx { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(40,90,255,.35) 100%); }
+  #btnSkill { right: 18px; bottom: 222px; font-size: 11px; } #btnSkill.cd { opacity: .4; }
+  body.phoneL #btnSkill { right: 14px; bottom: 84px; width: 56px; height: 56px; }
+  body.phoneL #radio { left: 50px; bottom: auto; top: 50px; max-width: 42vw; font-size: 11px; padding: 4px 8px; }
+  body.phoneL #streak { font-size: 20px; top: auto; bottom: 24%; }
+  body.phoneL #skillTxt { display: none; }
   #rotate { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
@@ -153,7 +189,7 @@
   <div class="bar" id="arwrap"><div id="ar"></div></div>
   <div id="hpText"></div>
   <div id="topc"><div id="stars"></div><div id="timer" hidden>0:00</div><div id="objective" hidden></div></div>
-  <div id="topr"><div id="cash">$0</div><div id="weapon">Pistol</div><div id="ammo"></div></div>
+  <div id="topr"><div id="cash">$0</div><div id="weapon">Pistol</div><div id="ammo"></div><div id="skillTxt"></div></div>
   <div id="board" hidden></div>
   <div id="feed"></div>
   <canvas id="mini" width="170" height="130"></canvas>
@@ -164,7 +200,9 @@
   <button class="tbtn" id="btnWpn" hidden>WPN</button>
   <button class="tbtn" id="btnBrake" hidden>BRAKE</button>
   <button class="tbtn" id="btnHand" hidden>DRIFT</button>
+  <button class="tbtn" id="btnSkill" hidden>RUSH</button>
   <button class="tbtn" id="btnPause" hidden>II</button>
+  <div id="streak"></div><div id="radio"></div><div id="slowFx" hidden></div>
   <div id="rotate" hidden>Landscape works best</div>
 </div>
 
@@ -179,6 +217,7 @@
       <p class="blurb" id="blurb"><span class="bl bl1">They were cops. Then they read the rulebook… and set it on fire.</span><span class="bl bl2"><span class="nm">MaFl</span> and <span class="nm">BARY</span>, the bearded Bors Brothers, have gone full <span class="rg">rogue</span>.</span><span class="bl bl3">Steal cars, crush gangs, run shady missions and stack cash in Bors City.</span><span class="bl bl4">Your only real enemy? Your former colleagues.</span></p>
       <div class="divider">choose your brother</div>
       <div class="seg" id="charSeg"><button data-char="mafl">MaFl</button><button data-char="bary">BARY</button></div>
+      <p class="charCard" id="charCard"></p>
       <input id="name" placeholder="Your name" maxlength="12" autocomplete="off">
       <button id="soloBtn" class="btn-primary">Play solo</button>
       <div class="divider" id="withBros">with the brothers</div>
@@ -295,6 +334,153 @@ const BROTHERS = {
   mafl: { name: 'MaFl', skin: '#f2c8a6', hair: '#6b4423', beard: '#5a381d', build: 'tall', scale: 1.08 },   // slightly taller
   bary: { name: 'BARY', skin: '#efc09c', hair: '#3a2515', beard: '#3a2515', build: 'muscle', scale: 1.04 }  // muscular
 };
+// Character perks (apply only to the local player; each browser applies its own brother)
+const PERKS = {
+  mafl: { role: 'The Driver', run: 1.08, car: 1.06, steer: 1.1, spread: 0.75, hp: 1, armorTaken: 1, taken: 1, melee: 1, knock: 1 },
+  bary: { role: 'The Muscle', run: 1, car: 1, steer: 1, spread: 1, hp: 1.2, taken: 0.9, melee: 1.5, knock: 1.7 }
+};
+const NO_PERK = { run: 1, car: 1, steer: 1, spread: 1, hp: 1, taken: 1, melee: 1, knock: 1 };
+const PERK_FOCUS_SOLO = Object.assign({}, PERKS.mafl, { run: 1.08 * 1.9, spread: 0 });   // Slow-Mo Swagger: you move near-normal while the world crawls
+const PERK_FOCUS_MP = Object.assign({}, PERKS.mafl, { run: 1.08 * 1.25, spread: 0 });    // multiplayer: no world slow-down, just focus
+function perkOf(p) {
+  if (!p || !p.isPlayer) return NO_PERK;
+  if (p.char === 'mafl' && skillActive()) return G.mode === 'solo' ? PERK_FOCUS_SOLO : PERK_FOCUS_MP;
+  return PERKS[p.char] || NO_PERK;
+}
+
+// ---- Signature moves (local player only)
+const SKILLS = { mafl: { name: 'Slow-Mo Swagger', btn: 'SLOW', cd: 14, dur: 3 }, bary: { name: 'Beard Rush', btn: 'RUSH', cd: 9, dur: 0.38 } };
+function skillOf() { const P = G.player; return P && SKILLS[P.char] || null; }
+function skillActive() { return !!(G.skill && G.time < G.skill.endT); }
+function trySkill() {
+  const P = G.player, S = skillOf();
+  if (!S || !G.skill || G.phase !== 'playing' || !P.alive || P.car || G.busted || G.paused) return;
+  if (G.time < G.skill.readyT) { toast(S.name + ' recharging', 0.8); return; }
+  const dur = P.char === 'mafl' && G.mode === 'solo' ? S.dur * 0.5 : S.dur;   // solo slow-mo runs on slowed game time: 1.5 game s = about 3.3 real s
+  G.skill.endT = G.time + dur; G.skill.readyT = G.time + dur + S.cd; G.skill.hit = [];
+  P.goal = null; P.path = null;
+  if (P.char === 'bary') { G.skill.ang = P.a; toast('BEARD RUSH!', 0.9); sfx('alarm', null, null, 0.5); G.cam.shake = Math.max(G.cam.shake || 0, 6); }
+  else toast('SLOW-MO SWAGGER', 1.1);
+  sfx('mission');
+}
+function skillUpdate(dt) {
+  const P = G.player; if (!P || !G.skill) return;
+  const on = skillActive() && P.alive;
+  const fx = on && P.char === 'mafl'; if ($('slowFx').hidden === fx) $('slowFx').hidden = !fx;
+  if (!on || P.char !== 'bary' || P.car) return;
+  // Beard Rush: short charge along the facing, knocks down whoever is in the way
+  const a = G.skill.ang, steps = 3, st = 640 * dt / steps;
+  for (let i = 0; i < steps; i++) {
+    const nx = P.x + Math.cos(a) * st, ny = P.y + Math.sin(a) * st;
+    if (hitStatic(nx, ny, P.r, false)) { G.skill.endT = G.time; break; }
+    P.x = nx; P.y = ny;
+  }
+  for (const q of G.peds) {
+    if (q === P || !q.alive || q.car || G.skill.hit.indexOf(q) >= 0) continue;
+    if (isPlayerPed(q) && G.game === 'roam' && !G.ff) continue;
+    if (Math.hypot(q.x - P.x, q.y - P.y) > P.r + q.r + 8) continue;
+    G.skill.hit.push(q);
+    hitPed(q, 40, P, a, WEAPONS.bat);
+    if (!q.proxy && !isPlayerPed(q)) { q.ragT = Math.max(q.ragT, G.time + 0.7); q.vx += Math.cos(a) * 320; q.vy += Math.sin(a) * 320; }
+    addParticles('spark', q.x, q.y, 6);
+  }
+}
+function skillHUD() {
+  const P = G.player, S = skillOf(), el = $('skillTxt');
+  if (!S || !G.skill) { if (el.textContent) el.textContent = ''; if (isTouch) $('btnSkill').hidden = true; return; }
+  const left = Math.max(0, G.skill.readyT - G.time), txt = left > 0 ? S.name + ' ' + Math.ceil(left) + 's' : 'F: ' + S.name;
+  if (el.textContent !== txt) { el.textContent = txt; el.classList.toggle('rdy', left <= 0); }
+  if (isTouch) { const b = $('btnSkill'); b.hidden = !(P.alive && !P.car && !G.busted); b.textContent = left > 0 ? Math.ceil(left) + 's' : S.btn; b.classList.toggle('cd', left > 0); }
+}
+
+// ---- Streak multiplier
+const STREAK_NAMES = { 2: 'DOUBLE TROUBLE', 3: 'TRIPLE THREAT', 4: 'BORS-TASTIC', 5: 'FULL ROGUE' };
+function streakKill() {
+  if (!G.streak) G.streak = { n: 0, t: -99 };
+  const S = G.streak; if (G.time - S.t > 4) S.n = 0;
+  S.n++; S.t = G.time;
+  if (S.n < 2) return;
+  const name = STREAK_NAMES[Math.min(S.n, 5)] + (S.n > 5 ? ' x' + S.n : '');
+  const el = $('streak'); el.textContent = name; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+  if (G.game === 'roam') { const P = G.player; addCash(15 * (S.n - 1), P.x, P.y - 16); }
+  if (S.n === 3) banter('streak');
+}
+
+// ---- Brother radio banter
+const BANTER = {
+  wanted: ["Sirens? For us? I'm flattered.", "They're using our old radio codes. Amateurs.", "Keep moving, I still owe half of them money."],
+  rogue5: ["Five stars. Even the helicopter pilot hates us now.", "That's the whole department. Proud of you, partner."],
+  wasted: ["Get up. The paperwork on you would be endless.", "Bors Memorial again? They'll name a wing after you.", "Walk it off, partner. The beard is fine."],
+  busted: ["Arrested by the guy from traffic? Embarrassing.", "Don't say anything. Especially not the cheat codes.", "I'll bail you out. Eventually."],
+  pass: ["Case closed. First round of donuts is on you.", "Clean work. Well, cleanish.", "That's what I call community policing."],
+  fail: ["We'll call that a training exercise.", "Nobody saw that. Right? Right.", "Filing that under 'creative policing'."],
+  jack: ["Nice ride. Did you fill in the rental form?", "Buckle up. Actually, don't, we never do."],
+  copcar: ["You stole a squad car. From our own lot.", "Sirens on, conscience off."],
+  streak: ["Easy there, action hero. Leave some for me.", "Save some chaos for the rest of us.", "That's a lot of overtime."]
+};
+function banter(ev, force) {
+  const P = G.player, L = BANTER[ev]; if (!L || !P || G.phase !== 'playing') return;
+  if (!force && G.time < (G.radioT || 0)) return;
+  G.radioT = G.time + 7;
+  const who = P.char === 'mafl' ? 'BARY' : 'MaFl';
+  const el = $('radio'); el.innerHTML = '<b>' + who + ' on the radio:</b> ' + esc(L[Math.floor(Math.random() * L.length)]);
+  el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+}
+function newsBanter(text, s) {
+  if (s === 'mission' && String(text).indexOf('MISSION PASSED') === 0) banter('pass', true);
+  else if (s === 'fail' && String(text).indexOf('MISSION FAILED') === 0) banter('fail', true);
+}
+
+// ---- Multiplayer roles: first come, first served; roles never shift when someone leaves
+function roleStr(pd) { const r = pd && (pd.role || pd.char); return (r === 'mafl' || r === 'bary' || /^ac\d{1,3}$/.test(r || '')) ? r : 'mafl'; }
+function joinSorted(pl) { return Object.keys(pl).sort((a, b) => ((pl[a] && pl[a].joinedAt) || 0) - ((pl[b] && pl[b].joinedAt) || 0) || (a < b ? -1 : a > b ? 1 : 0)); }
+function computeRoles(pl) {
+  const ids = joinSorted(pl), taken = {}, out = {};
+  for (const id of ids) { const c = roleStr(pl[id]); if (!taken[c]) { taken[c] = 1; out[id] = c; } }
+  for (const id of ids) if (!out[id]) {
+    const c = roleStr(pl[id]); let r = null;
+    if (c === 'mafl' || c === 'bary') { const o = c === 'mafl' ? 'bary' : 'mafl'; if (!taken[o]) r = o; }
+    if (!r) { let n = 1; while (taken['ac' + n]) n++; r = 'ac' + n; }
+    taken[r] = 1; out[id] = r;
+  }
+  return out;
+}
+function claimRole(pl, pick) {
+  const taken = {}, cur = computeRoles(pl || {}); for (const id in cur) taken[cur[id]] = 1;
+  if (!taken[pick]) return pick;
+  const o = pick === 'mafl' ? 'bary' : 'mafl'; if (!taken[o]) return o;
+  let n = 1; while (taken['ac' + n]) n++; return 'ac' + n;
+}
+function roleInfo(r) {
+  if (r && r.indexOf('ac') === 0) { const n = +r.slice(2) || 1; return { key: 'ac', code: 'AC' + (n < 10 ? '0' : '') + n }; }
+  return r === 'bary' ? { key: 'bary', code: 'BARY' } : { key: 'mafl', code: 'MaFl' };
+}
+function dispName(id, R) {
+  const pd = players[id]; if (!pd) return '?';
+  const ri = roleInfo((R || computeRoles(players))[id]);
+  if (ri.key === 'ac') return ri.code;
+  const n = String(pd.name || '').trim();
+  return !n || /^(mafl|bary)$/i.test(n) ? ri.code : n;
+}
+function acLook() { return { skin: '#e6b48c', hair: '#2b2b2b', shirt: '#f2f2f2', pants: '#2d3440', glasses: false, hat: null, beard: null, build: null, scale: 1, epaulette: false }; }
+function lookForRole(key) { return key === 'ac' ? acLook() : brotherLook(key); }
+function applyMyRole(R) {
+  const P = G.player; if (!P || !P.isPlayer || G.mode !== 'mp' || !players[uid]) return;
+  const ri = roleInfo(R[uid]);
+  if (P.char !== ri.key || P.roleCode !== ri.code) {
+    P.char = ri.key; P.roleCode = ri.code; P.look = lookForRole(ri.key);
+    const mx = Math.round(CFG.player.hp * perkOf(P).hp);
+    if (P.maxHp !== mx) { const f = P.maxHp ? P.hp / P.maxHp : 1; P.maxHp = mx; P.hp = Math.min(mx, Math.max(1, Math.round(mx * f))); }
+    G.skill = { readyT: 0, endT: 0, hit: [] };
+  }
+  P.name = dispName(uid, R);
+  if (roomRef && players[uid].role !== R[uid] && G.roleWriteT !== R[uid]) { G.roleWriteT = R[uid]; roomRef.child('players/' + uid + '/role').set(R[uid]); }
+}
+function roleToast() {
+  const P = G.player; if (!P || G.mode !== 'mp') return;
+  if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
+  else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
+}
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -892,6 +1078,7 @@ function damagePed(p, dmg, src) {
     if (G.cheats.god) { G.fx.flash = G.time + 0.05; return; }
     if (by && by !== p && !isPlayerPed(by)) dmg *= D().dmg;
   }
+  if (p.isPlayer) dmg *= perkOf(p).taken;
   if (p.armor > 0) { const a = Math.min(p.armor, dmg * 0.65); p.armor -= a; dmg -= a; }
   p.hp -= dmg; p.lastHitT = G.time;
   const ang = src.ang != null ? src.ang : rand(0, TAU);
@@ -922,7 +1109,7 @@ function killPed(p, src) {
     else if (p.kind === 'cop' || p.kind === 'swat') { cash = CFG.economy.killCop; heat = 45; score = 10; }
     else if (p.kind === 'civ') { heat = src.kind === 'car' ? 22 : 25; score = 2; }
     addHeat(heat, by);
-    if (by.isPlayer) { G.stats.kills++; if (p.kind === 'civ') G.stats.civKills++; if (cash) addCash(cash, p.x, p.y); G.stats.score += score; }
+    if (by.isPlayer) { streakKill(); G.stats.kills++; if (p.kind === 'civ') G.stats.civKills++; if (cash) addCash(cash, p.x, p.y); G.stats.score += score; }
     else sendMsg(by.uid, { t: 'reward', cash, score, kill: 1, x: Math.round(p.x), y: Math.round(p.y) });
     if (G.mission) missionOnKill(p);
   }
@@ -994,19 +1181,19 @@ function carBlocked(c, x, y, a) {
   return hitStatic(x + cs * o, y + sn * o, r, true) || hitStatic(x - cs * o, y - sn * o, r, true);
 }
 function carPhysics(c, dt) {
-  const C = CFG.car, cs = Math.cos(c.a), sn = Math.sin(c.a);
+  const C = CFG.car, cs = Math.cos(c.a), sn = Math.sin(c.a), pk = perkOf(c.driver), perf = c.perf * pk.car;
   let vf = c.vx * cs + c.vy * sn, vl = -c.vx * sn + c.vy * cs;
   const th = c.dead ? 0 : c.throttle;
-  if (th > 0.03) vf += C.accel * c.perf * th * dt * (vf < 0 ? 2 : 1);
+  if (th > 0.03) vf += C.accel * perf * th * dt * (vf < 0 ? 2 : 1);
   else if (th < -0.03) { if (vf > 15) vf += C.brake * th * dt; else vf += C.accel * 0.5 * th * dt; }
   else vf -= Math.sign(vf) * Math.min(Math.abs(vf), C.roll * dt);
   if (c.handbrake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 380 * dt);
   vf -= vf * C.drag * dt;
-  vf = clamp(vf, -C.reverse, C.maxSpeed * c.perf);
+  vf = clamp(vf, -C.reverse, C.maxSpeed * perf);
   const grip = c.handbrake ? C.gripLo : (Math.abs(vl) > 140 ? C.gripHi * 0.6 : C.gripHi);
   vl -= vl * Math.min(1, grip * dt);
   const sp = Math.abs(vf);
-  const turn = C.turn * (1 - 0.45 * clamp((sp - 200) / 360, 0, 1)) * clamp(sp / 110, 0, 1);
+  const turn = C.turn * pk.steer * (1 - 0.45 * clamp((sp - 200) / 360, 0, 1)) * clamp(sp / 110, 0, 1);
   const yaw = c.steer * turn * (vf < 0 ? -1 : 1) * dt;
   c.a = normAng(c.a + yaw);
   c.vx = cs * vf - sn * vl; c.vy = sn * vf + cs * vl; c.vf = vf;
@@ -1254,7 +1441,7 @@ function addHeat(n, who) {
   if (!G.isSim) { if (who.isPlayer) netEvent({ t: 'heat', n }); return; }
   const W = wantedOf(who); W.heat = Math.min(W.heat + n, 420); W.lastCrimeT = G.time;
   const s = starsFor(W.heat);
-  if (s > W.stars) { W.stars = s; W.spawnT = 0; if (who.isPlayer) { toast('WANTED ' + '★'.repeat(s) + (s >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); sfx('alarm', null, null, 1); } }
+  if (s > W.stars) { W.stars = s; W.spawnT = 0; if (who.isPlayer) { toast('WANTED ' + '★'.repeat(s) + (s >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(s >= 5 ? 'rogue5' : 'wanted', s >= 5); sfx('alarm', null, null, 1); } }
 }
 function clearWanted(who) {
   const W = wantedOf(who); const had = W.stars > 0;
@@ -1782,8 +1969,9 @@ function fireWeapon(p, aim) {
         if (isPlayerPed(p) && isPlayerPed(q) && G.game === 'roam' && !G.ff) continue;
         const dx = q.x - p.x, dy = q.y - p.y, d = Math.hypot(dx, dy);
         if (d > W.range + q.r || Math.abs(angDiff(aim, Math.atan2(dy, dx))) > 1.1) continue;
-        hitPed(q, W.dmg, p, aim, W);
-        if (!q.proxy && !isPlayerPed(q)) { q.ragT = Math.max(q.ragT, now + 0.25); q.vx += Math.cos(aim) * 140; q.vy += Math.sin(aim) * 140; }
+        const pk = perkOf(p);
+        hitPed(q, W.dmg * pk.melee, p, aim, W);
+        if (!q.proxy && !isPlayerPed(q)) { q.ragT = Math.max(q.ragT, now + 0.25 * pk.knock); q.vx += Math.cos(aim) * 140 * pk.knock; q.vy += Math.sin(aim) * 140 * pk.knock; }
         hit = true;
       } else if (q.type === 'car') {
         const cs = Math.cos(q.a), sn = Math.sin(q.a), o = q.L / 2 - q.W / 2, rr = q.W / 2 + W.range;
@@ -1804,7 +1992,7 @@ function fireWeapon(p, aim) {
   const mx = p.x + Math.cos(p.a) * 20, my = p.y + Math.sin(p.a) * 20;
   const netNpc = G.mode === 'mp' && G.isSim && !isPlayerPed(p);
   for (let i = 0; i < W.pellets; i++) {
-    const ang = aim + (Math.random() - 0.5) * 2 * W.spread * (p.moving ? 1.5 : 1);
+    const ang = aim + (Math.random() - 0.5) * 2 * W.spread * (p.moving ? 1.5 : 1) * perkOf(p).spread;
     const h = hitscan(mx, my, ang, W.range, p);
     addTracer(mx, my, h.x, h.y, W.key);
     if (i === 0 && p.isPlayer && G.mode === 'mp') netFire(mx, my, h.x, h.y, W.key);
@@ -1887,7 +2075,7 @@ function markersUpdate() {
 }
 const FLANKS = [-0.9, 0, 0.9, 1.7, -1.7];
 function newsAll(text, secs, s) {
-  toast(text, secs); if (s) sfx(s);
+  toast(text, secs); if (s) sfx(s); newsBanter(text, s);
   if (G.mode === 'mp') netNews(text, secs, s);
 }
 function startMission(m, who) {
@@ -2018,6 +2206,7 @@ function inputInit() {
     if (e.code === 'Tab' || e.code === 'Escape') { IN.pause = true; e.preventDefault(); }
     if (e.code.indexOf('Digit') === 0) { const n = +e.code.slice(5); if (n >= 1 && n <= 4) IN.weaponSel = n; }
     if (e.code === 'KeyQ') IN.cycle = 1;
+    if (e.code === 'KeyF' && !e.repeat) trySkill();
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -2053,6 +2242,7 @@ function inputInit() {
   hold('btnBrake', 'brake'); hold('btnHand', 'hand');
   $('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); IN.interact = true; });
   $('btnWpn').addEventListener('pointerdown', e => { e.preventDefault(); IN.cycle = 1; });
+  $('btnSkill').addEventListener('pointerdown', e => { e.preventDefault(); trySkill(); });
   $('btnPause').addEventListener('pointerdown', e => { e.preventDefault(); IN.pause = true; });
 }
 function resize() {
@@ -2062,6 +2252,7 @@ function resize() {
   baseScale = Math.min(cw / CFG.view.w, ch / CFG.view.h) * (isTouch ? 1.15 : 1);
   scale = baseScale * G.cam.zoom;
   const r = $('rotate'); if (r) r.hidden = !(isTouch && ch > cw && G.phase === 'playing');
+  document.body.classList.toggle('phoneL', isTouch && cw > ch && ch <= 520);
 }
 function screenToWorld(sx, sy) { return { x: (sx - cw / 2) / scale + G.cam.x + G.cam.sx, y: (sy - ch / 2) / scale + G.cam.y + G.cam.sy }; }
 
@@ -2186,7 +2377,7 @@ function tryEnterCar(c) {
   if (c.driver) {
     const wasCop = c.driver.kind === 'cop';
     c.target = P; ejectDriver(c, true); if (c.passengers) copsJumpOut(c);
-    addHeat(wasCop ? 35 : 12, P); toast(wasCop ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3);
+    addHeat(wasCop ? 35 : 12, P); toast(wasCop ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3); banter(wasCop ? 'copcar' : 'jack');
   } else if (c.kind === 'police') addHeat(20, P);
   enterCar(P, c);
 }
@@ -2228,13 +2419,13 @@ function updatePlayerFoot(dt) {
     if (g.car) { g.x = g.car.x; g.y = g.car.y; if (!canEnter(g.car) || G.cars.indexOf(g.car) < 0) P.goal = null; }
     if (P.goal) {
       const d = dist(P.x, P.y, g.x, g.y);
-      const moving = followPathTo(P, g, C.run, dt, { roadCost: 1.5, maxExp: 5000, repath: 1.2 });
+      const moving = followPathTo(P, g, C.run * perkOf(P).run, dt, { roadCost: 1.5, maxExp: 5000, repath: 1.2 });
       if (g.car && carDist(g.car, P.x, P.y) < 30) { tryEnterCar(g.car); P.goal = null; }
       else if (!moving || d < 14) { P.goal = null; P.wx = P.wy = 0; }
     }
   } else {
     let mx = IN.mx, my = IN.my; const l = Math.hypot(mx, my); if (l > 1) { mx /= l; my /= l; }
-    const sp = IN.run ? C.run : C.walk;
+    const sp = (IN.run ? C.run : C.walk) * perkOf(P).run;
     if (l > 0.01) { const d = steerAround(P, Math.atan2(my, mx)); if (d != null) { const m = Math.min(l, 1); mx = Math.cos(d) * m; my = Math.sin(d) * m; } }
     P.wx = mx * sp; P.wy = my * sp;
   }
@@ -2605,6 +2796,9 @@ function uiInit() {
     G.settings.char = ch === 'bary' ? 'bary' : 'mafl'; saveSettings();
     for (const b of $('charSeg').querySelectorAll('button')) b.classList.toggle('on', b.dataset.char === G.settings.char);
     $('name').placeholder = 'Name (default: ' + BROTHERS[G.settings.char].name + ')';
+    $('charCard').innerHTML = G.settings.char === 'bary'
+      ? '<b>BARY \u00b7 The Muscle</b><br>600 HP, takes 10% less damage, bat hits 50% harder and sends people flying'
+      : '<b>MaFl \u00b7 The Driver</b><br>Runs 8% faster, cars get 6% more power and sharper steering, steadier aim';
   };
   for (const b of $('charSeg').querySelectorAll('button')) b.onclick = () => setChar(b.dataset.char);
   setChar(G.settings.char);
@@ -2642,7 +2836,7 @@ function updateHUD() {
   const P = G.player; if (!P) return;
   $('hp').style.width = clamp(P.hp / P.maxHp * 100, 0, 100) + '%';
   $('hp').style.background = P.hp > P.maxHp * 0.5 ? '#7dff4d' : P.hp > P.maxHp * 0.25 ? '#ffd24d' : '#ff4d4d';
-  $('hpText').textContent = (BROTHERS[P.char] ? BROTHERS[P.char].name + '  ' : '') + Math.max(0, Math.ceil(P.hp));
+  $('hpText').textContent = (P.roleCode ? P.roleCode + '  ' : BROTHERS[P.char] ? BROTHERS[P.char].name + '  ' : '') + Math.max(0, Math.ceil(P.hp));
   $('ar').style.width = clamp(P.armor, 0, 100) + '%';
   $('cheatsOn').textContent = (G.cheats.god ? ' GOD' : '') + (G.cheats.guns ? ' GUNS' : '') + (G.cheats.slow && G.mode === 'solo' ? ' SLOWMO' : '');
   const W = WEAPONS[P.weapon];
@@ -2669,6 +2863,7 @@ function updateHUD() {
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
   }
   $('hint').hidden = !hint; $('hint').textContent = hint;
+  skillHUD();
   if (isTouch) {
     const inCar = !!P.car;
     $('btnAct').hidden = !(P.alive && (inCar || nearCar)); $('btnAct').textContent = inCar ? 'EXIT' : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
@@ -3025,10 +3220,11 @@ async function joinRoom(code) {
   code = code.toUpperCase().trim(); const ref = db.ref('rooms/' + code);
   const m = (await ref.child('meta').once('value')).val(); if (!m) { msg('Room ' + code + ' not found'); return; }
   roomRef = ref; roomCode = code; G.mode = 'mp';
-  const cnt = (await ref.child('players').once('value')).numChildren(), color = CFG.colors[cnt % CFG.colors.length];
+  const psnap = await ref.child('players').once('value'), cnt = psnap.numChildren(), color = CFG.colors[cnt % CFG.colors.length];
+  const myRole = claimRole(psnap.val() || {}, G.settings.char === 'bary' ? 'bary' : 'mafl');
   G.playerColor = color;
   const pref = ref.child('players/' + uid);
-  await pref.set({ name: G.playerName, color, char: G.settings.char === 'bary' ? 'bary' : 'mafl', hp: CFG.player.hp, alive: true, kills: 0, deaths: 0, cash: 0, joinedAt: TS() });
+  await pref.set({ name: G.playerName, color, char: G.settings.char === 'bary' ? 'bary' : 'mafl', role: myRole, hp: CFG.player.hp, alive: true, kills: 0, deaths: 0, cash: 0, joinedAt: TS() });
   pref.onDisconnect().remove(); ref.child('state/' + uid).onDisconnect().remove();
   G.game = m.mode || 'roam'; G.isSim = false;
   setupWorld(m.seed, 'mp');
@@ -3048,7 +3244,7 @@ function attachListeners() {
   roomRef.child('feed').on('child_added', s => { const f = s.val(); if (f && serverNow() - (f.t || 0) < 6000) feed(f.x ? f.x : f.k + (f.w === 'car' ? ' ran over ' : f.w === 'bat' ? ' clubbed ' : ' shot ') + f.v); });
   roomRef.child('hits/' + uid).on('child_added', s => { const h = s.val(); s.ref.remove(); onHit(h); });
   roomRef.child('msg/' + uid).on('child_added', s => { const m = s.val(); s.ref.remove(); if (m) onMsg(m); });
-  roomRef.child('news').on('child_added', s => { const n = s.val(); if (n && n.u !== uid && G.phase === 'playing' && serverNow() - (n.ts || 0) < 6000) { toast(n.x, n.d || 1.5); if (n.s) sfx(n.s); } });
+  roomRef.child('news').on('child_added', s => { const n = s.val(); if (n && n.u !== uid && G.phase === 'playing' && serverNow() - (n.ts || 0) < 6000) { toast(n.x, n.d || 1.5); if (n.s) sfx(n.s); newsBanter(n.x, n.s); } });
   roomRef.child('world').on('value', s => onWorld(s.val()));
   roomRef.child('pickups').on('value', s => onPickupList(s.val()));
 }
@@ -3097,13 +3293,13 @@ function renderLobby() {
   $('modeInfo').textContent = mode === 'roam'
     ? 'One living city for everyone: traffic, gangs, cops and shared missions. The host’s browser runs the city, so the host should be on a laptop and keep the game in front.'
     : 'Players only, ' + Math.round(CFG.matchSeconds / 60) + ' minutes, most kills wins.';
-  const ids = Object.keys(players).sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0));
-  $('playerList').innerHTML = ids.map(id => '<li><span class="dot" style="background:' + players[id].color + '"></span>' + esc(players[id].name) + ' <small>as ' + (players[id].char === 'bary' ? 'BARY' : 'MaFl') + '</small>' + (meta && meta.host === id ? ' <small>host</small>' : '') + (id === uid ? ' <small>you</small>' : '') + '</li>').join('');
+  const ids = Object.keys(players).sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0)), RL = computeRoles(players);
+  $('playerList').innerHTML = ids.map(id => '<li><span class="dot" style="background:' + players[id].color + '"></span>' + esc(players[id].name) + ' <small>as ' + (RL[id] && RL[id].indexOf('ac') === 0 ? roleInfo(RL[id]).code + ' (Assistant Consultant)' : roleInfo(RL[id]).code) + '</small>' + (meta && meta.host === id ? ' <small>host</small>' : '') + (id === uid ? ' <small>you</small>' : '') + '</li>').join('');
   $('startBtn').hidden = !isHost; $('startBtn').textContent = mode === 'roam' ? 'Start free roam' : 'Start Brother vs Brother'; $('waitMsg').hidden = isHost;
 }
 function rankedIds() { return Object.keys(players).sort((a, b) => (players[b].kills || 0) - (players[a].kills || 0) || (players[a].deaths || 0) - (players[b].deaths || 0)); }
 function renderResults() {
-  $('rank').innerHTML = rankedIds().map((id, i) => '<li><span class="dot" style="background:' + players[id].color + '"></span><span>' + (i + 1) + '. ' + esc(players[id].name) + '</span><span>' + (players[id].kills || 0) + ' K / ' + (players[id].deaths || 0) + ' D</span></li>').join('');
+  $('rank').innerHTML = rankedIds().map((id, i) => '<li><span class="dot" style="background:' + players[id].color + '"></span><span>' + (i + 1) + '. ' + esc(dispName(id)) + '</span><span>' + (players[id].kills || 0) + ' K / ' + (players[id].deaths || 0) + ' D</span></li>').join('');
   $('lobbyBtn').hidden = !isHost; $('waitMsg2').hidden = isHost;
 }
 function starsOfUid(id) {
@@ -3114,21 +3310,23 @@ function netHUD() {
   if (G.game === 'dm') {
     const left = Math.max(0, meta && meta.endAt ? meta.endAt - serverNow() : 0);
     $('timer').textContent = fmtTime(left / 1000);
-    $('board').innerHTML = rankedIds().map(id => '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(players[id].name) + '</span><span>' + (players[id].kills || 0) + '/' + (players[id].deaths || 0) + '</span></div>').join('');
+    const myK = (players[uid] && players[uid].kills) || 0; if (myK > (G.lastDmKills || 0)) streakKill(); G.lastDmKills = myK;
+    $('board').innerHTML = rankedIds().map(id => '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(dispName(id)) + '</span><span>' + (players[id].kills || 0) + '/' + (players[id].deaths || 0) + '</span></div>').join('');
   } else {
     const ids = Object.keys(players).sort((a, b) => (players[a].joinedAt || 0) - (players[b].joinedAt || 0));
-    $('board').innerHTML = ids.map(id => { const s = starsOfUid(id), cash = id === uid ? G.stats.cash : (players[id].cash || 0); return '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(players[id].name) + (s ? ' <span style="color:#ffd24d">' + '★'.repeat(s) + '</span>' : '') + '</span><span>$' + cash + '</span></div>'; }).join('');
+    $('board').innerHTML = ids.map(id => { const s = starsOfUid(id), cash = id === uid ? G.stats.cash : (players[id].cash || 0); return '<div><span class="dot" style="background:' + players[id].color + '"></span><span>' + esc(dispName(id)) + (s ? ' <span style="color:#ffd24d">' + '★'.repeat(s) + '</span>' : '') + '</span><span>$' + cash + '</span></div>'; }).join('');
   }
 }
 
 // ---- remote players
 function syncRemotes() {
+  const R = computeRoles(players); applyMyRole(R);
   for (const id in players) {
     if (id === uid) continue;
     const pd = players[id]; let r = G.remotes[id];
     if (!r) { const ped = makePed('remote', -1000, -1000, { uid: id, name: pd.name, color: pd.color }); ped.alive = false; G.peds.push(ped); r = G.remotes[id] = { ped, snaps: [], c: 0, hadCar: false }; }
-    const ch = pd.char === 'bary' ? 'bary' : 'mafl'; if (r.ped.char !== ch) { r.ped.char = ch; r.ped.look = brotherLook(ch); }
-    r.ped.name = pd.name; r.ped.color = pd.color; r.ped.hp = pd.hp; r.ped.alive = !!pd.alive && r.snaps.length > 0;
+    const ch = roleInfo(R[id]).key; if (r.ped.char !== ch) { r.ped.char = ch; r.ped.look = lookForRole(ch); }
+    r.ped.name = dispName(id, R); r.ped.color = pd.color; r.ped.hp = pd.hp; r.ped.alive = !!pd.alive && r.snaps.length > 0;
   }
   for (const id in G.remotes) if (!players[id]) removeRemote(id);
 }
@@ -3271,11 +3469,11 @@ function onMsg(m) {
       c.x = m.x; c.y = m.y; c.a = m.a; c.hp = m.hp; c.vx = c.vy = c.vf = 0; c.npcDrv = false; c.pdrv = false;
       if (!P.alive || P.car || G.busted) { netReleaseCar(c); break; }
       enterCar(P, c); lastSent = '';
-      if (m.jack) toast(m.jack === 2 ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3);
+      if (m.jack) toast(m.jack === 2 ? 'Stole a police car!\nTechnically a company car' : 'Carjacked!\nThis ride is now Bors-rowed', 1.3); banter(m.jack === 2 ? 'copcar' : 'jack');
       break;
     }
     case 'deny': P.pendingCar = null; break;
-    case 'reward': if (m.cash) addCash(m.cash, m.x != null ? m.x : P.x, m.y != null ? m.y : P.y); G.stats.score += m.score || 0; if (m.kill) G.stats.kills++; if (m.mission) G.stats.missions = (G.stats.missions || 0) + 1; break;
+    case 'reward': if (m.cash) addCash(m.cash, m.x != null ? m.x : P.x, m.y != null ? m.y : P.y); G.stats.score += m.score || 0; if (m.kill) { G.stats.kills++; streakKill(); } if (m.mission) G.stats.missions = (G.stats.missions || 0) + 1; break;
     case 'pickup': pickupEffect(P, m.ty, m.n); break;
     case 'bust': bustPlayer(); break;
     case 'cardmg': if (P.car && !P.car.dead) damageCar(P.car, m.d, { kind: 'gun' }); break;
@@ -3387,7 +3585,7 @@ function onWorld(v) {
   }
   if (v.b) for (const e of String(v.b).split(';')) { const [x, y, r] = e.split(',').map(Number); explosionFx(x, y, r); }
   const w = v.w || {}, stars = w[uid] || 0;
-  if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + (stars >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); sfx('alarm', null, null, 1); }
+  if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + (stars >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); sfx('alarm', null, null, 1); }
   else if (stars === 0 && G.wanted.stars > 0) toast('Wanted level cleared\nInternal Affairs lost the paperwork', 1.8);
   G.wanted.stars = stars; G.netStars = w;
   const k = String(v.k || ''); for (let i = 0; i < G.pickups.length; i++) G.pickups[i].taken = k[i] === '1';
@@ -3506,7 +3704,7 @@ function netPlayerDied(src) {
   if (tag && players[tag] && tag !== uid) {
     roomRef.child('players/' + tag + '/kills').transaction(k => (k || 0) + 1);
     const w = src.kind === 'car' ? 'car' : src.kind === 'melee' ? 'bat' : 'gun';
-    roomRef.child('feed').push({ k: players[tag].name || '?', v: P.name, w, t: TS() });
+    roomRef.child('feed').push({ k: dispName(tag), v: P.name, w, t: TS() });
   } else if (tag.indexOf('npc:') === 0 && G.game === 'roam') {
     const who = { gang: 'a gang member', cop: 'the cops', swat: 'SWAT', civ: 'a civilian' }[tag.slice(4)] || 'the city';
     roomRef.child('feed').push({ x: P.name + ' was wasted by ' + who, t: TS() });
@@ -3538,6 +3736,8 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = brotherLook(P.char);
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null;
+  P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) { P.owned = { bat: true, pistol: true, smg: true, shotgun: true }; P.ammo.smg = WEAPONS.smg.ammoMax; P.ammo.shotgun = WEAPONS.shotgun.ammoMax; }
   G.player = P; G.peds.push(P);
   G.cam.x = st.x; G.cam.y = st.y; G.cam.zoom = 1; G.cam.shake = 0; G.cam.snap = true;
@@ -3569,7 +3769,7 @@ function startMatch() {
   setupWorld(meta ? meta.seed : 1, 'mp');
   G.isSim = G.game === 'roam' && isHost;
   syncRemotes(); if (G.game === 'dm') syncCars();
-  enterPlay();
+  enterPlay(); roleToast();
   const P = G.player;
   if (G.game === 'dm') { P.owned = { pistol: true, bat: true, smg: true, shotgun: true }; P.ammo.smg = 9999; P.ammo.shotgun = 9999; netRespawn(); }
   else {
@@ -3587,6 +3787,7 @@ function loop() {
   requestAnimationFrame(loop);
   const now = performance.now(); let dt = (now - lastTs) / 1000; lastTs = now; if (dt > 0.05) dt = 0.05;
   if (G.cheats.slow && G.mode === 'solo') dt *= 0.4;
+  else if (G.mode === 'solo' && G.player && G.player.char === 'mafl' && skillActive()) dt *= 0.45;
   if (IN.pause) { IN.pause = false; togglePause(); }
   if (G.paused && G.mode === 'solo') return;
   update(dt); render();
@@ -3599,7 +3800,7 @@ function update(dt) {
   const P = G.player;
   if (!P.alive) { if (G.time >= G.deadT) respawnPlayer(false); }
   else if (G.busted) { if (G.time >= G.deadT) respawnPlayer(true); }
-  updatePlayer(dt);
+  updatePlayer(dt); skillUpdate(dt);
   netPre(dt);
   if (G.isSim) {
     updateNPCs(dt); resolveCollisions(); rebuildHash(); spawnerUpdate(dt);
@@ -3622,7 +3823,7 @@ function playerDied(src) {
     if (c.driver === P) c.driver = null; P.car = null;
     if (G.mode === 'mp' && G.game === 'roam' && !G.isSim) netReleaseCar(c);
   }
-  bigText('WASTED', G.game === 'roam' ? 'Waking up at Bors Memorial. The beard survived.' : 'Respawning. The beard survived.');
+  bigText('WASTED', G.game === 'roam' ? 'Waking up at Bors Memorial. The beard survived.' : 'Respawning. The beard survived.'); banter('wasted', true);
   sfx('wasted'); G.cam.shake = 8;
   if (G.mode === 'mp') netPlayerDied(src || {});
   if (G.game === 'roam') { G.wanted.heat = 0; G.wanted.stars = 0; saveBest(); }
@@ -3632,7 +3833,7 @@ function bustPlayer(T) {
   const P = G.player; if (G.busted || !P.alive || G.game !== 'roam') return;
   if (P.car) playerExitCar();
   G.busted = true; G.deadT = G.time + 3.2; P.wx = P.wy = 0; P.vx = P.vy = 0;
-  bigText('BORSTED!', 'Arrested by your ex-colleagues. Awkward.\n' + (G.cheats.guns ? '10% of your cash gone' : 'Weapons confiscated, 10% of your cash gone')); sfx('busted');
+  bigText('BORSTED!', 'Arrested by your ex-colleagues. Awkward.\n' + (G.cheats.guns ? '10% of your cash gone' : 'Weapons confiscated, 10% of your cash gone')); banter('busted', true); sfx('busted');
   G.wanted.heat = 0; G.wanted.stars = 0; G.stats.cash = Math.floor(G.stats.cash * 0.9);
   if (!G.cheats.guns) { P.owned = { pistol: true, bat: true }; P.weapon = 'pistol'; P.ammo.smg = 0; P.ammo.shotgun = 0; }
 }
