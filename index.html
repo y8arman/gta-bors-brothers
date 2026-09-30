@@ -457,6 +457,8 @@ const BANTER = {
   up: ["Back on my feet. Thanks, partner.", "Walked it off. The beard is fine."],
   hop: ["Scoot over, I'm riding shotgun.", "Shotgun! Literally.", "You drive, I shoot. Classic."],
   heist: ["Robbing a bank. Our own pension fund is in there.", "Masks on. Badges... also on, apparently.", "In and out. Twenty minutes, tops."],
+  war: ["Gang war! Just like the academy never taught us.", "They want the block back? Tell them to file a complaint."],
+  turf: ["That block is ours now. Paint it blue.", "Bors Brothers: now in real estate."],
   streak: ["Easy there, action hero. Leave some for me.", "Save some chaos for the rest of us.", "That's a lot of overtime."]
 };
 function banter(ev, force) {
@@ -522,7 +524,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 16;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 17;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -1019,6 +1021,14 @@ function buildCity(seed) {
     { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' },
     { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist' }
   ];
+  city.territories = [];
+  for (const b of city.blocks) {
+    if (['residential', 'oldtown', 'harbour', 'industrial'].indexOf(b.district) < 0) continue;
+    if ((b.c * 3 + b.r * 5) % 4 !== 0) continue;
+    if ((b.c === 0 || b.c === cols - 1) && (b.r === 0 || b.r === rows - 1)) continue;          // corner gang hideouts stay as they are
+    if (Math.abs(b.c - (cc - 1)) <= 1 && Math.abs(b.r - cr) <= 1) continue;                    // not right next to the start
+    city.territories.push({ i: city.territories.length, key: b.c + ',' + b.r, blk: b, x: b.x + b.w / 2, y: b.y + b.h / 2, gang: (b.x + b.w / 2) > W / 2 ? 'rats' : 'saints', owner: null, kills: 0, killT: 0, coolT: 0, spawnT: 0 });
+  }
   city.turfs = [blockAt(0, 0), blockAt(cols - 1, 0), blockAt(0, rows - 1), blockAt(cols - 1, rows - 1)];
   city.start = ePt(blockAt(cc - 1, cr), 'bottom', 0.5);
 
@@ -1250,6 +1260,7 @@ function damagePed(p, dmg, src) {
   if (p.kind === 'remote') { netHitPlayer(p, dmg, src); return; }
   if (p.kind === 'partner' && (p.down || (by && (by.isPlayer || by.kind === 'partner')))) return;
   if (p.isPlayer && by && by.kind === 'partner') return;
+  if (p.terr && isPlayerPed(by)) p.provoked = true;   // turf lookouts fight back once you attack them
   if (p.isPlayer) {
     if (by && by.kind === 'remote' && G.game === 'roam' && !G.ff) return;
     if (G.cheats.god) { G.fx.flash = G.time + 0.05; return; }
@@ -1290,6 +1301,7 @@ function killPed(p, src) {
     if (by.isPlayer) { streakKill(); G.stats.kills++; if (p.kind === 'civ') G.stats.civKills++; if (cash) addCash(cash, p.x, p.y); G.stats.score += score; }
     else sendMsg(by.uid, { t: 'reward', cash, score, kill: 1, x: Math.round(p.x), y: Math.round(p.y) });
     if (G.mission) missionOnKill(p);
+    if (p.kind === 'gang') territoryKill(p, by);
   }
   if (p.kind === 'civ' || p.kind === 'gang') alertPeds(p.x, p.y, 240, 'death');
 }
@@ -1635,7 +1647,7 @@ function clearWanted(who) {
 function spawnCiv(x, y) { const p = makePed('civ', x, y); p.stateT = G.time + rand(0, 2); G.peds.push(p); return p; }
 function spawnGang(x, y, turf, flank, weapon) {
   const w = weapon || pick(['pistol', 'pistol', 'pistol', 'smg', 'smg', 'shotgun']);
-  const p = makePed('gang', x, y, { weapon: w, turf, flank }); p.ammo.smg = 9999; p.ammo.shotgun = 9999; p.sight = 640; G.peds.push(p); return p;
+  const p = makePed('gang', x, y, { weapon: w, turf, flank }); p.ammo.smg = 9999; p.ammo.shotgun = 9999; p.sight = 640; gangDress(p); G.peds.push(p); return p;
 }
 function spawnCop(x, y, swat, target) {
   const p = makePed(swat ? 'swat' : 'cop', x, y, { weapon: swat ? 'smg' : 'pistol', hp: swat ? 150 : 100 });
@@ -1779,6 +1791,7 @@ function pickTarget(p) {
   for (const q of allPlayers()) {
     if (!q.alive || isBusted(q)) continue;
     if (p.kind !== 'gang' && wantedOf(q).stars === 0) continue;
+    if (p.terr && !p.provoked && !inRect(terrRect(p.terr), posOf(q).x, posOf(q).y)) continue;   // lookouts only go after players on their block
     const qp = posOf(q), s = dist(p.x, p.y, qp.x, qp.y) - (q === p.target ? 150 : 0);
     if (s < bd) { bd = s; best = q; }
   }
@@ -2270,7 +2283,7 @@ function markersUpdate() {
       } else toast('Respray costs $' + CFG.economy.price.respray, 1.5);
     }
   }
-  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate();
+  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate();
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
@@ -2284,6 +2297,7 @@ function newsAll(text, secs, s) {
 }
 function startMission(m, who) {
   if (m.type === 'heist' && !heistAvailable(m, who)) return;
+  if (m.type === 'war' && G.mission) return;
   const C = G.city, Df = D(), wp = posOf(who), nP = allPlayers().length;
   const M = { type: m.type, marker: m, who, startT: G.time, text: '', timer: 0, targets: [], objective: null, waves: 0, nextWaveT: 0, car: null, phase: 0, kills: 0 };
   if (m.type === 'hit') {
@@ -2312,6 +2326,7 @@ function startMission(m, who) {
     M.timer = 30; M.nextWaveT = G.time + 0.5; M.text = 'RAMPAGE: 0 kills';
     M.objective = { x: wp.x, y: wp.y };
   } else if (m.type === 'heist') heistStart(M, nP);
+  else if (m.type === 'war') warStart(M, m, nP);
   G.mission = M; m.cooldownT = G.time + 99999;
   newsAll(m.label.toUpperCase() + (G.mode === 'mp' ? '\nstarted by ' + (who.name || 'a player') : ''), 1.8, 'mission');
 }
@@ -2369,6 +2384,7 @@ function missionUpdate(dt) {
     M.objective = M.route[Math.min(M.idx, M.route.length - 1)];
     M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
   } else if (M.type === 'heist') { heistUpdate(M); return;
+  } else if (M.type === 'war') { warUpdate(M); return;
   } else if (M.type === 'rampage') {
     const ups = missionPlayersUp();
     if (G.time >= M.nextWaveT && ups.length) {
@@ -3067,6 +3083,121 @@ function applyGasState(v) {
   const bits = String(v || '');
   L.forEach((st, i) => { st.burntT = bits[i] === '1' ? G.time + 5 : 0; });
 }
+// ---- v17: gang territories (San Andreas style). Host/solo decides, everyone sees the blue blocks.
+const GANGS = { rats: { name: 'Harbour Rats', color: '#ff3b3b', shirt: '#b3261e', pants: '#2b1a12' }, saints: { name: 'Old Town Saints', color: '#b04dff', shirt: '#6a2c91', pants: '#1b1b2a' } };
+const TERR = { killsToStart: 3, killWindow: 90, waves: 3, warSec: 150, leaveDist: 950, reward: 300, income: 50, incomeSec: 120, bankCap: 3000 };
+const TERR_KEY = 'gb_turf';
+function gangDress(p) { const C = G.city; if (!C) return; p.gang = p.x > C.W / 2 ? 'rats' : 'saints'; const g = GANGS[p.gang]; p.look = Object.assign({}, p.look, { shirt: g.shirt, pants: g.pants }); }
+function terrOwned() { const L = G.city && G.city.territories; return L ? L.filter(T => T.owner === 'bors').length : 0; }
+function terrRect(T) { const b = T.blk, sw = G.city.sw; return { x: b.x - sw, y: b.y - sw, w: b.w + 2 * sw, h: b.h + 2 * sw }; }
+function terrAt(x, y) { const L = G.city && G.city.territories; if (!L) return null; for (const T of L) if (inRect(terrRect(T), x, y)) return T; return null; }
+function territoryKill(p, by) {
+  if (!G.isSim || G.game !== 'roam' || G.mission) return;
+  const T = terrAt(p.x, p.y) || (by && terrAt(by.x, by.y)); if (!T || T.owner === 'bors' || G.time < T.coolT) return;
+  if (G.time - T.killT > TERR.killWindow) T.kills = 0;
+  T.kills++; T.killT = G.time;
+  if (T.kills < TERR.killsToStart) { addText(T.kills + '/' + TERR.killsToStart + ' for a gang war', p.x, p.y - 34, GANGS[T.gang].color); return; }
+  T.kills = 0;
+  startMission({ type: 'war', label: 'Gang war', x: T.x, y: T.y, terr: T, cooldownT: 0 }, by);
+}
+function warStart(M, m, nP) {
+  const T = m.terr; M.terr = T; M.timer = TERR.warSec; M.waves = 0; M.nextWaveT = G.time + 4; M.nP = nP; M.objective = { x: T.x, y: T.y };
+  M.text = 'GANG WAR vs ' + GANGS[T.gang].name + ': get ready';
+  const P = G.player; if (P) banter('war', true);
+  newsAll('GANG WAR!\nThe ' + GANGS[T.gang].name + ' want their block back. Survive ' + TERR.waves + ' waves.', 2.6, 'alarm');
+}
+function warUpdate(M) {
+  const T = M.terr, ups = missionPlayersUp();
+  let near = false; for (const q of ups) { const qp = posOf(q); if (dist(qp.x, qp.y, T.x, T.y) < TERR.leaveDist) near = true; }
+  if (!near) { if (!M.awayT) M.awayT = G.time; else if (G.time - M.awayT > 6) { failMission('You abandoned the turf'); return; } } else M.awayT = 0;
+  const alive = M.targets.filter(g => g.alive);
+  if (!alive.length && G.time >= M.nextWaveT) {
+    if (M.waves >= TERR.waves) { warWon(M); return; }
+    M.waves++;
+    const n = Math.max(2, Math.round((1 + M.waves) * D().count * (1 + 0.35 * (ups.length - 1))));
+    if (M.waves > 1) for (const q of ups) { if (q.isPlayer) { q.hp = Math.min(q.maxHp, q.hp + 100); addText('+100 HP', q.x, q.y - 22, '#ff6b6b'); } else sendMsg(q.uid, { t: 'pickup', ty: 'health', n: 0 }); }   // breather between waves
+    for (let i = 0; i < n; i++) {
+      const pt = randomSidewalkPoint(T.x, T.y, 380, 640); if (!pt || G.peds.length >= CFG.world.maxPeds - 5) continue;
+      const tgt = ups[i % Math.max(1, ups.length)]; if (!tgt) continue; const tp = posOf(tgt);
+      const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5], M.waves === TERR.waves && i === 0 ? 'shotgun' : null);
+      g.gang = T.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[T.gang].shirt, pants: GANGS[T.gang].pants });
+      g.mission = M; g.state = 'engage'; g.target = tgt; g.lastSeenT = G.time; g.lastTargetPos = { x: tp.x, y: tp.y }; g.sight = 760; M.targets.push(g);
+    }
+    M.nextWaveT = G.time + 6;
+    newsAll('WAVE ' + M.waves + '/' + TERR.waves, 1);
+  }
+  const left = M.targets.filter(g => g.alive).length;
+  if (left) { const q = ups[0] ? posOf(ups[0]) : T; const nearest = M.targets.filter(g => g.alive).sort((a, b) => dist(a.x, a.y, q.x, q.y) - dist(b.x, b.y, q.x, q.y))[0]; M.objective = { x: nearest.x, y: nearest.y }; }
+  else M.objective = { x: T.x, y: T.y };
+  M.text = 'GANG WAR vs ' + GANGS[T.gang].name + ': wave ' + Math.max(1, M.waves) + '/' + TERR.waves + (left ? ', ' + left + ' left' : '') + ' (' + Math.ceil(M.timer) + 's)';
+}
+function warWon(M) {
+  const T = M.terr; T.owner = 'bors'; T.kills = 0; T.cheat = !!(G.cheats.god || G.cheats.guns);
+  for (const p of G.peds) if (p.terr === T) p.terr = null;   // leftover lookouts become ordinary stragglers and despawn once you leave
+  saveTerritories();
+  if (G.player) banter('turf', true);
+  completeMission(TERR.reward, 'TERRITORY TAKEN! ' + terrOwned() + '/' + G.city.territories.length + ' blocks are Bors blue.' + (G.mode === 'solo' ? '\nProtection money piles up at BORS HQ.' : ''));
+}
+function territoryUpdate() {
+  const L = G.city && G.city.territories; if (!L || G.game !== 'roam') return;
+  const P = G.player;
+  if (P && P.alive) {                                          // entering a territory shows who runs it (everyone, locally)
+    const T = terrAt(P.x, P.y);
+    if (T !== G.lastTerr) { G.lastTerr = T; if (T && !P.car && !G.mission && G.time > (G.terrToastT || 0)) { G.terrToastT = G.time + 4; toast(T.owner === 'bors' ? 'BORS BROTHERS TURF\nYour block. Your rules.' : GANGS[T.gang].name.toUpperCase() + ' TURF\nKill ' + TERR.killsToStart + ' of them here to start a gang war', 2); } }
+  }
+  if (!G.isSim) return;
+  if (G.mode === 'solo') {                                     // protection money, collected at BORS HQ
+    const own = terrOwned();
+    if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + own * TERR.income); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
+    if (P && P.alive && !P.car && G.terrBank > 0 && G.city.safehouse && inRect(G.city.safehouse, P.x, P.y)) { const n = Math.round(G.terrBank); G.terrBank = 0; addCash(n, P.x, P.y); toast('PROTECTION MONEY\n+$' + n + ' from your ' + own + ' blocks', 2.2); sfx('cash'); saveTerritories(); }
+  }
+  if (G.frame % 20) return;
+  for (const T of L) {                                         // a few gang members hang around enemy blocks near a player
+    if (T.owner === 'bors' || G.time < T.spawnT) continue;
+    if (minPlayerDist(T.x, T.y) > 900 || G.peds.length > CFG.world.maxPeds - 20) continue;
+    T.spawnT = G.time + 20;
+    let alive = 0; for (const p of G.peds) if (p.alive && p.terr === T) alive++;
+    for (let i = alive; i < 3; i++) for (let k = 0; k < 20; k++) {
+      const pt = edgePoint(T.blk, pick(['top', 'bottom', 'left', 'right']), rand(0.1, 0.9));
+      if (G.city.cellCost(pt.x, pt.y) !== 1 || hitStatic(pt.x, pt.y, 13, false) || minPlayerDist(pt.x, pt.y) < 250) continue;
+      const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.terr = T; g.home = { x: pt.x, y: pt.y }; break;
+    }
+  }
+}
+function saveTerritories() {
+  if (G.mode !== 'solo') return;
+  const own = G.city.territories.filter(T => T.owner === 'bors' && !T.cheat).map(T => T.key);
+  try { localStorage[TERR_KEY] = JSON.stringify({ v: 1, own, bank: Math.round(G.terrBank || 0) }); } catch (e) {}
+}
+function loadTerritories() {
+  G.terrBank = 0; G.incomeT = 0; G.lastTerr = null;
+  if (G.mode !== 'solo' || !G.city.territories) return;
+  let d = null; try { d = JSON.parse(localStorage[TERR_KEY] || 'null'); } catch (e) { d = null; }
+  if (!d || d.v !== 1 || !Array.isArray(d.own)) return;
+  const keys = new Set(d.own.filter(k => typeof k === 'string'));
+  for (const T of G.city.territories) if (keys.has(T.key)) T.owner = 'bors';
+  const b = Number(d.bank); G.terrBank = isFinite(b) ? clamp(Math.round(b), 0, TERR.bankCap) : 0;
+}
+function applyTerrState(v) {
+  const L = G.city && G.city.territories; if (G.isSim || !L) return;
+  const s2 = String(v || ''); L.forEach((T, i) => { T.owner = s2[i] === 'b' ? 'bors' : null; });
+}
+function terrColor(T) { return T.owner === 'bors' ? '#3b7bff' : GANGS[T.gang].color; }
+function drawTerritories(V) {
+  const L = G.city.territories; if (!L || G.game !== 'roam') return;
+  const war = G.mission && G.mission.type === 'war' ? G.mission.terr : null;
+  for (const T of L) {
+    const r = terrRect(T); if (r.x > V.x1 || r.x + r.w < V.x0 || r.y > V.y1 || r.y + r.h < V.y0) continue;
+    ctx.globalAlpha = war === T ? 0.45 + 0.3 * Math.sin(G.time * 6) : 0.55;
+    ctx.strokeStyle = terrColor(T); ctx.lineWidth = 4; ctx.setLineDash(T.owner === 'bors' ? [] : [14, 8]); ctx.strokeRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6); ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+}
+function drawTerritoriesMini(m, k) {
+  const L = G.city.territories; if (!L) return;
+  for (const T of L) { const b = T.blk; m.globalAlpha = T.owner === 'bors' ? 0.6 : 0.4; m.fillStyle = terrColor(T); m.fillRect(b.x, b.y, b.w, b.h); }
+  m.globalAlpha = 1;
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
@@ -3081,6 +3212,7 @@ function completeMission(reward, extra) {
 }
 function failMission(why) {
   const M = G.mission; if (!M) return;
+  if (M.type === 'war' && M.terr) { M.terr.kills = 0; M.terr.coolT = G.time + 30; }
   G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : 8);
   newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
   if (M.car) M.car.marked = false;
@@ -3512,7 +3644,7 @@ function drawGround(V) {
       const ys = s < 0 ? ny - road / 2 : ny + half; for (let x = nx - half + 3; x < nx + half - 3; x += 10) ctx.fillRect(x, ys + 2, 5, sw - 4);
     }
   }
-  drawBridges(V);
+  drawBridges(V); drawTerritories(V);
 }
 function drawGroundProps(V) {
   for (const p of G.city.props) {
@@ -3864,6 +3996,7 @@ function drawMini() {
     if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
+    drawTerritoriesMini(m, k);
     for (const st of C.gas || []) dot(st.x, st.y, st.burntT > G.time ? '#555555' : '#ff9d2e', R * 1.2);
     if (C.bank) dot(C.bank.x + C.bank.w / 2, C.bank.y + C.bank.h / 2, '#e8c547', R * 1.5);
     dot(C.places.gunshop.x, C.places.gunshop.y, '#7dff4d'); dot(C.places.spray.x, C.places.spray.y, '#d24dff'); dot(C.places.hospital.x, C.places.hospital.y, '#ff6b6b');
@@ -3922,7 +4055,7 @@ function uiInit() {
   $('settingsBtn').onclick = () => { settingsReturn = 'menu'; syncSettingsUI(); showScreen('settings'); };
   $('pauseSettings').onclick = () => { settingsReturn = 'pause'; syncSettingsUI(); showScreen('settings'); };
   $('settingsBack').onclick = () => { readSettingsUI(); showScreen(settingsReturn); };
-  $('resetSave').onclick = () => { if (confirm('Delete your saved cash and weapons? Rogue Rep and best score stay.')) { resetProgress(); $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
+  $('resetSave').onclick = () => { if (confirm('Delete your saved cash, weapons and territories? Rogue Rep and best score stay.')) { resetProgress(); try { delete localStorage[TERR_KEY]; } catch (e) {} $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
   for (const id of ['setControls', 'setDiff', 'setNight', 'setSound', 'setPartner']) $(id).onchange = readSettingsUI;
   $('helpBtn').onclick = () => showMainPanel('help');
   $('helpBack').onclick = () => showMainPanel('main');
@@ -3942,7 +4075,7 @@ function togglePause(on) {
     $('pauseTitle').textContent = G.mode === 'solo' ? 'Paused' : 'Menu (the game keeps running)';
     $('endSessionBtn').hidden = !(G.mode === 'mp' && isHost);
     $('quitBtn').textContent = G.mode === 'solo' ? 'Back to menu' : 'Leave room';
-    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0) + '  ·  Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')';
+    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0) + '  ·  Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')' + (G.city && G.city.territories ? '  ·  Territories ' + terrOwned() + '/' + G.city.territories.length : '');
     showScreen('pause');
   } else showScreen(null);
 }
@@ -4701,6 +4834,7 @@ function hostWorldTick(dt) {
   const shots = G.netShots.filter(s => near(s[0], s[1]) || near(s[2], s[3]));
   if (shots.length) snap.s = shots.slice(-24).map(s => s.map(Math.round).join(',')).join(';');
   if (G.city.bank) snap.bk = bankState();
+  if (G.city.territories) snap.tr = G.city.territories.map(T => T.owner === 'bors' ? 'b' : '0').join('');
   if (G.city.gas) snap.gs = G.city.gas.map(q => q.burntT > G.time ? 1 : 0).join('');
   if (G.helis.length) snap.h = G.helis.map(h => h.id + ',' + Math.round(h.x) + ',' + Math.round(h.y) + ',' + Math.round(h.a * 100) + ',' + Math.round(clamp(h.hp / h.maxHp, 0, 1) * 100)).join(';');
   if (G.netBooms.length) snap.b = G.netBooms.map(b => b.map(Math.round).join(',')).join(';');
@@ -4725,7 +4859,7 @@ function onWorld(v) {
     addTracer(x, y, x2, y2, wk); addFlash(x, y, Math.atan2(y2 - y, x2 - x)); sfx((WEAPONS[wk] || WEAPONS.pistol).sfx, x, y);
     addParticles(h === 1 ? 'blood' : h === 2 ? 'spark' : 'dust', x2, y2, h === 0 ? 2 : 3);
   }
-  heliSnapshot(v.h); applyBankState(v.bk); applyGasState(v.gs);
+  heliSnapshot(v.h); applyBankState(v.bk); applyGasState(v.gs); applyTerrState(v.tr);
   if (v.b) for (const e of String(v.b).split(';')) { const [x, y, r] = e.split(',').map(Number); explosionFx(x, y, r); }
   const w = v.w || {}, stars = w[uid] || 0;
   if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + starLine(stars), 2); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); addRep(10); sfx('alarm', null, null, 1); }
@@ -4745,7 +4879,7 @@ function updateProxies(dt) {
   for (const [id, b] of B.peds) {
     let p = proxPeds.get(id);
     const kind = PED_KINDS[b[4]] || 'civ';
-    if (!p) { p = makePed(kind, b[1], b[2], { id, a: b[3] / 100 }); p.proxy = true; if (kind === 'swat') p.maxHp = 150; proxPeds.set(id, p); G.peds.push(p); }
+    if (!p) { p = makePed(kind, b[1], b[2], { id, a: b[3] / 100 }); p.proxy = true; if (kind === 'swat') p.maxHp = 150; if (kind === 'gang') gangDress(p); proxPeds.set(id, p); G.peds.push(p); }
     const a = A && A.peds.get(id);
     const nx = a ? lerp(a[1], b[1], t) : b[1], ny = a ? lerp(a[2], b[2], t) : b[2];
     const moved = Math.hypot(nx - p.x, ny - p.y);
@@ -4907,7 +5041,7 @@ function startSolo() {
   G.playerName = getName(); G.playerColor = '#ffd24d';
   setupWorld(Math.floor(Math.random() * 1e9), 'solo');
   populateWorld(); spawnPartner(); rebuildHash();
-  const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); rebuildHash();
+  const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); loadTerritories(); rebuildHash();
   enterPlay();
   toast(resumed ? 'Welcome back to Bors City\nYour cash and weapons are still here.' : 'Welcome to Bors City\nBadges on. Rules off.', 2.4);
   startLoop();
