@@ -171,6 +171,7 @@
   @keyframes rdIn { 0% { opacity: 0; transform: translateY(8px); } 8% { opacity: 1; transform: none; } 85% { opacity: 1; } 100% { opacity: 0; } }
   #skillTxt { font-size: 12px; opacity: .85; margin-top: 2px; } #skillTxt.rdy { color: #7dff4d; }
   #slowFx { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(40,90,255,.35) 100%); }
+  #btnShoot { right: 96px; bottom: 230px; font-size: 11px; } body.phoneL #btnShoot { right: 82px; bottom: 84px; width: 56px; height: 56px; }
   #btnSkill { right: 18px; bottom: 222px; font-size: 11px; } #btnSkill.cd { opacity: .4; }
   body.phoneL #btnSkill { right: 14px; bottom: 84px; width: 56px; height: 56px; }
   body.phoneL #radio { left: 50px; bottom: auto; top: 50px; max-width: 42vw; font-size: 11px; padding: 4px 8px; }
@@ -201,6 +202,7 @@
   <button class="tbtn" id="btnBrake" hidden>BRAKE</button>
   <button class="tbtn" id="btnHand" hidden>DRIFT</button>
   <button class="tbtn" id="btnSkill" hidden>RUSH</button>
+  <button class="tbtn" id="btnShoot" hidden>SHOOT</button>
   <button class="tbtn" id="btnPause" hidden>II</button>
   <div id="streak"></div><div id="radio"></div><div id="slowFx" hidden></div>
   <div id="rotate" hidden>Landscape works best</div>
@@ -344,6 +346,10 @@ const PERK_FOCUS_SOLO = Object.assign({}, PERKS.mafl, { run: 1.08 * 1.9, spread:
 const PERK_FOCUS_MP = Object.assign({}, PERKS.mafl, { run: 1.08 * 1.25, spread: 0 });    // multiplayer: no world slow-down, just focus
 function perkOf(p) {
   if (!p || !p.isPlayer) return NO_PERK;
+  if (G.sugarT && G.time < G.sugarT) { const b = basePerk(p); return Object.assign({}, b, { run: b.run * 1.25, car: b.car * 1.08 }); }
+  return basePerk(p);
+}
+function basePerk(p) {
   if (p.char === 'mafl' && skillActive()) return G.mode === 'solo' ? PERK_FOCUS_SOLO : PERK_FOCUS_MP;
   return PERKS[p.char] || NO_PERK;
 }
@@ -393,13 +399,26 @@ function skillHUD() {
   if (isTouch) { const b = $('btnSkill'); b.hidden = !(P.alive && !P.car && !G.busted); b.textContent = left > 0 ? Math.ceil(left) + 's' : S.btn; b.classList.toggle('cd', left > 0); }
 }
 
+// ---- Rogue Rep (saved in this browser; cheats god/guns freeze it)
+const REP_TITLES = [[0, 'Rookie Rogue'], [300, 'Loose Cannon'], [1000, 'Bad Bors'], [2500, 'Off the Books'], [6000, 'Legend of Bors City']];
+function repTitle(n) { let t = REP_TITLES[0][1]; for (const r of REP_TITLES) if (n >= r[0]) t = r[1]; return t; }
+function repGet() { if (G.rep == null) { let v = 0; try { v = parseInt(localStorage.gb_rep, 10) || 0; } catch (e) {} G.rep = Math.max(0, v); } return G.rep; }
+function addRep(n) {
+  if (!n || G.phase !== 'playing' || G.cheats.god || G.cheats.guns) return;
+  const before = repTitle(repGet()); G.rep = Math.max(0, G.rep + n);
+  try { localStorage.gb_rep = String(G.rep); } catch (e) {}
+  const after = repTitle(G.rep);
+  if (n > 0 && after !== before) { toast('PROMOTED!\nRogue Rep: ' + after, 2.6); sfx('mission'); }
+}
+
 // ---- Streak multiplier
 const STREAK_NAMES = { 2: 'DOUBLE TROUBLE', 3: 'TRIPLE THREAT', 4: 'BORS-TASTIC', 5: 'FULL ROGUE' };
 function streakKill() {
   if (!G.streak) G.streak = { n: 0, t: -99 };
   const S = G.streak; if (G.time - S.t > 4) S.n = 0;
-  S.n++; S.t = G.time;
+  S.n++; S.t = G.time; addRep(3);
   if (S.n < 2) return;
+  if (S.n >= 3) addRep(5);
   const name = STREAK_NAMES[Math.min(S.n, 5)] + (S.n > 5 ? ' x' + S.n : '');
   const el = $('streak'); el.textContent = name; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
   if (G.game === 'roam') { const P = G.player; addCash(15 * (S.n - 1), P.x, P.y - 16); }
@@ -851,7 +870,10 @@ function buildCity(seed) {
   city.missions = [
     { ...ePt(blockAt(cc, cr), 'top', 0.5), type: 'hit', label: 'Gang hit' },
     { ...ePt(blockAt(1, cr), 'right', 0.5), type: 'delivery', label: 'Hot delivery' },
-    { ...ePt(blockAt(cols - 3, 1), 'bottom', 0.5), type: 'survive', label: 'Turf war' }
+    { ...ePt(blockAt(cols - 3, 1), 'bottom', 0.5), type: 'survive', label: 'Turf war' },
+    { ...ePt(blockAt(cc + 2, cr + 1), 'left', 0.5), type: 'donut', label: 'Donut Duty' },
+    { ...ePt(blockAt(2, rows - 2), 'top', 0.5), type: 'rampage', label: 'Rampage' },
+    { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' }
   ];
   city.turfs = [blockAt(0, 0), blockAt(cols - 1, 0), blockAt(0, rows - 1), blockAt(cols - 1, rows - 1)];
   city.start = ePt(blockAt(cc - 1, cr), 'bottom', 0.5);
@@ -1441,7 +1463,7 @@ function addHeat(n, who) {
   if (!G.isSim) { if (who.isPlayer) netEvent({ t: 'heat', n }); return; }
   const W = wantedOf(who); W.heat = Math.min(W.heat + n, 420); W.lastCrimeT = G.time;
   const s = starsFor(W.heat);
-  if (s > W.stars) { W.stars = s; W.spawnT = 0; if (who.isPlayer) { toast('WANTED ' + '★'.repeat(s) + (s >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(s >= 5 ? 'rogue5' : 'wanted', s >= 5); sfx('alarm', null, null, 1); } }
+  if (s > W.stars) { W.stars = s; W.spawnT = 0; if (who.isPlayer) { toast('WANTED ' + '★'.repeat(s) + (s >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(s >= 5 ? 'rogue5' : 'wanted', s >= 5); addRep(10); sfx('alarm', null, null, 1); } }
 }
 function clearWanted(who) {
   const W = wantedOf(who); const had = W.stars > 0;
@@ -2098,6 +2120,14 @@ function startMission(m, who) {
     M.objective = { x: c.x, y: c.y }; M.timer = 90; M.text = 'Get to the marked car';
   } else if (m.type === 'survive') {
     M.objective = { x: wp.x, y: wp.y }; M.timer = 60; M.nextWaveT = G.time + 2; M.text = 'Survive the turf war';
+  } else if (m.type === 'donut') {
+    M.route = []; let px = wp.x, py = wp.y;
+    for (let i = 0; i < 5; i++) { const pt = randomSidewalkPoint(px, py, 380, 700) || randomSidewalkPoint(px, py, 150, 2000); if (!pt) break; M.route.push({ x: pt.x, y: pt.y }); px = pt.x; py = pt.y; }
+    if (!M.route.length) M.route.push({ x: wp.x + 200, y: wp.y });
+    M.idx = 0; M.timer = 70; M.objective = M.route[0]; M.text = 'Donut Duty: shop 1/' + M.route.length;
+  } else if (m.type === 'rampage') {
+    M.timer = 30; M.nextWaveT = G.time + 0.5; M.text = 'RAMPAGE: 0 kills';
+    M.objective = { x: wp.x, y: wp.y };
   }
   G.mission = M; m.cooldownT = G.time + 99999;
   newsAll(m.label.toUpperCase() + (G.mode === 'mp' ? '\nstarted by ' + (who.name || 'a player') : ''), 1.8, 'mission');
@@ -2109,7 +2139,7 @@ function missionUpdate(dt) {
   const P = G.player;
   if (G.mode === 'solo') { if (!P.alive || G.busted) { failMission(P.alive ? 'You got busted' : 'You died'); return; } }
   else if (!missionPlayersUp().length) { failMission('Everyone is down'); return; }
-  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0) { failMission('Out of time'); return; } }
+  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else failMission('Out of time'); return; } }
   if (M.type === 'hit') {
     const alive = M.targets.filter(g => g.alive);
     M.text = 'Take out the gang crew: ' + alive.length + ' left';
@@ -2142,14 +2172,64 @@ function missionUpdate(dt) {
       newsAll('WAVE ' + M.waves, 1);
     }
     if (M.timer <= 0.05 && M.timer > 0) completeMission(CFG.economy.mission.survive);
+  } else if (M.type === 'donut') {
+    const o = M.route[M.idx];
+    for (const T of missionPlayersUp()) {
+      const tp = posOf(T); if (dist(tp.x, tp.y, o.x, o.y) > 46) continue;
+      M.idx++; M.timer += 6;
+      if (T.isPlayer) sugarRush(); else sendMsg(T.uid, { t: 'sugar' });
+      addParticles('cash', o.x, o.y, 6);
+      if (M.idx >= M.route.length) { completeMission(CFG.economy.mission.delivery + 150, 'Five donuts. Zero regrets.'); return; }
+      newsAll('DONUT ' + M.idx + '/' + M.route.length + '\nSugar rush! Next shop marked', 1.3, 'pickup');
+      break;
+    }
+    M.objective = M.route[Math.min(M.idx, M.route.length - 1)];
+    M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
+  } else if (M.type === 'rampage') {
+    const ups = missionPlayersUp();
+    if (G.time >= M.nextWaveT && ups.length) {
+      M.nextWaveT = G.time + 7; M.waves++;
+      const n = M.waves === 1 ? 6 : 4;
+      for (let i = 0; i < n; i++) {
+        const T = ups[i % ups.length], tp = posOf(T), pt = randomSidewalkPoint(tp.x, tp.y, 320, 620);
+        if (pt) { const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.mission = M; g.state = 'engage'; g.target = T; g.lastSeenT = G.time; g.lastTargetPos = { x: tp.x, y: tp.y }; g.sight = 900; M.targets.push(g); }
+      }
+    }
+    const alive = M.targets.filter(g => g.alive);
+    if (alive.length) { const tp = posOf(ups[0] || P); alive.sort((a, b) => dist(a.x, a.y, tp.x, tp.y) - dist(b.x, b.y, tp.x, tp.y)); M.objective = { x: alive[0].x, y: alive[0].y }; }
+    M.text = 'RAMPAGE: ' + M.kills + ' kills (' + Math.ceil(M.timer) + 's)';
   }
 }
+function finishRampage(M) {
+  const k = M.kills || 0;
+  if (k >= 8) { completeMission(40 * k, 'RAMPAGE! ' + k + ' kills'); M.marker.cooldownT = G.time + 60; }
+  else failMission('Only ' + k + ' kills. Rookie numbers.');
+}
+function driveBy(P, c) {
+  const w = P.weapon === 'smg' && P.owned && P.owned.smg && ((P.ammo.smg || 0) > 0 || unlimitedAmmo(P)) ? 'smg' : 'pistol';
+  let aim;
+  if (!isTouch && mouse.seen) { const pw = screenToWorld(mouse.x, mouse.y); aim = Math.atan2(pw.y - c.y, pw.x - c.x); }
+  else {
+    let best = null, bs = 1e9;
+    for (const q of G.peds) {
+      if (q === P || !q.alive || q.car || !isEnemy(q)) continue;
+      const d = dist(c.x, c.y, q.x, q.y); if (d > 460 || d >= bs || !hasLOS(c.x, c.y, q.x, q.y)) continue;
+      bs = d; best = q;
+    }
+    aim = best ? Math.atan2(best.y - c.y, best.x - c.x) : c.a + Math.PI / 2;
+  }
+  const keepW = P.weapon, keepA = P.a;
+  P.weapon = w; P.a = aim;
+  fireWeapon(P, aim);
+  P.weapon = keepW; P.a = keepA;
+}
+function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
   G.mission = null; M.marker.cooldownT = G.time + 20;
   const ps = allPlayers(), share = ps.length > 1 ? Math.ceil(reward / ps.length / 10) * 10 : reward;
   for (const q of ps) {
-    if (q.isPlayer) { addCash(share, q.x, q.y); G.stats.score += 100; G.stats.missions = (G.stats.missions || 0) + 1; }
+    if (q.isPlayer) { addCash(share, q.x, q.y); G.stats.score += 100; G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); }
     else sendMsg(q.uid, { t: 'reward', cash: share, score: 100, mission: 1 });
   }
   newsAll('MISSION PASSED  +$' + share + (ps.length > 1 ? ' each' : '') + (extra ? '\n' + extra : '') + '\nCase closed. Donuts on the house.', 2.8, 'mission');
@@ -2190,7 +2270,7 @@ const IN = { mx: 0, my: 0, run: false, aimA: 0, aimActive: false, aimAuto: false
 const keys = {};
 const mouse = { x: 0, y: 0, l: false, r: false, seen: false, downT: 0, downX: 0, downY: 0, moved: false };
 const sticks = { left: null, right: null };
-const btn = { brake: false, hand: false };
+const btn = { brake: false, hand: false, shoot: false };
 const STICK_R = 60;
 const isTouch = (navigator.maxTouchPoints || 0) > 0;
 let canvas, ctx, cw = 0, ch = 0, dpr = 1, scale = 1, baseScale = 1;
@@ -2239,7 +2319,7 @@ function inputInit() {
   canvas.addEventListener('wheel', e => { IN.cycle = e.deltaY > 0 ? 1 : -1; e.preventDefault(); }, { passive: false });
   document.addEventListener('touchmove', e => { if (G.phase === 'playing' && e.target === canvas) e.preventDefault(); }, { passive: false });
   const hold = (id, key) => { const b = $(id); const up = () => { btn[key] = false; b.classList.remove('on'); }; b.addEventListener('pointerdown', e => { e.preventDefault(); btn[key] = true; b.classList.add('on'); }); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up); };
-  hold('btnBrake', 'brake'); hold('btnHand', 'hand');
+  hold('btnBrake', 'brake'); hold('btnHand', 'hand'); hold('btnShoot', 'shoot');
   $('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); IN.interact = true; });
   $('btnWpn').addEventListener('pointerdown', e => { e.preventDefault(); IN.cycle = 1; });
   $('btnSkill').addEventListener('pointerdown', e => { e.preventDefault(); trySkill(); });
@@ -2317,6 +2397,7 @@ function applyCheatCode(code) {
   }
   if (code === CFG.cheats.donuts) {
     if (P) { P.hp = P.maxHp; P.armor = 100; }
+    if (G.phase === 'playing') G.sugarT = G.time + 12;
     toast('DONUTS!\nFull health and armor. Sugar rush approved.', 2); sfx('mission'); return true;
   }
   if (code === CFG.cheats.rogue) {
@@ -2466,6 +2547,7 @@ function updatePlayerCar(dt) {
   if (!P.car) return;
   P.x = c.x; P.y = c.y; P.a = c.a;
   if (G.cheats.god) P.hp = P.maxHp;
+  if ((keys.KeyG || btn.shoot) && !c.dead && c.driver === P && !G.busted) driveBy(P, c);
   if (c.dead && !G.isSim && G.mode === 'mp') { playerExitCar(); toast('Bailed out!', 0.8); return; }
   if (c.dead && c.burnT && G.time > G.fx.hintT) { G.fx.hintT = G.time + 1.5; toast('GET OUT!', 0.8); }
 }
@@ -2614,6 +2696,14 @@ function drawPickups(V) {
     ctx.fillStyle = '#111'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(T.label, k.x, k.y + bob);
   }
 }
+function drawSkull(x, y) {
+  ctx.fillStyle = '#fff'; circle(ctx, x, y - 2, 8); ctx.fillRect(x - 5, y + 3, 10, 6);
+  ctx.fillStyle = '#1a1a1a'; circle(ctx, x - 3, y - 2, 2.2); circle(ctx, x + 3, y - 2, 2.2); ctx.fillRect(x - 3, y + 5, 1.5, 4); ctx.fillRect(x + 1.5, y + 5, 1.5, 4);
+}
+function drawDonut(x, y) {
+  ctx.lineWidth = 6; ctx.strokeStyle = '#c98a4b'; ctx.beginPath(); ctx.arc(x, y, 8, 0, TAU); ctx.stroke();
+  ctx.lineWidth = 4; ctx.strokeStyle = '#ff8fc7'; ctx.beginPath(); ctx.arc(x, y, 8, 0, TAU); ctx.stroke();
+}
 function drawMarkers(V) {
   if (G.game !== 'roam') return;
   const C = G.city, t = G.time;
@@ -2622,7 +2712,7 @@ function drawMarkers(V) {
     ctx.globalAlpha = 0.2; ctx.fillStyle = color; circle(ctx, x, y, r); ctx.globalAlpha = 1;
     if (label) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y); }
   };
-  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0)) ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR');
+  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0)) { if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
   const gs = C.places.gunshop; if (inV(V, gs.x, gs.y)) ring(gs.x, gs.y, 20, '#7dff4d', 'GUNS');
   const sp = C.places.spray; if (inV(V, sp.x, sp.y)) ring(sp.x, sp.y, 32, '#d24dff', 'SPRAY');
   const hs = C.places.hospital; if (inV(V, hs.x, hs.y)) { ctx.fillStyle = '#fff'; ctx.fillRect(hs.x - 3, hs.y - 10, 6, 20); ctx.fillRect(hs.x - 10, hs.y - 3, 20, 6); ctx.fillStyle = '#ff3b3b'; ctx.fillRect(hs.x - 2, hs.y - 9, 4, 18); ctx.fillRect(hs.x - 9, hs.y - 2, 18, 4); }
@@ -2759,7 +2849,7 @@ function drawMini() {
   const R = 4.5 / k, dot = (x, y, color, r) => { m.fillStyle = color; m.beginPath(); m.arc(x, y, r || R, 0, TAU); m.fill(); };
   const pp = playerPos();
   if (G.game === 'roam') {
-    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, '#ffd24d', R * 1.3);
+    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     dot(C.places.gunshop.x, C.places.gunshop.y, '#7dff4d'); dot(C.places.spray.x, C.places.spray.y, '#d24dff'); dot(C.places.hospital.x, C.places.hospital.y, '#ff6b6b');
     if (G.mission && G.mission.objective) { const o = G.mission.objective; m.strokeStyle = '#ffd24d'; m.lineWidth = 2 / k; m.beginPath(); m.arc(o.x, o.y, R * 2 + Math.sin(G.time * 6) * R, 0, TAU); m.stroke(); }
   }
@@ -2799,6 +2889,7 @@ function uiInit() {
     $('charCard').innerHTML = G.settings.char === 'bary'
       ? '<b>BARY \u00b7 The Muscle</b><br>600 HP, takes 10% less damage, bat hits 50% harder and sends people flying'
       : '<b>MaFl \u00b7 The Driver</b><br>Runs 8% faster, cars get 6% more power and sharper steering, steadier aim';
+    $('charCard').innerHTML += '<br><small style="opacity:.75">Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')</small>';
   };
   for (const b of $('charSeg').querySelectorAll('button')) b.onclick = () => setChar(b.dataset.char);
   setChar(G.settings.char);
@@ -2828,7 +2919,7 @@ function togglePause(on) {
     $('pauseTitle').textContent = G.mode === 'solo' ? 'Paused' : 'Menu (the game keeps running)';
     $('endSessionBtn').hidden = !(G.mode === 'mp' && isHost);
     $('quitBtn').textContent = G.mode === 'solo' ? 'Back to menu' : 'Leave room';
-    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0);
+    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0) + '  ·  Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')';
     showScreen('pause');
   } else showScreen(null);
 }
@@ -2857,7 +2948,7 @@ function updateHUD() {
   let hint = '';
   const nearCar = P.alive && !P.car ? nearestEnterableCar(P, 90) : null;
   if (P.alive && !G.busted) {
-    if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : 'E: get out');
+    if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : 'E: get out  ·  G: drive-by');
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
@@ -2867,7 +2958,7 @@ function updateHUD() {
   if (isTouch) {
     const inCar = !!P.car;
     $('btnAct').hidden = !(P.alive && (inCar || nearCar)); $('btnAct').textContent = inCar ? 'EXIT' : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
-    $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar;
+    $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar; $('btnShoot').hidden = !(inCar && P.alive);
     $('btnWpn').hidden = inCar || playerWeaponList(P).length < 2;
     $('btnPause').hidden = false;
   }
@@ -3473,8 +3564,9 @@ function onMsg(m) {
       break;
     }
     case 'deny': P.pendingCar = null; break;
-    case 'reward': if (m.cash) addCash(m.cash, m.x != null ? m.x : P.x, m.y != null ? m.y : P.y); G.stats.score += m.score || 0; if (m.kill) { G.stats.kills++; streakKill(); } if (m.mission) G.stats.missions = (G.stats.missions || 0) + 1; break;
+    case 'reward': if (m.cash) addCash(m.cash, m.x != null ? m.x : P.x, m.y != null ? m.y : P.y); G.stats.score += m.score || 0; if (m.kill) { G.stats.kills++; streakKill(); } if (m.mission) { G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); } break;
     case 'pickup': pickupEffect(P, m.ty, m.n); break;
+    case 'sugar': sugarRush(); break;
     case 'bust': bustPlayer(); break;
     case 'cardmg': if (P.car && !P.car.dead) damageCar(P.car, m.d, { kind: 'gun' }); break;
     case 'exitcar': if (P.car) playerExitCar(); break;
@@ -3585,7 +3677,7 @@ function onWorld(v) {
   }
   if (v.b) for (const e of String(v.b).split(';')) { const [x, y, r] = e.split(',').map(Number); explosionFx(x, y, r); }
   const w = v.w || {}, stars = w[uid] || 0;
-  if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + (stars >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); sfx('alarm', null, null, 1); }
+  if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + (stars >= 5 ? '\nNow it\'s Bors vs. everybody' : ''), 1.8); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); addRep(10); sfx('alarm', null, null, 1); }
   else if (stars === 0 && G.wanted.stars > 0) toast('Wanted level cleared\nInternal Affairs lost the paperwork', 1.8);
   G.wanted.stars = stars; G.netStars = w;
   const k = String(v.k || ''); for (let i = 0; i < G.pickups.length; i++) G.pickups[i].taken = k[i] === '1';
@@ -3736,7 +3828,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = brotherLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null;
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0;
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) { P.owned = { bat: true, pistol: true, smg: true, shotgun: true }; P.ammo.smg = WEAPONS.smg.ammoMax; P.ammo.shotgun = WEAPONS.shotgun.ammoMax; }
   G.player = P; G.peds.push(P);
@@ -3833,7 +3925,7 @@ function bustPlayer(T) {
   const P = G.player; if (G.busted || !P.alive || G.game !== 'roam') return;
   if (P.car) playerExitCar();
   G.busted = true; G.deadT = G.time + 3.2; P.wx = P.wy = 0; P.vx = P.vy = 0;
-  bigText('BORSTED!', 'Arrested by your ex-colleagues. Awkward.\n' + (G.cheats.guns ? '10% of your cash gone' : 'Weapons confiscated, 10% of your cash gone')); banter('busted', true); sfx('busted');
+  bigText('BORSTED!', 'Arrested by your ex-colleagues. Awkward.\n' + (G.cheats.guns ? '10% of your cash gone' : 'Weapons confiscated, 10% of your cash gone')); banter('busted', true); addRep(-25); sfx('busted');
   G.wanted.heat = 0; G.wanted.stars = 0; G.stats.cash = Math.floor(G.stats.cash * 0.9);
   if (!G.cheats.guns) { P.owned = { pistol: true, bat: true }; P.weapon = 'pistol'; P.ammo.smg = 0; P.ammo.shotgun = 0; }
 }
