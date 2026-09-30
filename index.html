@@ -307,7 +307,7 @@ const CFG = {
   netHz: 15, interpDelayMs: 120,
   worldHz: 8, worldInterpMs: 200, interestRadius: 1150,   // free roam: host world snapshots
   pvpDamage: 2.5,             // player vs player damage multiplier (players have 5x health)
-  city: { cols: 10, rows: 8, block: 300, road: 120, sidewalk: 20 },
+  city: { cols: 12, rows: 10, block: 300, road: 120, sidewalk: 20 },
   view: { w: 1120, h: 630 },  // world pixels visible on a desktop screen (roughly)
   ped: { walk: 150, run: 265, accel: 1100, turn: 14, radius: 13, hp: 100 },
   player: { hp: 500, regenAfter: 6, regenTo: 200, regenRate: 20, healthPickup: 200, shopHealth: 250 },
@@ -522,7 +522,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 15;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 16;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -829,7 +829,7 @@ function buildCity(seed) {
   const city = { seed, cols, rows, block, road, sw, pitch, W, H, blocks: [], buildings: [], props: [], nodes: [], turfs: [], places: {}, missions: [] };
   const cc = Math.floor(cols / 2), cr = Math.floor(rows / 2);
   const parks = new Set([1 + ',' + (rows - 2), (cols - 3) + ',' + 1]);
-  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : 'residential';
+  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : 'residential';
   const addB = (b, blk) => { b.block = blk; blk.buildings.push(b); city.buildings.push(b); return b; };
   const addP = (p, blk) => { blk.props.push(p); city.props.push(p); return p; };
   const ePt = (blk, side, t) => side === 'top' ? { x: blk.x + blk.w * t, y: blk.y - sw / 2 } : side === 'bottom' ? { x: blk.x + blk.w * t, y: blk.y + blk.h + sw / 2 } : side === 'left' ? { x: blk.x - sw / 2, y: blk.y + blk.h * t } : { x: blk.x + blk.w + sw / 2, y: blk.y + blk.h * t };
@@ -899,6 +899,18 @@ function buildCity(seed) {
       addP({ x: hx + hw / 2, y: hy + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);   // cars cannot squeeze through the doorway
       city.safehouse = { x: hx, y: hy, w: hw, h: hh, t, door: { x: hx + hw / 2, y: hy - sw / 2 - 20 }, bed: { x: hx + hw - 44, y: hy + hh - 40 }, garage: lanePt(blk, 'top', 0.85) };
       for (let k = 0; k < 4; k++) { const tx = bx + rr(20, block - 20), ty = by + rr(block - 90, block - 20); addP({ x: tx, y: ty, r: 7, canopy: rr(13, 18), type: 'tree', pedBlock: true, carBlock: true }, blk); }
+    } else if (blk.district === 'river') {
+      // Bors River: water inside a stone embankment; every road crossing it is a bridge
+      blk.base = '#8c8577'; const m = 14;
+      addB({ x: bx + m, y: by + m, w: block - 2 * m, h: block - 2 * m, kind: 'water', color: '#2c5f8a', height: 0, river: true }, blk);
+      city.riverRow = r;
+    } else if (blk.district === 'gas') {
+      // Gas station: pumps under a canopy near the top street, a small shop at the back. Explosions nearby set it off.
+      blk.base = '#8b8d90';
+      addB({ x: bx + 40, y: by + 176, w: 130, h: 70, kind: 'gasshop', color: '#e9e4d8', height: 1 }, blk);
+      const pumps = [bx + 80, bx + 150, bx + 220].map(px => addP({ x: px, y: by + 84, r: 7, type: 'pump', pedBlock: true, carBlock: true }, blk));
+      for (let k = 0; k < 2; k++) addP({ x: bx + rr(200, 280), y: by + rr(190, 280), r: 7, canopy: rr(12, 16), type: 'tree', pedBlock: true, carBlock: true }, blk);
+      (city.gas = city.gas || []).push({ x: bx + 150, y: by + 84, blk, pumps, burntT: 0, fuse: 0, by: null });
     } else if (blk.district === 'bank') {
       // Bors National Bank: lobby with teller counter, vault room at the back behind a steel door
       blk.base = '#6c727c';
@@ -1308,7 +1320,7 @@ function explosionFx(x, y, radius) {
   sfx('explosion', x, y);
 }
 function explodeAt(x, y, radius, dmg, by) {
-  bankBlast(x, y, radius, by);
+  bankBlast(x, y, radius, by); gasBlast(x, y, radius, by);
   explosionFx(x, y, radius);
   if (G.mode === 'mp' && G.isSim) G.netBooms.push([x, y, radius]);
   for (const p of G.peds) {
@@ -2258,7 +2270,7 @@ function markersUpdate() {
       } else toast('Respray costs $' + CFG.economy.price.respray, 1.5);
     }
   }
-  garageUpdate(); barUpdate(); bankUpdate();
+  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate();
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
@@ -3014,6 +3026,47 @@ function heistUpdate(M) {
     return;
   }
 }
+// ---- v16: river bridges (drawing only) and explosive gas stations (host/solo decides)
+function drawBridges(V) {
+  const C = G.city; if (C.riverRow == null) return;
+  const y0 = C.road + C.riverRow * C.pitch, y1 = y0 + C.block; if (y1 < V.y0 || y0 > V.y1) return;
+  for (let i = 0; i <= C.cols; i++) {
+    const x0 = i * C.pitch, x1 = x0 + C.road; if (x1 < V.x0 - 20 || x0 > V.x1 + 20) continue;
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(x1, y0 + 6, 10, C.block - 12);
+    ctx.fillStyle = '#b7b1a4'; ctx.fillRect(x0 - 5, y0, 5, C.block); ctx.fillRect(x1, y0, 5, C.block);
+    ctx.fillStyle = '#6f695e'; for (let y = y0 + 6; y < y1; y += 24) { ctx.fillRect(x0 - 6, y, 7, 5); ctx.fillRect(x1 - 1, y, 7, 5); }
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(x0, y0, C.road, 3); ctx.fillRect(x0, y1 - 3, C.road, 3);
+  }
+  const mid = C.blocks.find(b => b.district === 'river' && b.c === Math.floor(C.cols / 2));
+  if (mid && inV(V, mid.x + mid.w / 2, mid.y + mid.h / 2, 150)) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.font = 'bold 22px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS RIVER', mid.x + mid.w / 2, mid.y + mid.h / 2); }
+}
+const GAS = { radius: 190, dmg: 150, repairSec: 120, reach: 60 };
+function gasBlast(x, y, radius, by) {
+  const L = G.city && G.city.gas; if (!L || !G.isSim || G.game !== 'roam') return;
+  for (const st of L) {
+    if (st.fuse || st.burntT > G.time) continue;
+    let near = false; for (const p of st.pumps) if (dist(x, y, p.x, p.y) < Math.min(radius, 140) * 0.6 + GAS.reach) near = true;
+    if (!near) continue;
+    st.fuse = G.time + 0.35; st.by = by || null;
+  }
+}
+function gasUpdate() {
+  const L = G.city && G.city.gas; if (!L || !G.isSim) return;
+  for (const st of L) {
+    if (!st.fuse || G.time < st.fuse) continue;
+    st.fuse = 0; st.burntT = G.time + GAS.repairSec;
+    const by = st.by; st.by = null;
+    explodeAt(st.x, st.y, GAS.radius, GAS.dmg, by);
+    for (const p of st.pumps) addFire(p.x, p.y + 12, 42, 8, by, false);
+    newsAll('GAS STATION EXPLOSION\nBors Fuel will be closed for a while.', 1.8);
+    if (by && isPlayerPed(by)) { addHeat(60, by); if (by.isPlayer) toast('KA-BOOM!\nFill \'er up? Too late.', 1.8); }
+  }
+}
+function applyGasState(v) {
+  const L = G.city && G.city.gas; if (G.isSim || !L) return;
+  const bits = String(v || '');
+  L.forEach((st, i) => { st.burntT = bits[i] === '1' ? G.time + 5 : 0; });
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
@@ -3408,7 +3461,14 @@ function drawGround(V) {
     ctx.fillStyle = '#8d8d90'; ctx.fillRect(b.x - sw, b.y - sw, b.w + 2 * sw, b.h + 2 * sw);
     ctx.strokeStyle = 'rgba(0,0,0,.28)'; ctx.lineWidth = 1.5; ctx.strokeRect(b.x - sw + 0.75, b.y - sw + 0.75, b.w + 2 * sw - 1.5, b.h + 2 * sw - 1.5);
     ctx.fillStyle = b.base; ctx.fillRect(b.x, b.y, b.w, b.h);
-    if (b.district === 'residential') { for (const lot of b.lots) { ctx.fillStyle = lot.color; ctx.fillRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); } ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; for (const lot of b.lots) ctx.strokeRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); }
+    if (b.district === 'gas') {
+      const st = (G.city.gas || []).find(q => q.blk === b), burnt = st && st.burntT > G.time;
+      ctx.fillStyle = burnt ? '#3a3533' : 'rgba(255,255,255,.85)'; ctx.fillRect(b.x + 30, b.y + 42, b.w - 60, 84);
+      if (!burnt) { ctx.fillStyle = '#d62828'; ctx.fillRect(b.x + 30, b.y + 42, b.w - 60, 9); ctx.fillStyle = '#fff'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS FUEL', b.x + b.w / 2, b.y + 47); }
+      ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 30, b.y + 42, b.w - 60, 84);
+    }
+    else if (b.district === 'river') { ctx.fillStyle = '#6f695e'; ctx.fillRect(b.x, b.y, b.w, 6); ctx.fillRect(b.x, b.y + b.h - 6, b.w, 6); }
+    else if (b.district === 'residential') { for (const lot of b.lots) { ctx.fillStyle = lot.color; ctx.fillRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); } ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; for (const lot of b.lots) ctx.strokeRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); }
     else if (b.district === 'harbour') { ctx.strokeStyle = 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.beginPath(); for (let gx = b.x; gx <= b.x + b.w; gx += 40) { ctx.moveTo(gx, b.y); ctx.lineTo(gx, b.y + b.h); } ctx.stroke(); ctx.fillStyle = '#e8c547'; ctx.fillRect(b.x + b.w * 0.5, b.y + 20, 3, b.h - 40); for (const pr of b.piers || []) { ctx.fillStyle = '#7a5a36'; ctx.fillRect(pr.x, pr.y, pr.w, pr.h); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = pr.x + 6; x < pr.x + pr.w; x += 7) { ctx.moveTo(x, pr.y); ctx.lineTo(x, pr.y + pr.h); } ctx.stroke(); } }
     else if (b.district === 'oldtown') { ctx.fillStyle = b.plaza ? '#cdbf9f' : '#a8997c'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 1; ctx.beginPath(); for (let gy = b.y; gy <= b.y + b.h; gy += 12) { ctx.moveTo(b.x, gy); ctx.lineTo(b.x + b.w, gy); } for (let gx = b.x; gx <= b.x + b.w; gx += 16) { ctx.moveTo(gx, b.y); ctx.lineTo(gx, b.y + b.h); } ctx.stroke(); }
     else if (b.district === 'bank' && G.city.bank) {
@@ -3452,6 +3512,7 @@ function drawGround(V) {
       const ys = s < 0 ? ny - road / 2 : ny + half; for (let x = nx - half + 3; x < nx + half - 3; x += 10) ctx.fillRect(x, ys + 2, 5, sw - 4);
     }
   }
+  drawBridges(V);
 }
 function drawGroundProps(V) {
   for (const p of G.city.props) {
@@ -3460,12 +3521,21 @@ function drawGroundProps(V) {
       case 'tree': ctx.fillStyle = 'rgba(0,0,0,.28)'; circle(ctx, p.x + 6, p.y + 6, p.canopy * 0.9); ctx.fillStyle = '#4a2f17'; circle(ctx, p.x, p.y, 4); break;
       case 'lamp': ctx.fillStyle = '#2b2b30'; circle(ctx, p.x, p.y, 3.5); ctx.fillStyle = G.settings.night ? '#fff0b0' : '#b9b9c2'; circle(ctx, p.x, p.y, 2); break;
       case 'bench': ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-13, -2, 28, 8); ctx.fillStyle = '#7a5230'; ctx.fillRect(-14, -4, 28, 8); ctx.restore(); break;
+      case 'pump': { const st = (G.city.gas || []).find(q => q.pumps.includes(p)), burnt = st && st.burntT > G.time; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(p.x - 6, p.y - 8, 14, 18); ctx.fillStyle = burnt ? '#2b2b2b' : '#c0392b'; ctx.fillRect(p.x - 7, p.y - 10, 14, 18); if (!burnt) { ctx.fillStyle = '#f2f2f2'; ctx.fillRect(p.x - 5, p.y - 8, 10, 6); ctx.fillStyle = '#222'; ctx.fillRect(p.x + 7, p.y - 4, 3, 8); } break; }
       case 'bollard': ctx.fillStyle = '#2a2a2a'; circle(ctx, p.x, p.y, 4); ctx.fillStyle = '#555'; circle(ctx, p.x, p.y, 2); break;
       case 'hydrant': ctx.fillStyle = '#c0392b'; circle(ctx, p.x, p.y, 3.5); ctx.fillStyle = '#e74c3c'; circle(ctx, p.x, p.y, 1.8); break;
     }
   }
 }
 function drawBuilding(b) {
+  if (b.kind === 'gasshop') {
+    const st = (G.city.gas || []).find(q => q.blk === b.block), burnt = st && st.burntT > G.time;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(b.x + 8, b.y + 8, b.w, b.h);
+    ctx.fillStyle = burnt ? '#2e2a28' : b.color; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = burnt ? '#1c1a19' : '#d62828'; ctx.fillRect(b.x, b.y, b.w, 12);
+    if (!burnt) { ctx.fillStyle = '#9fd3ff'; ctx.fillRect(b.x + 12, b.y + 22, b.w - 24, 16); ctx.fillStyle = '#333'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('SNACKS  ·  DONUTS', b.x + b.w / 2, b.y + 54); }
+    return;
+  }
   if (b.kind === 'vaultdoor') {
     if (b.open) { ctx.fillStyle = '#5c636b'; ctx.fillRect(b.x - 2, b.y - 30, 8, 32); ctx.fillStyle = '#9aa3ad'; ctx.fillRect(b.x + 2, b.y - 30, 4, 30); return; }
     ctx.fillStyle = '#5c636b'; ctx.fillRect(b.x, b.y, b.w, b.h);
@@ -3794,6 +3864,7 @@ function drawMini() {
     if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0)) dot(mm.x, mm.y, mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
+    for (const st of C.gas || []) dot(st.x, st.y, st.burntT > G.time ? '#555555' : '#ff9d2e', R * 1.2);
     if (C.bank) dot(C.bank.x + C.bank.w / 2, C.bank.y + C.bank.h / 2, '#e8c547', R * 1.5);
     dot(C.places.gunshop.x, C.places.gunshop.y, '#7dff4d'); dot(C.places.spray.x, C.places.spray.y, '#d24dff'); dot(C.places.hospital.x, C.places.hospital.y, '#ff6b6b');
     if (G.mission && G.mission.objective) { const o = G.mission.objective; m.strokeStyle = '#ffd24d'; m.lineWidth = 2 * ms / k; m.beginPath(); m.arc(o.x, o.y, R * 2 + Math.sin(G.time * 6) * R, 0, TAU); m.stroke(); }
@@ -4471,7 +4542,7 @@ function netFire(x, y, x2, y2, w) { if (!roomRef) return; shotN++; roomRef.child
 function onFx(s) {
   if (s.key === uid || G.phase !== 'playing') return;
   const f = s.val(); if (!f) return;
-  if (f.w === 'boom') { explosionFx(f.x, f.y, clamp(f.x2 || 120, 40, 200)); if (G.isSim && G.game === 'roam') { alertPeds(f.x, f.y, 700, 'explosion'); const r = G.remotes[s.key]; if (r && isFinite(f.x) && isFinite(f.y)) bankBlast(f.x, f.y, clamp(f.x2 || 120, 40, 200), r.ped); } return; }
+  if (f.w === 'boom') { explosionFx(f.x, f.y, clamp(f.x2 || 120, 40, 200)); if (G.isSim && G.game === 'roam') { alertPeds(f.x, f.y, 700, 'explosion'); const r = G.remotes[s.key]; if (r && isFinite(f.x) && isFinite(f.y)) { bankBlast(f.x, f.y, clamp(f.x2 || 120, 40, 200), r.ped); gasBlast(f.x, f.y, clamp(f.x2 || 120, 40, 200), r.ped); } } return; }
   if (f.w === 'fire') { addFire(f.x, f.y, clamp(f.x2 || 70, 30, 120), clamp(f.y2 || 6, 1, 10), null, true); sfx('glass', f.x, f.y); return; }
   if (WEAPONS[f.w] && WEAPONS[f.w].proj) {
     const pr = { kind: WEAPONS[f.w].proj, x: f.x, y: f.y, vx: (f.x2 || 0) / 100, vy: (f.y2 || 0) / 100, t0: G.time, by: null, fx: true, fuse: WEAPONS[f.w].fuse || 0 };
@@ -4630,6 +4701,7 @@ function hostWorldTick(dt) {
   const shots = G.netShots.filter(s => near(s[0], s[1]) || near(s[2], s[3]));
   if (shots.length) snap.s = shots.slice(-24).map(s => s.map(Math.round).join(',')).join(';');
   if (G.city.bank) snap.bk = bankState();
+  if (G.city.gas) snap.gs = G.city.gas.map(q => q.burntT > G.time ? 1 : 0).join('');
   if (G.helis.length) snap.h = G.helis.map(h => h.id + ',' + Math.round(h.x) + ',' + Math.round(h.y) + ',' + Math.round(h.a * 100) + ',' + Math.round(clamp(h.hp / h.maxHp, 0, 1) * 100)).join(';');
   if (G.netBooms.length) snap.b = G.netBooms.map(b => b.map(Math.round).join(',')).join(';');
   G.netShots.length = 0; G.netBooms.length = 0;
@@ -4653,7 +4725,7 @@ function onWorld(v) {
     addTracer(x, y, x2, y2, wk); addFlash(x, y, Math.atan2(y2 - y, x2 - x)); sfx((WEAPONS[wk] || WEAPONS.pistol).sfx, x, y);
     addParticles(h === 1 ? 'blood' : h === 2 ? 'spark' : 'dust', x2, y2, h === 0 ? 2 : 3);
   }
-  heliSnapshot(v.h); applyBankState(v.bk);
+  heliSnapshot(v.h); applyBankState(v.bk); applyGasState(v.gs);
   if (v.b) for (const e of String(v.b).split(';')) { const [x, y, r] = e.split(',').map(Number); explosionFx(x, y, r); }
   const w = v.w || {}, stars = w[uid] || 0;
   if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + starLine(stars), 2); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); addRep(10); sfx('alarm', null, null, 1); }
