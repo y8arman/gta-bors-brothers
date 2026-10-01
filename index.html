@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070b1e">
-<title>Bors Bros V26</title>
+<title>Bors Bros V29</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&display=swap">
@@ -182,6 +182,7 @@
   body.phoneL #streak { font-size: 20px; top: auto; bottom: 24%; }
   body.phoneL #skillTxt { display: none; }
   #verTag { position: fixed; left: 8px; bottom: 3px; z-index: 12; font: 10px system-ui, -apple-system, sans-serif; letter-spacing: 1px; color: rgba(255,255,255,.55); text-shadow: 0 1px 2px #000; pointer-events: none; }
+  #btnNitro { right: 174px; bottom: 230px; font-size: 11px; background: rgba(255,140,30,.4); } body.phoneL #btnNitro { right: 150px; bottom: 84px; width: 56px; height: 56px; }
   #btnBoom { right: 174px; bottom: 150px; background: rgba(255,60,60,.35); } body.phoneL #btnBoom { right: 150px; bottom: 16px; }
   #btnChat { left: 14px; top: 140px; width: 46px; height: 34px; border-radius: 8px; font-size: 11px; } body.phoneL #btnChat { left: 8px; top: 88px; width: 34px; height: 28px; font-size: 9px; }
   #chatPanel { position: absolute; left: 66px; top: 140px; display: flex; flex-direction: column; gap: 4px; pointer-events: auto; } body.phoneL #chatPanel { left: 48px; top: 60px; }
@@ -241,6 +242,7 @@
   <button class="tbtn" id="btnSkill" hidden>RUSH</button>
   <button class="tbtn" id="btnShoot" hidden>SHOOT</button>
   <button class="tbtn" id="btnBoom" hidden>BOOM</button>
+  <button class="tbtn" id="btnNitro" hidden>NITRO</button>
   <button class="tbtn" id="btnChat" hidden>CHAT</button>
   <div id="chatPanel" hidden></div>
   <button class="tbtn" id="btnPause" hidden>II</button>
@@ -284,7 +286,7 @@
     </div>
     <div class="panel" id="helpPanel" hidden>
       <h2>Controls</h2>
-      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, J opens the mission list, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
+      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, N nitro (after the garage upgrade), J opens the mission list, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
       <button id="helpBack" class="btn-glass">Back</button>
     </div>
   </div>
@@ -574,7 +576,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 26;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 29;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -884,7 +886,8 @@ function buildCity(seed) {
   const city = { seed, cols, rows, block, road, sw, pitch, W, H, blocks: [], buildings: [], props: [], nodes: [], turfs: [], places: {}, missions: [] };
   const cc = Math.floor(cols / 2), cr = Math.floor(rows / 2);
   const parks = new Set([1 + ',' + (rows - 2), (cols - 3) + ',' + 1]);
-  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (cols >= 18 && c === cols - 2 && r === rows - 1) ? 'prison' : (cols >= 18 && r <= 2 && c >= 3 && c <= 6) ? 'richhills' : (cols >= 18 && c === cols - 2 && r >= 4 && r <= rows - 5) ? 'docklands' : (cols >= 18 && c === 0 && r >= 5 && r <= rows - 5) ? 'trailer' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === cols - 5 && r === rows - 5) || (c === cc - 1 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (cols >= 18 && c === cc + 3 && r === cr - 1) ? 'casino' : (cols >= 18 && c === cc - 3 && r === cr + 2) ? 'mall' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : (rows >= 12 && r === rows - 1 && c <= cols - 3) ? 'beach' : (rows >= 12 && cols >= 14 && r >= rows - 3 && r <= rows - 2 && c >= cols - (cols >= 18 ? 7 : 5) && c <= cols - 3) ? 'airport' : (rows >= 12 && r >= rows - 3 && r <= rows - 2 && c >= 1 && c <= 4) ? 'littlebors' : 'residential';
+  const hqAt = cols >= 18 ? { ['2,0']: 'saints', [(cols - 1) + ',4']: 'rats', ['0,' + (rows - 3)]: 'dragons', [(cols - 2) + ',' + (rows - 2)]: 'raiders', [(cols - 3) + ',' + (rows - 4)]: 'cartel' } : {};
+  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : hqAt[c + ',' + r] ? 'ganghq' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (cols >= 18 && c === cols - 2 && r === rows - 1) ? 'prison' : (cols >= 18 && r <= 2 && c >= 3 && c <= 6) ? 'richhills' : (cols >= 18 && c === cols - 2 && r >= 4 && r <= rows - 5) ? 'docklands' : (cols >= 18 && c === 0 && r >= 5 && r <= rows - 5) ? 'trailer' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === cols - 5 && r === rows - 5) || (c === cc - 1 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (cols >= 18 && c === cc + 3 && r === cr - 1) ? 'casino' : (cols >= 18 && c === cc - 3 && r === cr + 2) ? 'mall' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : (rows >= 12 && r === rows - 1 && c <= cols - 3) ? 'beach' : (cols >= 18 && c === cols - 6 && r === rows - 3) ? 'terminal' : (rows >= 12 && cols >= 14 && r >= rows - 3 && r <= rows - 2 && c >= cols - (cols >= 18 ? 7 : 5) && c <= cols - 3) ? 'airport' : (rows >= 12 && r >= rows - 3 && r <= rows - 2 && c >= 1 && c <= 4) ? 'littlebors' : 'residential';
   const addB = (b, blk) => { b.block = blk; blk.buildings.push(b); city.buildings.push(b); return b; };
   const addP = (p, blk) => { blk.props.push(p); city.props.push(p); return p; };
   const ePt = (blk, side, t) => side === 'top' ? { x: blk.x + blk.w * t, y: blk.y - sw / 2 } : side === 'bottom' ? { x: blk.x + blk.w * t, y: blk.y + blk.h + sw / 2 } : side === 'left' ? { x: blk.x - sw / 2, y: blk.y + blk.h * t } : { x: blk.x + blk.w + sw / 2, y: blk.y + blk.h * t };
@@ -987,6 +990,33 @@ function buildCity(seed) {
         vault: { x: x0 + t, y: vy + 10, w: W2 - 2 * t, h: y0 + H2 - t - vy - 10 },
         loot: [0, 1, 2, 3].map(i => ({ x: x0 + 40 + i * ((W2 - 80) / 3), y: ly, taken: false })),
         tellers: [{ x: x0 + 52, y: y0 + 110 }, { x: x0 + 106, y: y0 + 110 }], drill: null, openT: 0, alarm: false };
+    } else if (blk.district === 'ganghq') {
+      // v27: gang headquarters: front hall + boss office behind an inner doorway; door on the top street
+      const g = hqAt[c + ',' + r]; blk.hqGang = g;
+      const W2 = 236, H2 = 210, x0 = bx + (block - W2) / 2, y0 = by + 36, t = 8, door = 56, cx = x0 + W2 / 2, col = HQ_LOOK[g].wall, yi = y0 + 112;
+      blk.base = HQ_LOOK[g].ground;
+      const wall = (x, y, w, h) => addB({ x, y, w, h, kind: 'wall', color: col, height: 1 }, blk);
+      wall(x0, y0, cx - door / 2 - x0, t); wall(cx + door / 2, y0, x0 + W2 - cx - door / 2, t);
+      wall(x0, y0 + H2 - t, W2, t); wall(x0, y0 + t, t, H2 - 2 * t); wall(x0 + W2 - t, y0 + t, t, H2 - 2 * t);
+      const gx = x0 + W2 - 70; wall(x0 + t, yi, gx - 32 - x0 - t, t); wall(gx + 32, yi, x0 + W2 - t - gx - 32, t);
+      addP({ x: cx, y: y0 + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);
+      const R2 = { x: x0, y: y0, w: W2, h: H2, t, kind: 'hq_' + g, gang: g, blk, door: { x: cx, y: y0 - sw / 2 - 20 }, spots: [],
+        rooms: { hall: [x0, y0, W2, yi - y0], office: [x0, yi, W2, y0 + H2 - yi] } };
+      city.services = city.services || []; city.services.push(R2); city.stations = city.stations || [];
+      for (let k = 0; k < 3; k++) addP({ x: bx + 20 + k * 130, y: by + block - 24, r: 7, canopy: rr(12, 15), type: 'tree', pedBlock: true, carBlock: true }, blk);
+    } else if (blk.district === 'terminal') {
+      // v28: Bors International terminal: check-in hall, security line with two gates, gate lounge
+      const m = 14, W2 = block - 2 * m, H2 = block - 2 * m, x0 = bx + m, y0 = by + m, t = 8, door = 60, cx = x0 + W2 / 2, col = '#c9d1da', ys = y0 + 110;
+      blk.base = '#5a5d63';
+      const wall = (x, y, w, h) => addB({ x, y, w, h, kind: 'wall', color: col, height: 1 }, blk);
+      wall(x0, y0, cx - door / 2 - x0, t); wall(cx + door / 2, y0, x0 + W2 - cx - door / 2, t);
+      wall(x0, y0 + H2 - t, W2, t); wall(x0, y0 + t, t, H2 - 2 * t); wall(x0 + W2 - t, y0 + t, t, H2 - 2 * t);
+      const g1 = x0 + 70, g2 = x0 + W2 - 70; wall(x0 + t, ys, g1 - 30 - x0 - t, t); wall(g1 + 30, ys, g2 - 30 - g1 - 30, t); wall(g2 + 30, ys, x0 + W2 - t - g2 - 30, t);
+      addP({ x: cx, y: y0 + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);
+      const R2 = { x: x0, y: y0, w: W2, h: H2, t, kind: 'terminal', blk, door: { x: cx, y: y0 - sw / 2 - 20 }, rooms: { hall: [x0, y0, W2, ys - y0], lounge: [x0, ys, W2, y0 + H2 - ys] },
+        spots: [{ x: x0 + 50, y: y0 + 80 }, { x: x0 + W2 - 50, y: y0 + 74 }, { x: cx + 40, y: ys + 90 }, { x: x0 + 60, y: ys + 110 }] };
+      city.services = city.services || []; city.services.push(R2); city.stations = city.stations || [];
+      city.stations.push({ type: 'fly', x: cx, y: y0 + 56, b: R2 }, { type: 'duty', x: x0 + 60, y: ys + 56, b: R2 }, { type: 'lounge', x: x0 + W2 - 60, y: ys + 56, b: R2 });
     } else if (blk.district === 'casino' || blk.district === 'mall') {
       // v25: whole-block buildings with several rooms. Shared rules: one street door on top, inner doorways 64 wide, stations 40+ px from walls.
       const K = blk.district, m = 14, W2 = block - 2 * m, H2 = block - 2 * m, x0 = bx + m, y0 = by + m, t = 8, door = 60, cx = x0 + W2 / 2;
@@ -1003,7 +1033,9 @@ function buildCity(seed) {
         // lobby (top) | gaming floor | VIP lounge (back left) + counting room (back right, locked: future heist)
         const yl = y0 + 90, yb = y0 + 176, vipX = x0 + (cx - x0) / 2;
         wallH(x0 + t, x0 + W2 - t, yl, [[cx, 64]]);
-        wallH(x0 + t, x0 + W2 - t, yb, [[vipX, 64]]);
+        const vdx = cx + (x0 + W2 - cx) / 2;
+        wallH(x0 + t, x0 + W2 - t, yb, [[vipX, 64], [vdx, 50]]);
+        R2.vdoor = addB({ x: vdx - 25, y: yb, w: 50, h: t, kind: 'vaultdoor', color: '#9aa3ad', height: 1, open: false }, blk);   // v29: counting-room door (casino heist)
         wallV(cx - t / 2, yb + t, y0 + H2 - t);
         R2.rooms = { lobby: [x0, y0, W2, yl - y0], floor: [x0, yl, W2, yb - yl], vip: [x0, yb, cx - x0, y0 + H2 - yb], vault: [cx, yb, x0 + W2 - cx, y0 + H2 - yb] };
         city.stations.push({ type: 'comp', x: x0 + 60, y: y0 + 50, b: R2 }, { type: 'slots', x: x0 + 52, y: yl + 47, b: R2 }, { type: 'roulette', x: cx, y: yl + 50, b: R2 }, { type: 'slots', x: x0 + W2 - 52, y: yl + 47, b: R2 }, { type: 'vip', x: vipX, y: yb + 52, b: R2 });
@@ -1095,8 +1127,17 @@ function buildCity(seed) {
       addB({ x: bx + m, y: by + block - m - wv, w: block - 2 * m, h: wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
       addB({ x: bx + m, y: by + m + wv, w: wv, h: block - 2 * m - 2 * wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
       addB({ x: bx + block - m - wv, y: by + m + wv, w: wv, h: block - 2 * m - 2 * wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
-      addB({ x: bx + m + wv + 30, y: by + m + wv + 46, w: block - 2 * (m + wv + 30), h: block - 2 * (m + wv) - 76, kind: 'prison', color: '#8a939b', height: 2 }, blk);
       blk.bridge = { x: cx - gap / 2, y: by + m, w: gap, h: wv };
+      // v28: enterable penitentiary: visiting hall (front) + cell block (back)
+      { const x0 = bx + 58, y0 = by + 96, W2 = 184, H2 = 150, t = 8, door = 52, col = '#7d8590';
+        const wall = (x, y, w, h) => addB({ x, y, w, h, kind: 'wall', color: col, height: 1 }, blk);
+        wall(x0, y0, cx - door / 2 - x0, t); wall(cx + door / 2, y0, x0 + W2 - cx - door / 2, t);
+        wall(x0, y0 + H2 - t, W2, t); wall(x0, y0 + t, t, H2 - 2 * t); wall(x0 + W2 - t, y0 + t, t, H2 - 2 * t);
+        addP({ x: cx, y: y0 + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);
+        const R2 = { x: x0, y: y0, w: W2, h: H2, t, kind: 'prison', blk, door: { x: cx, y: y0 - 18 }, rooms: { hall: [x0, y0, W2, 92], cells: [x0, y0 + 92, W2, H2 - 92] },
+          spots: [{ x: x0 + 44, y: y0 + H2 - 42 }, { x: x0 + 96, y: y0 + H2 - 40 }, { x: x0 + W2 - 44, y: y0 + H2 - 42 }] };
+        city.services = city.services || []; city.services.push(R2); city.stations = city.stations || [];
+        city.stations.push({ type: 'bail', x: x0 + 48, y: y0 + 52, b: R2 }, { type: 'iron', x: x0 + W2 - 48, y: y0 + 52, b: R2 }); }
     } else if (blk.district === 'beach') {
       // v22: Bors Beach & Boardwalk: boardwalk up top, sand, palms, umbrellas, a lifeguard tower, sea at the bottom
       blk.base = '#e8d39a';
@@ -1202,6 +1243,7 @@ function buildCity(seed) {
     { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist', id: 'heist1' },
     { ...ePt(blockAt(cc, rows - 1), 'top', 0.3), type: 'boss', label: 'Showdown at Bors Arena', id: 'story4' }
   ].concat(cols >= 18 ? [
+    { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.62), type: 'story', label: 'The Counting Room', id: 'cheist' },
     { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.25), type: 'clear', label: 'Card Sharks', id: 'side2', bld: 'casino', gang: 'cartel' },
     { ...ePt(blockAt(cc - 3, cr + 2), 'top', 0.25), type: 'clear', label: 'Mall Rats', id: 'side3', bld: 'mall', gang: 'raiders' }
   ] : []);
@@ -1214,7 +1256,16 @@ function buildCity(seed) {
       { ...ePt(lb[3] || by('littlebors'), 'top', 0.5), type: 'story', label: 'Tiny Lou', id: 'act3' },
       { ...ePt(blockAt(cc + 3, cr + 1), 'top', 0.82), type: 'story', label: 'Internal Affairs', id: 'act4' },
       { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.75), type: 'story', label: 'The House Always Wins', id: 'act5' },
-      { ...ePt(rh[4] || by('richhills'), 'bottom', 0.5), type: 'story', label: "Velvet's Offer", id: 'act6' });
+      { ...ePt(rh[4] || by('richhills'), 'bottom', 0.5), type: 'story', label: "Velvet's Offer", id: 'act6' },
+      { ...ePt(rh[8] || by('richhills'), 'top', 0.5), type: 'story', label: "Varga's Trail", id: 'act7' },
+      { ...ePt(by('terminal'), 'top', 0.2), type: 'story', label: 'Cargo Cult', id: 'act8' },
+      { ...ePt(by('prison'), 'top', 0.18), type: 'story', label: 'Jailhouse Rock', id: 'act9' },
+      { ...ePt(blockAt(cc, rows - 1), 'top', 0.72), type: 'story', label: 'Endgame', id: 'act10' },
+      { ...ePt(blockAt(cc - 2, cr + 1), 'bottom', 0.5), type: 'story', label: 'Gearbox Gina', id: 'c_gina' },
+      { ...ePt(blockAt(cc + 2, cr), 'bottom', 0.5), type: 'story', label: 'Rosa', id: 'c_rosa' },
+      { ...ePt(lb[1] || by('littlebors'), 'top', 0.5), type: 'story', label: 'Tiny Lou', id: 'c_lou' },
+      { ...ePt(blockAt(cc + 3, cr + 1), 'bottom', 0.5), type: 'story', label: 'Sgt. Doyle', id: 'c_doyle' });
+    for (const b of city.blocks) if (b.district === 'ganghq') { const g = b.hqGang; [0.2, 0.8, 0.5].forEach((tt, i) => city.missions.push({ ...ePt(b, 'top', tt), type: 'story', label: HQ_LOOK[g].name, id: 'gs_' + g + '_' + (i + 1), gangSaga: g })); }
   }
   for (const b of city.blocks) b.gang = gangForBlock(b, cols, rows, W);
   city.territories = [];
@@ -1510,6 +1561,7 @@ function damageCar(c, dmg, src) {
   src = src || {};
   if (G.game === 'dm') { addParticles('spark', c.x, c.y, 2); return; }     // deathmatch cars are not destructible
   if (c.proxy) { netHitCar(c, dmg, src); return; }
+  if (G.tune && G.tune.armor && c.driver && c.driver.isPlayer) dmg *= 0.5;   // v29: armor plating
   if (c.driver && c.driver.kind === 'remote') { sendMsg(c.driver.uid, { t: 'cardmg', d: Math.round(dmg) }); return; }
   c.hp -= dmg; c.lastHitT = G.time;
   if (c.driver && !isPlayerPed(c.driver) && c.driver.kind === 'civ' && c.hp < c.maxHp * 0.7) c.panicked = true;
@@ -1530,7 +1582,7 @@ function explosionFx(x, y, radius) {
   sfx('explosion', x, y);
 }
 function explodeAt(x, y, radius, dmg, by) {
-  bankBlast(x, y, radius, by); gasBlast(x, y, radius, by);
+  bankBlast(x, y, radius, by); casinoBlast(x, y, radius, by); gasBlast(x, y, radius, by);
   explosionFx(x, y, radius);
   if (G.mode === 'mp' && G.isSim) G.netBooms.push([x, y, radius]);
   for (const p of G.peds) {
@@ -1580,8 +1632,11 @@ function carPhysics(c, dt) {
   else vf -= Math.sign(vf) * Math.min(Math.abs(vf), C.roll * dt);
   if (c.handbrake) vf -= Math.sign(vf) * Math.min(Math.abs(vf), 380 * dt);
   vf -= vf * C.drag * dt;
-  vf = clamp(vf, -C.reverse, C.maxSpeed * perf);
-  const grip = c.handbrake ? C.gripLo : (Math.abs(vl) > 140 ? C.gripHi * 0.6 : C.gripHi);
+  const boost = nitroOn(c);
+  if (boost) { vf += C.accel * 1.3 * dt; if (chance(0.7)) addParticles('fire', c.x - cs * c.L * 0.55, c.y - sn * c.L * 0.55, 1); }
+  vf = clamp(vf, -C.reverse, C.maxSpeed * perf * (boost ? 1.4 : 1));
+  const wet = G.wx ? clamp(G.wx.level, 0, 1) : 0;   // v28: rain makes the roads slippery
+  const grip = (c.handbrake ? C.gripLo : (Math.abs(vl) > 140 ? C.gripHi * 0.6 : C.gripHi)) * (1 - 0.5 * wet);
   vl -= vl * Math.min(1, grip * dt);
   const sp = Math.abs(vf);
   const turn = C.turn * pk.steer * (c.kind === 'bike' ? 1.35 : 1) * (1 - 0.45 * clamp((sp - 200) / 360, 0, 1)) * clamp(sp / 110, 0, 1);
@@ -2529,7 +2584,7 @@ function markersUpdate() {
       } else toast('Respray costs $' + CFG.economy.price.respray, 1.5);
     }
   }
-  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate(); interiorPatrons(); decalsTick(); weatherTick();
+  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate(); interiorPatrons(); decalsTick(); weatherTick(); hqGuards(); tipTick();
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
@@ -2587,7 +2642,7 @@ function missionUpdate(dt) {
   const P = G.player;
   if (G.mode === 'solo') { if (!P.alive || G.busted) { failMission(P.alive ? 'You got busted' : 'You died'); return; } }
   else if (!missionPlayersUp().length) { failMission('Everyone is down'); return; }
-  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0 && M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'survive') { M.timer = 0; M.surviveDone = true; } else if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else if (M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'lose') failMission('Varga\'s men caught up with you'); else if (M.type === 'defend' && M.terr) failMission('The ' + GANGS[M.terr.gang].name + ' took your block'); else failMission('Out of time'); return; } }
+  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0 && M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'survive') { M.timer = 0; M.surviveDone = true; } else if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else if (M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'lose') failMission('Varga\'s men caught up with you'); else if (M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'escape') failMission('Too slow. The cash is evidence now.'); else if (M.type === 'defend' && M.terr) failMission('The ' + GANGS[M.terr.gang].name + ' took your block'); else failMission('Out of time'); return; } }
   if (M.type === 'hit') {
     const alive = M.targets.filter(g => g.alive);
     M.text = 'Take out the gang crew: ' + alive.length + ' left';
@@ -3115,8 +3170,9 @@ function garageUpdate() {
   if (c.dead || c.kind === 'tank' || dist(c.x, c.y, S.garage.x, S.garage.y) > 46 || Math.abs(c.vf) > 40 || G.time < (G.garageT || 0)) return;
   G.garageT = G.time + 6;
   if (G.cheats.god || G.cheats.guns) { toast('Garage is closed while cheats are on', 1.6); return; }
-  try { localStorage[GARAGE_KEY] = JSON.stringify({ v: 1, kind: c.kind, ci: c.colorIdx < 0 ? 0 : c.colorIdx }); } catch (e) {}
+  try { localStorage[GARAGE_KEY] = JSON.stringify({ v: 1, kind: c.kind, ci: c.colorIdx < 0 ? 0 : c.colorIdx, col: PAINTS.indexOf(c.color) >= 0 ? c.color : null }); } catch (e) {}
   toast('PARKED AT BORS HQ\nThis ride will be waiting next time.', 2.2); sfx('cash');
+  setTimeout(() => { if (G.phase === 'playing' && G.player && G.player.car === c && $('dialog').hidden) tuneMenu(c); }, 900);
 }
 function spawnGarageCar() {
   const S = G.city && G.city.safehouse; if (!S || G.mode !== 'solo') return;
@@ -3124,7 +3180,7 @@ function spawnGarageCar() {
   if (!d || d.v !== 1 || !CAR_KINDS[d.kind] || d.kind === 'tank') return;
   const K = CAR_KINDS[d.kind], ci = Number.isInteger(d.ci) && d.ci >= 0 && d.ci < K.colors.length ? d.ci : 0;
   for (let i = G.cars.length - 1; i >= 0; i--) if (!G.cars[i].driver && dist(G.cars[i].x, G.cars[i].y, S.garage.x, S.garage.y) < 90) G.cars.splice(i, 1);
-  const c = makeCar(d.kind, S.garage.x, S.garage.y, S.garage.a || 0, { colorIdx: ci }); c.parked = true; G.cars.push(c);
+  const c = makeCar(d.kind, S.garage.x, S.garage.y, S.garage.a || 0, { colorIdx: ci }); c.parked = true; if (PAINTS.indexOf(d.col) >= 0) c.color = d.col; G.cars.push(c);
 }
 // ---- The Bors Bar: regulars and a bartender (host/solo spawns them), Bors Brew at the counter for everyone
 const BREW_PRICE = 50;
@@ -3344,6 +3400,7 @@ function applyGasState(v) {
 // ---- v17: gang territories (San Andreas style). Host/solo decides, everyone sees the blue blocks.
 const TURF_MOD = 4;
 function gangForBlock(b, cols, rows, W) {   // v24: five gangs by region
+  if (b.district === 'ganghq') return b.hqGang;
   if (b.district === 'littlebors') return 'dragons';
   if (b.district === 'trailer' || b.district === 'docklands' || b.district === 'industrial') return 'raiders';
   if (cols >= 18 && b.c >= cols * 0.5 && b.r >= rows * 0.55) return 'cartel';
@@ -3419,7 +3476,7 @@ function territoryUpdate() {
   if (!G.isSim) return;
   if (G.mode === 'solo') {                                     // protection money, collected at BORS HQ
     const own = terrOwned();
-    if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + Math.round(own * TERR.income * (storyAlign().rogue >= 2 ? 1.25 : 1))); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
+    if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + Math.round(own * TERR.income * (storyAlign().rogue >= 2 ? 1.25 : 1) * (gangBroken('dragons') ? 1.5 : 1))); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
     if (P && P.alive && !P.car && G.terrBank > 0 && G.city.safehouse && inRect(G.city.safehouse, P.x, P.y)) { const n = Math.round(G.terrBank); G.terrBank = 0; addCash(n, P.x, P.y); toast('PROTECTION MONEY\n+$' + n + ' from your ' + own + ' blocks', 2.2); sfx('cash'); saveTerritories(); }
   }
   counterAttackTick();
@@ -3663,7 +3720,7 @@ function counterAttackTick() {
   if (G.time < G.attackT || G.mission) return;
   const ups = missionPlayersUp(); if (!ups.length) { G.attackT = G.time + 30; return; }
   let best = null, bd = 2200, who = null;
-  for (const T of G.city.territories) { if (T.owner !== 'bors') continue; for (const q of ups) { const qp = posOf(q), d = dist(qp.x, qp.y, T.x, T.y); if (d < bd) { bd = d; best = T; who = q; } } }
+  for (const T of G.city.territories) { if (T.owner !== 'bors' || gangBroken(T.gang)) continue; for (const q of ups) { const qp = posOf(q), d = dist(qp.x, qp.y, T.x, T.y); if (d < bd) { bd = d; best = T; who = q; } } }
   if (!best) { G.attackT = G.time + 60; return; }
   G.attackT = G.time + rand(DEFEND.nextMin, DEFEND.nextMax);
   startMission({ type: 'defend', label: 'Turf under attack', x: best.x, y: best.y, terr: best, cooldownT: 0 }, who);
@@ -3778,14 +3835,21 @@ function drawBubbles(V) {
 }
 // ---- v21: service buildings (Bors Memorial, Police HQ, Beard Barber)
 const SERVICE_LOOK = {
+  prison:   { label: 'BORS PENITENTIARY', c1: '#aeb6bd', c2: '#bcc3c9', dot: '#ff8c1a', floor: '#c9ccd0' },
+  terminal: { label: 'BORS INTERNATIONAL', c1: '#e6eaee', c2: '#eef1f4', dot: '#4dc3ff', floor: '#eceae4' },
+  hq_saints: { label: 'SAINTS CHAPEL', c1: '#3b2050', c2: '#46265f', dot: '#b04dff', floor: '#5b4a6a' },
+  hq_rats: { label: 'THE RAT HOLE', c1: '#4a1712', c2: '#5a1c16', dot: '#ff3b3b', floor: '#6a5a4a' },
+  hq_dragons: { label: 'DRAGON HOUSE', c1: '#0e4a44', c2: '#125a52', dot: '#14c8b4', floor: '#7a2a2a' },
+  hq_raiders: { label: 'RAIDER YARD', c1: '#4a2a0a', c2: '#5a330d', dot: '#ff8c1a', floor: '#6a6a62' },
+  hq_cartel: { label: 'CARTEL HACIENDA', c1: '#1f4a24', c2: '#25582b', dot: '#45c24f', floor: '#c9b28a' },
   casino:   { label: 'BORS CASINO', c1: '#2a1838', c2: '#341d46', dot: '#ff4fd8', floor: '#5a1c2a', neon: true },
   mall:     { label: 'BORS MALL', c1: '#d7dde4', c2: '#e3e8ee', dot: '#4dc3ff', floor: '#e6e2d8' },
   hospital: { label: 'BORS MEMORIAL', c1: '#d9dee3', c2: '#e6eaee', dot: '#ff6b6b', floor: '#eef3f6' },
   policehq: { label: 'POLICE HQ', c1: '#2f3b55', c2: '#38466a', dot: '#4d8bff', floor: '#b9bec7' },
   barber:   { label: 'BEARD BARBER', c1: '#7a2522', c2: '#8f2c28', dot: '#ffd24d', floor: '#e8e2d3' }
 };
-const STATION_BTN = { heal: 'HEAL', armor: 'ARMOR', locker: 'SHRED', armory: 'RAID', barber: 'TRIM', comp: 'DRINK', slots: 'SPIN', roulette: 'BET', vip: 'HIGH', outfit: 'STYLE', arcade: 'PLAY', kiosk: 'GUNS', food: 'EAT' };
-const PRICE = { heal: 100, armor: 200, locker: 300, barber: 50, slots: 50, roulette: 100, vip: 500, outfit: 100, arcade: 20, food: 30 };
+const STATION_BTN = { bail: 'BAIL', iron: 'LIFT', fly: 'FLY', duty: 'SHOP', lounge: 'REST', heal: 'HEAL', armor: 'ARMOR', locker: 'SHRED', armory: 'RAID', barber: 'TRIM', comp: 'DRINK', slots: 'SPIN', roulette: 'BET', vip: 'HIGH', outfit: 'STYLE', arcade: 'PLAY', kiosk: 'GUNS', food: 'EAT' };
+const PRICE = { bail: 400, fly: 100, duty: 300, heal: 100, armor: 200, locker: 300, barber: 50, slots: 50, roulette: 100, vip: 500, outfit: 100, arcade: 20, food: 30 };
 const BEARDS = [['Classic', null], ['Jet black', '#141414'], ['Ginger', '#b5521f'], ['Silver fox', '#bdbdbd'], ['Golden', '#d8b04a'], ['Bors blue', '#2a5bd7']];
 const OUTFITS = [['Classic uniform', null, null], ['Miami vice', '#f4a3c4', '#e8e2d0'], ['Undercover black', '#1b1b1b', '#111111'], ['Hawaiian shirt', '#e8b436', '#2b4a6e'], ['Tracksuit', '#2a5bd7', '#2a5bd7'], ['Casino tux', '#f2f2f2', '#141414']];
 function myLook(ch) {
@@ -3816,6 +3880,11 @@ function stationHint(st) {
     case 'armor': return 'body armor ($' + PRICE.armor + ')';
     case 'locker': return 'shred your file: clears stars ($' + shredPrice() + ')' + cd('lockerT');
     case 'armory': return 'raid the armory (4 stars!)' + cd('armoryT');
+    case 'bail': return 'bail out 2 inmates for your crew ($' + PRICE.bail + ')';
+    case 'iron': return 'pump iron in the yard: +50 armor' + cd('ironT');
+    case 'fly': return 'Bors Air shuttle ($' + PRICE.fly + ')';
+    case 'duty': return 'duty-free: armor + 2 grenades ($' + PRICE.duty + ')';
+    case 'lounge': return 'VIP lounge: +150 HP' + cd('loungeT');
     case 'comp': return 'comp drink: +100 HP, on the house' + cd('compT');
     case 'slots': return 'slot machine ($' + PRICE.slots + ' a spin)';
     case 'roulette': return 'roulette: $' + PRICE.roulette + ' on red';
@@ -3852,6 +3921,37 @@ function useStation(st) {
       giveWeapon(P, 'bazooka', 3); giveWeapon(P, 'grenade', 3); giveWeapon(P, 'sniper', 10); giveWeapon(P, 'smg', 60); P.armor = 100;
       { const W = wantedOf(P), need = Math.max(0, 210 - (G.isSim ? W.heat : 0)); addHeat(G.isSim ? need : 210, P); }
       toast('ARMORY RAIDED!\nBazooka, grenades, sniper, armor. SWAT is on the way.', 2.4); sfx('alarm', null, null, 0.8); return;
+    case 'bail': {
+      if (G.mode !== 'solo') { toast('Bail is solo only (for now)', 1.4); return; }
+      if (crewCount() + 2 > crewCap()) { toast('Your crew is full\nDismiss someone first.', 1.4); return; }
+      if (!pay(PRICE.bail)) return;
+      for (let i = 0; i < 2; i++) { const sp = freeSpotNear({ r: 13 }, P.x + (i ? 30 : -30), P.y + 20), q = spawnCrewMember(sp.x, sp.y, null); q.following = true; q.ownerUid = 'solo'; q.look = Object.assign({}, q.look, { shirt: '#e8762c', pants: '#e8762c' }); }
+      toast('BAILED OUT\nTwo inmates owe you one. Crew ' + crewCount() + '/' + crewCap(), 2); sfx('cash'); return;
+    }
+    case 'iron':
+      if (G.time < (G.ironT || 0)) { toast('Your arms are jelly\nAgain in ' + Math.ceil(G.ironT - G.time) + 's', 1.3); return; }
+      if (P.armor >= 100) { toast('Armor already full', 1.2); return; }
+      G.ironT = G.time + 180; P.armor = Math.min(100, P.armor + 50); toast('PUMPING IRON\nThe inmates are impressed. +50 armor', 1.8); sfx('pickup'); return;
+    case 'fly': {
+      if (wantedOf(P).stars > 0) { toast('Not while you\'re wanted\nSecurity knows your face.', 1.6); return; }
+      const dest = flyDestinations(), opts = dest.map(d => [d.name, d.key]).concat([['Cancel', 'x']]);
+      showDialog([], { who: 'Bors Air', q: 'Where to, officer? ($' + PRICE.fly + ')', opts }, k => {
+        const d = dest.find(q => q.key === k); if (!d) return;
+        if (wantedOf(P).stars > 0 || !P.alive) return;
+        if (!pay(PRICE.fly)) return;
+        const sp = freeSpotNear(P, d.x, d.y); P.x = sp.x; P.y = sp.y; P.vx = P.vy = 0; P.path = null; G.cam.snap = true;
+        if (G.partner && !G.partner.car) { const s2 = freeSpotNear(G.partner, sp.x + 40, sp.y); G.partner.x = s2.x; G.partner.y = s2.y; }
+        for (const q of G.peds) if (q.recruit && q.following && !q.proxy && crewOwner(q) === P) { const s3 = freeSpotNear(q, sp.x - 40, sp.y + 20); q.x = s3.x; q.y = s3.y; q.path = null; }
+        toast('WELCOME TO ' + d.name.toUpperCase() + '\nThanks for flying Bors Air.', 1.8); sfx('mission');
+      });
+      return;
+    }
+    case 'duty':
+      if (!pay(PRICE.duty)) return; P.armor = 100; giveWeapon(P, 'grenade', 2); toast('DUTY-FREE\nArmor and two "souvenirs".', 1.6); sfx('pickup'); return;
+    case 'lounge':
+      if (G.time < (G.loungeT || 0)) { toast('Lounge is full\nAgain in ' + Math.ceil(G.loungeT - G.time) + 's', 1.3); return; }
+      if (P.hp >= P.maxHp) { toast('You look rested already', 1.2); return; }
+      G.loungeT = G.time + 120; P.hp = Math.min(P.maxHp, P.hp + 150); toast('VIP LOUNGE\nComplimentary nap. +150 HP', 1.6); sfx('pickup'); return;
     case 'comp':
       if (G.time < (G.compT || 0)) { toast('The bartender is busy\nNext drink in ' + Math.ceil(G.compT - G.time) + 's', 1.3); return; }
       if (P.hp >= P.maxHp) { toast('You look fine\nMaybe later, high roller.', 1.3); return; }
@@ -3907,6 +4007,28 @@ function drawServiceFloor(S) {
     ctx.fillStyle = '#2b2b2b'; for (let k = 0; k < 4; k++) ctx.fillRect(S.x + 22 + k * 12, S.y + S.h - 30, 9, 18);
     ctx.fillStyle = '#4a4a4a'; ctx.fillRect(S.x + S.w - 80, S.y + S.h - 30, 60, 16); ctx.fillStyle = '#c0392b'; ctx.fillRect(S.x + S.w - 76, S.y + S.h - 26, 10, 8);
     ctx.fillStyle = 'rgba(77,139,255,.25)'; ctx.fillRect(S.x + S.w / 2 - 30, S.y + 20, 60, 26); ctx.fillStyle = '#1d3d97'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('TO SERVE & PROTECT', S.x + S.w / 2, S.y + 34);
+  } else if (S.kind === 'prison') {
+    const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
+    ctx.fillStyle = '#c9ccd0'; ctx.fillRect(S.x + t, S.y + t, S.w - 2 * t, S.h - 2 * t); ctx.fillStyle = '#9aa1a8'; ctx.fillRect(Rm.cells[0] + t, Rm.cells[1], Rm.cells[2] - 2 * t, Rm.cells[3] - t);
+    ctx.fillStyle = '#4a5158'; for (let k = 0; k < 4; k++) { const cx2 = Rm.cells[0] + 22 + k * 32; ctx.fillRect(cx2, Rm.cells[1] + Rm.cells[3] - 34, 2, 26); ctx.fillRect(cx2 + 26, Rm.cells[1] + Rm.cells[3] - 34, 2, 26); for (let y = Rm.cells[1] + Rm.cells[3] - 34; y < Rm.cells[1] + Rm.cells[3] - 8; y += 6) ctx.fillRect(cx2, y, 28, 1.5); }
+    ctx.fillStyle = '#2b2b2b'; ctx.fillRect(Rm.hall[0] + Rm.hall[2] / 2 - 40, Rm.hall[1] + 16, 80, 6); ctx.fillStyle = '#9fd3ff'; ctx.fillRect(Rm.hall[0] + Rm.hall[2] / 2 - 36, Rm.hall[1] + 17, 72, 3);
+  } else if (S.kind === 'terminal') {
+    const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
+    rf(Rm.hall, '#eceae4'); rf(Rm.lounge, '#d6dde6');
+    ctx.fillStyle = '#2a5bd7'; ctx.fillRect(Rm.hall[0] + 30, Rm.hall[1] + 30, Rm.hall[2] - 60, 10);
+    ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS AIR  \u00b7  CHECK-IN', Rm.hall[0] + Rm.hall[2] / 2, Rm.hall[1] + 35);
+    ctx.fillStyle = '#1b1b1b'; for (const gx of [Rm.lounge[0] + 70, Rm.lounge[0] + Rm.lounge[2] - 70]) { ctx.fillRect(gx - 22, Rm.lounge[1] - 3, 4, 14); ctx.fillRect(gx + 18, Rm.lounge[1] - 3, 4, 14); }
+    for (let k = 0; k < 5; k++) { ctx.fillStyle = '#3a4a5a'; ctx.fillRect(Rm.lounge[0] + 50 + k * 38, Rm.lounge[1] + Rm.lounge[3] - 46, 26, 10); }
+    ctx.fillStyle = '#1d3d97'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.fillText('GATES 1-2', Rm.lounge[0] + Rm.lounge[2] / 2, Rm.lounge[1] + 22);
+  } else if (S.kind.indexOf('hq_') === 0) {
+    const L2 = HQ_LOOK[S.gang], Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
+    rf(Rm.hall, L2.floor); rf(Rm.office, shade(L2.floor, -0.25));
+    ctx.fillStyle = GANGS[S.gang].color; ctx.globalAlpha = 0.35; ctx.fillRect(Rm.office[0] + Rm.office[2] / 2 - 50, Rm.office[1] + 24, 100, 50); ctx.globalAlpha = 1;
+    ctx.fillStyle = '#4a2f17'; ctx.fillRect(Rm.office[0] + Rm.office[2] / 2 - 34, Rm.office[1] + Rm.office[3] - 36, 68, 16);
+    ctx.fillStyle = '#e8c547'; ctx.fillRect(Rm.office[0] + Rm.office[2] / 2 - 6, Rm.office[1] + Rm.office[3] - 33, 12, 8);
+    for (let k = 0; k < 3; k++) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(Rm.hall[0] + 26 + k * 66, Rm.hall[1] + 30, 34, 18); ctx.fillStyle = GANGS[S.gang].color; ctx.fillRect(Rm.hall[0] + 28 + k * 66, Rm.hall[1] + 32, 30, 4); }
+    ctx.fillStyle = gangBroken(S.gang) ? '#9aa3ad' : labelOn(L2.floor) === '#ffffff' ? '#ffffff' : '#1d3d97'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(gangBroken(S.gang) ? 'ABANDONED' : HQ_LOOK[S.gang].boss.toUpperCase(), Rm.office[0] + Rm.office[2] / 2, Rm.office[1] + 50);
   } else if (S.kind === 'casino') {
     const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
     rf(Rm.lobby, '#3a2a1e'); rf(Rm.floor, '#5a1c2a'); rf(Rm.vip, '#2a1a3a'); rf(Rm.vault, '#4c535c');
@@ -3916,7 +4038,9 @@ function drawServiceFloor(S) {
     { const st = G.city.stations.find(q => q.b === S && q.type === 'roulette'); if (st) { ctx.fillStyle = '#1e6b3a'; roundRect(ctx, st.x - 46, st.y - 40, 92, 22, 10); ctx.fill(); ctx.save(); ctx.translate(st.x + 30, st.y - 29); ctx.rotate(G.time * 3); for (let k = 0; k < 8; k++) { ctx.fillStyle = k % 2 ? '#c0392b' : '#111'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 9, k * Math.PI / 4, (k + 1) * Math.PI / 4); ctx.fill(); } ctx.restore(); } }
     { const st = G.city.stations.find(q => q.b === S && q.type === 'vip'); if (st) { ctx.fillStyle = '#1e6b3a'; circle(ctx, st.x, st.y - 30, 16); ctx.strokeStyle = '#e8c547'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(st.x, st.y - 30, 16, 0, TAU); ctx.stroke(); } }
     const v = Rm.vault; ctx.fillStyle = '#9aa3ad'; ctx.fillRect(v[0] + v[2] / 2 - 22, v[1] + 2, 44, 6); ctx.fillStyle = '#e8c547'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('COUNTING ROOM', v[0] + v[2] / 2, v[1] + v[3] / 2 - 6); ctx.fillStyle = '#ff6b6b'; ctx.fillText('STAFF ONLY', v[0] + v[2] / 2, v[1] + v[3] / 2 + 8);
-    ctx.fillStyle = '#3aa655'; for (let k = 0; k < 6; k++) { ctx.fillRect(v[0] + 20 + (k % 3) * 34, v[1] + v[3] - 26 - Math.floor(k / 3) * 10, 22, 7); }
+    if (G.cheist && G.cheist.S === S) { for (const L2 of G.cheist.loot) if (!L2.taken) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(L2.x - 12, L2.y - 6, 26, 16); ctx.fillStyle = '#3f9a45'; ctx.fillRect(L2.x - 14, L2.y - 9, 26, 16); ctx.fillStyle = '#7dff4d'; ctx.fillRect(L2.x - 12, L2.y - 6, 22, 3); ctx.fillStyle = '#e8c547'; ctx.fillRect(L2.x - 2, L2.y - 9, 3, 16); }
+      const H2 = G.cheist; if (H2.mode === 'drill' && !S.vdoor.open && H2.prog > 0) { const dx2 = S.vdoor.x + 25, dy2 = S.vdoor.y - 24; ctx.fillStyle = 'rgba(0,0,0,.7)'; ctx.fillRect(dx2 - 26, dy2 - 4, 52, 8); ctx.fillStyle = '#e8c547'; ctx.fillRect(dx2 - 25, dy2 - 3, 50 * clamp(H2.prog / CHEIST.drill, 0, 1), 6); } }
+    else { ctx.fillStyle = '#3aa655'; for (let k = 0; k < 6; k++) { ctx.fillRect(v[0] + 20 + (k % 3) * 34, v[1] + v[3] - 26 - Math.floor(k / 3) * 10, 22, 7); } }
   } else if (S.kind === 'mall') {
     const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
     rf(Rm.concourse, '#ece8de'); rf(Rm.clothes, '#f3d9e4'); rf(Rm.arcade, '#1b1d3a'); rf(Rm.food, '#e9dcc4');
@@ -3931,7 +4055,7 @@ function drawServiceFloor(S) {
     for (let k = 0; k < 2; k++) { const cx = S.x + 58 + k * 60, cy = S.y + 78; ctx.fillStyle = '#2b2b2b'; circle(ctx, cx, cy - 18, 10); ctx.fillStyle = '#7a2522'; circle(ctx, cx, cy - 18, 7); }
     ctx.fillStyle = '#e8e8e8'; ctx.fillRect(S.x + S.w - 34, S.y + 20, 10, 40); ctx.fillStyle = '#d62828'; for (let y = S.y + 22; y < S.y + 58; y += 8) ctx.fillRect(S.x + S.w - 34, y, 10, 3);
   }
-  for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a', comp: '#2ea44f', slots: '#e8b436', roulette: '#c0392b', vip: '#8e44ad', outfit: '#ff8fc7', arcade: '#4dc3ff', kiosk: '#3aa655', food: '#e67e22' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
+  for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a', bail: '#e8762c', iron: '#7d8590', fly: '#2a5bd7', duty: '#3aa655', lounge: '#8e44ad', comp: '#2ea44f', slots: '#e8b436', roulette: '#c0392b', vip: '#8e44ad', outfit: '#ff8fc7', arcade: '#4dc3ff', kiosk: '#3aa655', food: '#e67e22' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
 }
 function speakerIcon(on) {   // drawn icon (no emoji font needed)
   return '<svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/>' +
@@ -3943,25 +4067,47 @@ function toggleMute() {
 }
 // ---- v23: Mission app. Missions have stable IDs; finishing one unlocks the next. Only the chosen mission shows on the map.
 const MIS_KEY = 'gb_missions';
+const SAGA_ORDER = ['saints', 'rats', 'dragons', 'raiders', 'cartel'];
+const HQ_LOOK = {
+  saints:  { name: 'Saints Chapel', boss: 'Father Silas', weapon: 'smg', stash: 'collection plates full of dirty money', wall: '#5b3a74', ground: '#6e5f50', floor: '#5b4a6a', perk: 'shredding your file at Police HQ is free', taunt: 'My children, the Bors Brothers have come to confess. How touching.' },
+  rats:    { name: 'Rat Hole', boss: 'Mama Rattigan', weapon: 'shotgun', stash: 'warehouse of stolen goods at the docks', wall: '#6a2a20', ground: '#6d6a62', floor: '#6a5a4a', perk: '20% off everything at Guns N\' Bors', taunt: 'You sank my boats, boys. Now I sink you.' },
+  dragons: { name: 'Dragon House', boss: 'Madam Jade', weapon: 'smg', stash: 'contraband stall in the market lane', wall: '#1f6e64', ground: '#6e5f50', floor: '#7a2a2a', perk: 'protection money +50%', taunt: 'You broke my lanterns. I break your beards.' },
+  raiders: { name: 'Raider Yard', boss: 'Torque', weapon: 'shotgun', stash: 'chop shop full of stolen parts', wall: '#7a4a1a', ground: '#7a6a5a', floor: '#6a6a62', perk: '2 C4 and 3 grenades at every new game', taunt: 'I build things that go boom. Today: you.' },
+  cartel:  { name: 'Cartel Hacienda', boss: 'El Contador', weapon: 'smg', stash: 'air-cargo pallets of cartel cash', wall: '#2f6e36', ground: '#7a7f86', floor: '#c9b28a', perk: '+20% cash from every mission', taunt: 'Every bullet is accounted for, officers. Yours are overdrawn.' }
+};
 const MISSION_INFO = {
   act1: { cat: 'story', solo: true, title: 'Act I.1 Bad Day at the Docks', desc: 'Captain Briggs has a tip: the Harbour Rats are moving stolen police rifles through the docks.', need: [] },
   act2: { cat: 'story', solo: true, title: 'Act I.2 Follow the Money', desc: 'A Rats courier is driving the cash away. Stop that car.', need: ['act1'] },
   act3: { cat: 'story', solo: true, title: 'Act I.3 Tiny Lou', desc: 'Your old informant in Little Bors knows whose ledger this is. Your call how you get it.', need: ['act2'] },
   act4: { cat: 'story', solo: true, title: 'Act I.4 Internal Affairs', desc: 'Someone ratted you out. Shake off your own colleagues.', need: ['act3'] },
   act5: { cat: 'story', solo: true, title: 'Act I.5 The House Always Wins', desc: 'Velvet\'s money men count the dirty cash at Bors Casino. Crash the party.', need: ['act4'] },
+  act7: { cat: 'story', solo: true, title: "Act II.1 Varga's Trail", desc: 'Varga is running. Catch his getaway car and search the wreck.', need: ['act6'] },
+  act8: { cat: 'story', solo: true, title: 'Act II.2 Cargo Cult', desc: 'Airport heist: the Cartel flies the dirty money out tonight. Stop the cargo truck, grab the cargo, lose 5 stars. Pick the plan on the HQ planning board.', need: ['act7'] },
+  act9: { cat: 'story', solo: true, title: 'Act II.3 Jailhouse Rock', desc: 'Prison break at Bors Penitentiary. Whose side are you on?', need: ['act8'] },
+  act10: { cat: 'story', solo: true, title: 'Act II.4 Endgame', desc: 'Varga\'s last stand at Bors Arena. How it ends depends on the choices you made.', need: ['act9'] },
   act6: { cat: 'story', solo: true, title: "Act I.6 Velvet's Offer", desc: 'Councilman Victor Velvet invites you to his villa in Rich Hills. Bring a decision.', need: ['act5'] },
   story1: { cat: 'street', title: '1. Gang Hit', desc: 'Take out a gang crew holed up in a corner hideout.', need: [] },
   story2: { cat: 'street', title: '2. Hot Delivery', desc: 'Grab the marked sports car and bring it to the garage in one piece.', need: ['story1'] },
   story3: { cat: 'street', title: '3. Turf War', desc: 'Hold your ground for 60 seconds while the gangs come in waves.', need: ['story2'] },
+  cheist: { cat: 'heist', solo: true, title: 'Casino Heist: The Counting Room', desc: 'Velvet\'s cash sleeps in the Bors Casino counting room. Plan it quiet or loud, grab the money, lose 5 stars.', need: ['heist1'] },
   heist1: { cat: 'heist', title: 'The Bors Heist', desc: 'Guards, a vault, five stars and a drop-off. Unlocks after Turf War.', need: ['story3'] },
   story4: { cat: 'street', title: '4. Showdown at Bors Arena', desc: 'The rival bosses want their city back. Needs the Heist and half the turf.', need: ['heist1'], turf: true },
   side1: { cat: 'side', title: 'Donut Duty', desc: 'Five donut shops against the clock. Sugar rush included.', need: [] },
   chal1: { cat: 'chal', title: 'Rampage (West)', desc: '30 seconds, at least 8 gang kills.', need: [] },
   chal2: { cat: 'chal', title: 'Rampage (East)', desc: 'Same rules, tougher corner of town.', need: ['chal1'] },
+  ...(() => { const o = {}; for (const g of SAGA_ORDER) { const L = HQ_LOOK[g];
+    o['gs_' + g + '_1'] = { cat: 'saga', solo: true, gang: g, title: GANGS[g].name + ' 1: Stash Raid', desc: 'Hit the ' + L.stash + '. That gets the attention of ' + L.boss + '.', need: [] };
+    o['gs_' + g + '_2'] = { cat: 'saga', solo: true, gang: g, title: GANGS[g].name + ' 2: Convoy', desc: 'Stop the ' + GANGS[g].name + ' convoy before it reaches the ' + L.name + '.', need: ['gs_' + g + '_1'] };
+    o['gs_' + g + '_3'] = { cat: 'saga', solo: true, gang: g, gt: 3, title: GANGS[g].name + ' 3: Showdown with ' + L.boss, desc: 'Storm the ' + L.name + '. Perk when you win: ' + L.perk + '.', need: ['gs_' + g + '_2'] }; }
+    return o; })(),
+  c_gina: { cat: 'contact', solo: true, title: 'Gearbox Gina (mechanic)', desc: 'A mechanic near BORS HQ needs her tow truck back. Unlocks: call her to repair your car.', need: [] },
+  c_rosa: { cat: 'contact', solo: true, title: 'Rosa (Bors Bar)', desc: 'The new bartender has a loan shark problem. Unlocks: drop by her place to heal up.', need: [] },
+  c_lou: { cat: 'contact', solo: true, title: 'Tiny Lou (informant)', desc: 'Lou owes the Dragons money. Again. Unlocks: tips on hidden gang cash.', need: ['act3'] },
+  c_doyle: { cat: 'contact', solo: true, title: 'Sgt. Doyle (corrupt cop)', desc: 'A cop who hates Varga as much as you do. Unlocks: make your wanted stars vanish.', need: ['act4'] },
   side2: { cat: 'side', title: 'Card Sharks', desc: 'Cartel card cheats are cleaning out Bors Casino. Clear the floor, VIP lounge included.', need: [] },
   side3: { cat: 'side', title: 'Mall Rats', desc: 'Raiders are looting Bors Mall. Shop them out of business.', need: [] }
 };
-const MISSION_CATS = [['story', 'Story: Act I - Badge & Burn'], ['street', 'Street cases'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
+const MISSION_CATS = [['story', 'Story: Badge & Burn'], ['saga', 'Gang sagas'], ['contact', 'Contacts'], ['street', 'Street cases'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
 function missionsDone() { if (!G.misDone) G.misDone = {}; return G.misDone; }
 function loadMissions() {
   G.misDone = {}; G.activeId = null; G.story = { badge: 0, rogue: 0, picks: {} };
@@ -3970,7 +4116,7 @@ function loadMissions() {
   if (!d || d.v !== 1) return;
   if (d.done && typeof d.done === 'object') for (const id in d.done) if (MISSION_INFO[id]) G.misDone[id] = 1;
   if (typeof d.active === 'string' && MISSION_INFO[d.active] && missionUnlocked(d.active)) G.activeId = d.active;
-  if (d.story && typeof d.story === 'object') { const b = Number(d.story.badge), r = Number(d.story.rogue); G.story = { badge: isFinite(b) ? clamp(Math.round(b), 0, 99) : 0, rogue: isFinite(r) ? clamp(Math.round(r), 0, 99) : 0, picks: {} }; if (d.story.picks && typeof d.story.picks === 'object') for (const k in d.story.picks) if (MISSION_INFO[k] && (d.story.picks[k] === 'badge' || d.story.picks[k] === 'rogue')) G.story.picks[k] = d.story.picks[k]; }
+  if (d.story && typeof d.story === 'object') { const b = Number(d.story.badge), r = Number(d.story.rogue); G.story = { badge: isFinite(b) ? clamp(Math.round(b), 0, 99) : 0, rogue: isFinite(r) ? clamp(Math.round(r), 0, 99) : 0, picks: {} }; if (d.story.picks && typeof d.story.picks === 'object') for (const k in d.story.picks) if ((MISSION_INFO[k] || k === 'ending') && ['badge', 'rogue', 'date', 'friend', 'quiet', 'loud', 'stealth', 'assault', 'ending_badge', 'ending_rogue'].indexOf(d.story.picks[k]) >= 0) G.story.picks[k] = d.story.picks[k]; }
 }
 function saveMissions() { if (G.mode !== 'solo') return; try { localStorage[MIS_KEY] = JSON.stringify({ v: 1, done: missionsDone(), active: G.activeId || null, story: G.story || null }); } catch (e) {} }
 function missionUnlocked(id) { const I = MISSION_INFO[id]; if (!I) return false; if (G.mode === 'mp') return true; return I.need.every(n => missionsDone()[n]); }
@@ -3982,6 +4128,7 @@ function missionList() {
     const I = MISSION_INFO[id], m = markerById(id); if (!m) continue;
     let state = 'open', why = '';
     if (I.solo && G.mode === 'mp') { state = 'locked'; why = 'Story missions are solo only (for now)'; }
+    else if (I.gt && missionUnlocked(id) && ownOf(I.gang) < I.gt) { state = 'locked'; why = 'Take ' + I.gt + ' ' + GANGS[I.gang].name + ' blocks first (you have ' + ownOf(I.gang) + ')'; }
     else if (!missionUnlocked(id)) { state = 'locked'; why = 'Finish ' + I.need.filter(n => !missionsDone()[n]).map(n => MISSION_INFO[n].title.replace(/^\d\. /, '')).join(', ') + ' first'; }
     else if (I.turf && !markerOpen(m)) { state = 'locked'; why = G.finaleDone ? 'Bors City is already yours' : 'Own ' + bossNeed() + ' turf blocks (you have ' + terrOwned() + ')'; }
     else if (G.time < (m.cooldownT || 0) && !(G.mission && G.mission.marker === m)) { state = 'wait'; why = m.cooldownT > 1e9 ? 'Running right now' : 'Back in ' + Math.ceil(m.cooldownT - G.time) + 's'; }
@@ -4003,7 +4150,7 @@ function activateMission(id, who) {
   who = who || G.player;
   if (!G.isSim) { netEvent({ t: 'activate', id: id || null }); G.activeId = id || null; return; }
   if (id && G.mission) { tellPlayer(who, 'Finish the current mission first\nOr fail it. We don\'t judge.'); return; }
-  if (id && (!missionUnlocked(id) || (MISSION_INFO[id].solo && G.mode === 'mp'))) return;
+  if (id && (!missionUnlocked(id) || (MISSION_INFO[id].solo && G.mode === 'mp') || (MISSION_INFO[id].gt && ownOf(MISSION_INFO[id].gang) < MISSION_INFO[id].gt))) return;
   G.activeId = id || null; saveMissions();
   if (id) { const I = MISSION_INFO[id]; if (G.mode === 'mp') newsAll('NEXT JOB: ' + I.title + '\nchosen by ' + (who.name || 'a player') + '. Follow the arrow.', 2); else toast('NEXT JOB: ' + I.title + '\nFollow the yellow arrow to the marker.', 2); }
 }
@@ -4016,21 +4163,24 @@ function closeMissionApp() { showScreen(null); if (G.mode === 'solo') G.paused =
 function renderMissionApp() {
   const L = missionList(), turf = G.city.territories ? terrOwned() + '/' + G.city.territories.length : '0';
   const al = storyAlign();
-  $('missionSub').textContent = (G.mode === 'mp' ? 'Shared with everyone in the room. ' : '') + 'Pick one job; only that one shows on the map.' + (G.mode === 'solo' && (al.badge || al.rogue) ? '  Badge ' + al.badge + ' \u00b7 Rogue ' + al.rogue : '');
+  $('missionSub').textContent = (G.mode === 'mp' ? 'Shared with everyone in the room. ' : '') + 'Pick one job; only that one shows on the map.' + (G.mode === 'solo' && (al.badge || al.rogue) ? '  Badge ' + al.badge + ' \u00b7 Rogue ' + al.rogue : '') + (G.mode === 'solo' && al.picks && al.picks.ending ? '  \u00b7 Ending: ' + (al.picks.ending === 'badge' ? 'Hero Cops' : 'Kings of Bors City') : '');
   let h = '';
   for (const [cat, name] of MISSION_CATS) {
     h += '<p class="mcat">' + esc(name) + '</p>';
     if (cat === 'gang') { h += '<div class="mrow"><div class="mtxt"><b>Turf ' + turf + '</b><small>Kill 3 gang members on a rival gang block (red, purple, teal, orange or green) to start a gang war. Win it and the block turns Bors blue.</small></div></div>'; continue; }
     for (const x of L) {
       if (x.I.cat !== cat) continue;
+      if (cat === 'saga' && x.id !== sagaCurrent(x.I.gang)) continue;   // one row per gang: the next step of its saga
+      if (cat === 'contact' && x.done && G.mode === 'solo') { const cd = callWait(x.id); h += '<div class="mrow"><div class="mtxt"><b>\u260E ' + esc(x.I.title) + '</b><small>' + esc(CONTACTS[x.id].service + (cd ? ' (again in ' + cd + 's)' : '')) + '</small></div><button class="btn-primary small" data-call="' + x.id + '"' + (cd || G.mission ? ' disabled' : '') + '>CALL</button></div>'; continue; }
       const label = x.active ? 'Active' : x.state === 'locked' ? 'Locked' : x.done ? 'Replay' : 'Play';
       const dis = x.state === 'locked' || (!x.active && !!G.mission);
-      h += '<div class="mrow' + (x.active ? ' active' : '') + (x.state === 'locked' ? ' locked' : '') + '"><div class="mtxt"><b>' + (x.done ? '\u2714 ' : '') + esc(x.I.title) + '</b><small>' + esc(x.why || x.I.desc) + '</small></div>' +
+      h += '<div class="mrow' + (x.active ? ' active' : '') + (x.state === 'locked' ? ' locked' : '') + '"><div class="mtxt"><b>' + (x.done ? '\u2714 ' : '') + esc(x.I.title) + '</b><small>' + esc(x.why || (x.I.cat === 'saga' && gangBroken(x.I.gang) ? 'Done. Perk active: ' + HQ_LOOK[x.I.gang].perk : x.I.desc)) + '</small></div>' +
         '<button class="' + (x.active ? 'btn-glass' : 'btn-primary') + ' small" data-id="' + x.id + '"' + (dis ? ' disabled' : '') + '>' + label + '</button></div>';
     }
   }
   $('missionList').innerHTML = h;
   for (const b of $('missionList').querySelectorAll('button[data-id]')) b.onclick = () => { const id = b.dataset.id; activateMission(G.activeId === id ? null : id); closeMissionApp(); };
+  for (const b of $('missionList').querySelectorAll('button[data-call]')) b.onclick = () => { closeMissionApp(); callContact(b.dataset.call); };
 }
 // ---- v25: 'clear' missions (Card Sharks, Mall Rats) and interior patrons for the big buildings
 function serviceOf(kind) { return (G.city.services || []).find(s => s.kind === kind); }
@@ -4076,6 +4226,7 @@ function interiorPatrons() {
     if (!free.length) continue;
     const sp = free[Math.floor(Math.random() * free.length)], p = spawnCiv(sp.x, sp.y);
     p.patronOf = S; p.stay = true; p.stayA = rand(0, TAU); p.a = p.stayA;
+    if (S.kind === 'prison') p.look = Object.assign({}, p.look, { shirt: '#e8762c', pants: '#e8762c' });
     if (S.kind === 'casino') p.look = Object.assign({}, p.look, { shirt: pick(['#141414', '#f2f2f2', '#6b1f5c', '#1d3d97']) });
   }
 }
@@ -4128,12 +4279,16 @@ function dlgStep() {
 }
 // ---- v26: Story Act I "Badge & Burn". Original characters; solo campaign driven by a small step runner.
 function storyAlign() { return G.story || { badge: 0, rogue: 0, picks: {} }; }
-function shredPrice() { return storyAlign().badge >= 2 ? Math.round(PRICE.locker / 2) : PRICE.locker; }
+function shredPrice() { if (gangBroken('saints')) return 0; return storyAlign().badge >= 2 ? Math.round(PRICE.locker / 2) : PRICE.locker; }
 function blockOf(kind, i) { const L = G.city.blocks.filter(b => b.district === kind); return L[Math.min(L.length - 1, i || 0)] || null; }
 const BRIGGS = 'Captain Rhonda Briggs', VARGA = 'IA Detective Nico Varga', VELVET = 'Councilman Victor Velvet', LOU = 'Tiny Lou';
 function bro() { return G.player && G.player.char === 'bary' ? 'BARY' : 'MaFl'; }
 function sib() { return G.player && G.player.char === 'bary' ? 'MaFl' : 'BARY'; }
 function storyScript(id) {
+  if (id === 'cheist') return casinoHeistScript();
+  if (/^act(7|8|9|10)$/.test(id)) return act2Script(id);
+  if (id.indexOf('c_') === 0) return contactScript(id);
+  if (id.indexOf('gs_') === 0) return sagaScript(id.split('_')[1], +id.split('_')[2]);
   switch (id) {
     case 'act1': return [
       { t: 'say', lines: [[BRIGGS, 'Boys. Somebody is moving stolen police rifles through the docks. OUR rifles.'], [sib(), 'Rifles? We still have to sign for every donut.'], [BRIGGS, 'Harbour Rats. East docks. Bring me a crate and try not to blow up the harbour.']] },
@@ -4187,22 +4342,42 @@ function storyUpdate(M) {
     M.stepInit = true;
     switch (S.t) {
       case 'say': M.waiting = true; showDialog(S.lines, null, () => { M.waiting = false; storyNext(M); }); return;
-      case 'choice': M.waiting = true; showDialog([], { who: S.who, q: S.q, opts: S.opts }, k => { M.waiting = false; const st = G.story; st.picks[S.key] = k; if (k === 'badge') st.badge++; else st.rogue++; saveMissions(); toast(k === 'badge' ? 'BADGE +1\nBy the book. Mostly.' : 'ROGUE +1\nThe rulebook is on fire.', 1.6); storyNext(M); }); return;
+      case 'choice': if (S.board && storyAlign().picks[S.key]) { toast('PLANNING BOARD\nPlan: ' + storyAlign().picks[S.key].toUpperCase(), 1.4); storyNext(M); return; } M.waiting = true; showDialog([], { who: S.who, q: S.q, opts: S.opts }, k => { M.waiting = false; const st = G.story; st.picks[S.key] = k; if (S.noAlign) { saveMissions(); storyNext(M); return; } if (k === 'badge') st.badge++; else st.rogue++; saveMissions(); toast(k === 'badge' ? 'BADGE +1\nBy the book. Mostly.' : 'ROGUE +1\nThe rulebook is on fire.', 1.6); storyNext(M); }); return;
       case 'branch': { const k = storyAlign().picks[S.key] || 'badge'; M.steps.splice(M.si + 1, 0, ...(S[k] || [])); storyNext(M); return; }
       case 'kill': case 'goto': { const a = S.at(); M.goal = { x: a.x, y: a.y }; M.spawned = false; break; }
       case 'chase': {
         let sp = null; for (let i = 0; i < 40 && !sp; i++) { const r = randomRoadSpawn(P.x, P.y, 450, 800); if (r && !carNear(r.x, r.y, 100)) sp = r; }
         if (!sp) sp = randomRoadSpawn(P.x, P.y, 300, 3000);
-        const c = makeCar('sport', sp.x, sp.y, sp.a, { ai: 'traffic' }); c.prevNode = sp.from; c.nextNode = sp.to; c.cruise = 330; c.marked = true; c.hp = c.maxHp = 260;
-        const d = makePed('gang', sp.x, sp.y, { weapon: 'pistol' }); gangDress(d); d.gang = 'rats'; d.look = Object.assign({}, d.look, { shirt: GANGS.rats.shirt, pants: GANGS.rats.pants }); d.car = c; d.state = 'drive'; d.mission = M; c.driver = d;
+        const cg = S.gang || 'rats', c = makeCar(S.car || 'sport', sp.x, sp.y, sp.a, { ai: 'traffic' }); c.prevNode = sp.from; c.nextNode = sp.to; c.cruise = S.car === 'van' ? 260 : 330; c.marked = true; c.hp = c.maxHp = S.hp || 260;
+        const d = makePed('gang', sp.x, sp.y, { weapon: 'pistol' }); gangDress(d); d.gang = cg; d.look = Object.assign({}, d.look, { shirt: GANGS[cg].shirt, pants: GANGS[cg].pants }); d.car = c; d.state = 'drive'; d.mission = M; c.driver = d;
         G.peds.push(d); G.cars.push(c); M.car = c; M.courier = d; M.targets.push(d); M.farT = 0; break;
       }
       case 'survive': M.timer = S.secs; M.waveT = G.time + 1; break;
       case 'lose': addHeat(Math.max(0, 115 - wantedOf(P).heat), P); M.timer = 150; break;
       case 'clearB': { const B = serviceOf(S.bld); M.S = B; const rooms = Object.values(B.rooms).filter((r, i) => !(B.kind === 'casino' && i === 3));
         for (let i = 0; i < S.n; i++) { const r = rooms[i % rooms.length]; for (let k = 0; k < 30; k++) { const x = r[0] + 30 + Math.random() * (r[2] - 60), y = r[1] + 30 + Math.random() * (r[3] - 60); if (pedBlocked({ r: 13 }, x, y) || G.city.cellCost(x, y) !== 1) continue; const g = spawnGang(x, y, null, FLANKS[i % 5]); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.home = { x, y }; g.mission = M; g.sight = 420; M.targets.push(g); break; } }
+        if (S.boss && B.rooms.office) { const r = B.rooms.office; for (let k = 0; k < 30; k++) { const x = r[0] + r[2] / 2 + rand(-50, 50), y = r[1] + r[3] / 2 + rand(-10, 20); if (pedBlocked({ r: 15 }, x, y)) continue; const g = spawnGang(x, y, null, 0, S.bossWeapon || 'smg'); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants, hat: 'cap', glasses: true, scale: 1.18 }); g.boss = true; g.name = S.boss; g.hp = g.maxHp = 700; g.home = { x, y }; g.mission = M; g.sight = 380; M.targets.push(g); break; } }
         M.timer = 180; break; }
-      case 'reward': { if (S.rep) addRep(S.rep); M.steps.length = M.si + 1; completeMission(S.cash || 0, 'STORY: ' + MISSION_INFO[M.marker.id].title.replace(/^Act I\.\d /, '') + ' complete'); return; }
+      case 'cvault': {
+        const B = serviceOf('casino'), d = B.vdoor, v = B.rooms.vault;
+        const lx = v[0] + 30, ly = v[1] + v[3] - 34, gap = (v[2] - 60) / 3;
+        G.cheist = { S: B, mode: S.mode, prog: 0, lastT: G.time, loot: [0, 1, 2, 3].map(i => ({ x: lx + i * gap, y: i % 2 ? ly : ly - 22, taken: false })) };
+        if (S.mode === 'blast' && !(P.ammo.c4 > 0)) giveWeapon(P, 'c4', 1);
+        break;
+      }
+      case 'cloot': break;
+      case 'reward_cash': addCash(S.cash || 0, P.x, P.y); storyNext(M); return;
+      case 'ending': G.story.picks.ending = S.kind; saveMissions(); toast(S.kind === 'badge' ? 'ENDING: HERO COPS\nBadge ' + storyAlign().badge + ' \u00b7 Rogue ' + storyAlign().rogue : 'ENDING: KINGS OF BORS CITY\nBadge ' + storyAlign().badge + ' \u00b7 Rogue ' + storyAlign().rogue, 3); storyNext(M); return;
+      case 'escape': {
+        const B = { door: playerPos() }; let drop = null;
+        for (let i = 0; i < 8 && !drop; i++) drop = randomRoadSpawn(B.door.x, B.door.y, 1500, 2700);
+        if (!drop) drop = randomRoadSpawn(B.door.x, B.door.y, 800, 5000) || { x: G.city.places.garage.x, y: G.city.places.garage.y };
+        M.drop = { x: drop.x, y: drop.y }; M.timer = 150;
+        { const W = wantedOf(P); if (W.heat < 330) addHeat(330 - W.heat, P); }
+        newsAll('GET TO THE DROP-OFF!\n5 stars. Bors City wants its money back.', 2.2, 'alarm');
+        break;
+      }
+      case 'reward': { if (S.rep) addRep(S.rep); M.steps.length = M.si + 1; completeMission(S.cash || 0, 'STORY: ' + MISSION_INFO[M.marker.id].title.replace(/^Act I+\.\d+ /, '') + ' complete'); return; }
     }
   }
   if (M.waiting) return;
@@ -4212,7 +4387,7 @@ function storyUpdate(M) {
         M.spawned = true; M.group = [];
         for (let i = 0; i < S.n; i++) { const pt = randomSidewalkPoint(M.goal.x, M.goal.y, 120, 320) || { x: M.goal.x + rand(-60, 60), y: M.goal.y }; if (pedBlocked({ r: 13 }, pt.x, pt.y)) continue;
           const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.home = { x: pt.x, y: pt.y }; g.mission = M; g.sight = 620;
-          if (S.boss && i === 0) { g.boss = true; g.name = S.boss; g.hp = g.maxHp = 500; g.weapon = 'shotgun'; }
+          if (S.boss && i === 0) { g.boss = true; g.name = S.boss; g.hp = g.maxHp = S.bossHp || 500; g.weapon = 'shotgun'; }
           M.targets.push(g); M.group.push(g); }
       }
       const alive = (M.group || []).filter(g => g.alive);
@@ -4221,7 +4396,7 @@ function storyUpdate(M) {
       M.text = S.label + (M.spawned ? ': ' + alive.length + ' left' : ''); return;
     }
     case 'goto': {
-      if (!M.npc && dist(P.x, P.y, M.goal.x, M.goal.y) < 700) { const q0 = { r: 13 }, sp = freeSpotNear(q0, M.goal.x + 34, M.goal.y); const p = spawnCiv(sp.x, sp.y); p.stay = true; p.name = S.npc; p.storyNpc = true; p.look = Object.assign({}, p.look, S.npc === VELVET ? { shirt: '#f2f2f2', pants: '#141414' } : { shirt: '#e8b436' }); M.npc = p; }
+      if (S.npc && !M.npc && dist(P.x, P.y, M.goal.x, M.goal.y) < 700) { const q0 = { r: 13 }, sp = freeSpotNear(q0, M.goal.x + 34, M.goal.y); const p = spawnCiv(sp.x, sp.y); p.stay = true; p.name = S.npc; p.storyNpc = true; p.look = Object.assign({}, p.look, S.npc === VELVET ? { shirt: '#f2f2f2', pants: '#141414' } : { shirt: '#e8b436' }); M.npc = p; }
       M.objective = M.goal; M.text = S.label;
       if (M.npc && !M.npc.alive) { failMission(S.npc + ' is dead. That\'s not how interviews work.'); return; }
       if (dist(P.x, P.y, M.goal.x, M.goal.y) < 60 && !P.car) { storyNext(M); return; }
@@ -4229,7 +4404,7 @@ function storyUpdate(M) {
     }
     case 'chase': {
       const c = M.car, d = M.courier;
-      if (!c || c.dead || !d || !d.alive || (d.car !== c)) { if (c) c.marked = false; storyNext(M); return; }
+      if (!c || c.dead || !d || !d.alive || (d.car !== c)) { M.carPos = c ? freeSpotNear(P, c.x, c.y) : playerPos(); if (c) c.marked = false; storyNext(M); return; }
       M.objective = { x: c.x, y: c.y };
       const dd = dist(P.x, P.y, c.x, c.y); if (dd > 2400) { M.farT += 1 / 60; if (M.farT > 8) { failMission('The courier got away'); return; } } else M.farT = 0;
       M.text = S.label + (dd > 1500 ? ' (he is getting away!)' : ''); return;
@@ -4249,6 +4424,28 @@ function storyUpdate(M) {
       if (st === 0 && M.timer < 148) { storyNext(M); return; }
       return;
     }
+    case 'cvault': {
+      const H = G.cheist, B = H.S, d = B.vdoor, spot = { x: d.x + 25, y: d.y - 26 };
+      const step = clamp(G.time - H.lastT, 0, 0.1); H.lastT = G.time;
+      if (!d.open && H.mode === 'drill' && dist(P.x, P.y, spot.x, spot.y) < 55 && !P.car) { H.prog += step; if (chance(0.3)) addParticles('spark', spot.x + rand(-6, 6), d.y - 4, 1); if (H.prog >= CHEIST.drill) casinoOpen(P); }
+      if (d.open) { storyNext(M); return; }
+      M.objective = inRect(B, P.x, P.y) ? spot : { x: B.door.x, y: B.door.y };
+      M.text = H.mode === 'drill' ? 'Drill the counting-room door: stand next to it (' + Math.round(H.prog / CHEIST.drill * 100) + '%)' : 'Blow the counting-room door: C4 or any explosive';
+      return;
+    }
+    case 'cloot': {
+      const H = G.cheist; let got = 0;
+      for (const L2 of H.loot) { if (!L2.taken && dist(P.x, P.y, L2.x, L2.y) < 26) { L2.taken = true; addParticles('cash', L2.x, L2.y, 8); addCash(CHEIST.stack, L2.x, L2.y); addHeat(40, P); } if (L2.taken) got++; }
+      if (got >= S.need) { storyNext(M); return; }
+      const left = H.loot.filter(q => !q.taken).sort((a, b) => dist(a.x, a.y, P.x, P.y) - dist(b.x, b.y, P.x, P.y))[0];
+      M.objective = inRect(H.S, P.x, P.y) ? { x: left.x, y: left.y } : { x: H.S.door.x, y: H.S.door.y };
+      M.text = 'Grab the cash: ' + got + '/' + S.need + ' stacks'; return;
+    }
+    case 'escape': {
+      M.objective = M.drop; M.text = 'Reach the green DROP-OFF (' + Math.ceil(M.timer) + 's)';
+      if (dist(P.x, P.y, M.drop.x, M.drop.y) < 64) { clearWanted(P); for (const p of G.peds) if ((p.kind === 'cop' || p.kind === 'swat') && p.alive && p.target === P) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.home = { x: p.x, y: p.y }; } storyNext(M); }
+      return;
+    }
     case 'clearB': {
       const alive = M.targets.filter(g => g.alive && g.mission === M);
       if (!alive.length) { storyNext(M); return; }
@@ -4258,11 +4455,244 @@ function storyUpdate(M) {
     }
   }
 }
+// ---- v27: gang sagas. Each gang: stash raid -> convoy -> showdown at its HQ with the leader. Beating a leader gives a perk.
+function gangBroken(g) { return G.mode === 'solo' && !!(G.misDone && G.misDone['gs_' + g + '_3']); }
+function ownOf(g) { const L = G.city && G.city.territories; return L ? L.filter(T => T.gang === g && T.owner === 'bors').length : 0; }
+function sagaCurrent(g) { for (let n = 1; n <= 3; n++) if (!missionsDone()['gs_' + g + '_' + n]) return 'gs_' + g + '_' + n; return 'gs_' + g + '_3'; }
+function priceOf(it) { return gangBroken('rats') ? Math.round(it.price * 0.8 / 10) * 10 : it.price; }
+function hqOf(g) { return (G.city.services || []).find(S => S.gang === g); }
+function sagaScript(g, n) {
+  const L = HQ_LOOK[g], G2 = GANGS[g].name, H = hqOf(g);
+  const stash = () => { const T = G.city.territories.filter(t => t.gang === g && t.owner !== 'bors').sort((a, b) => dist(a.x, a.y, H.x, H.y) - dist(b.x, b.y, H.x, H.y))[0]; return T ? edgePoint(T.blk, 'top', 0.5) : { x: H.door.x, y: H.door.y }; };
+  if (n === 1) return [
+    { t: 'say', lines: [[BRIGGS, 'The ' + G2 + ' answer to one person: ' + L.boss + '. We never get close.'], [sib(), 'So we make noise. Their ' + L.stash + ' should do it.']] },
+    { t: 'kill', at: stash, n: 6, gang: g, label: 'Raid the ' + G2 + ' stash' },
+    { t: 'say', lines: [[bro(), 'Stash is ours. They are loading what is left into a convoy.'], [sib(), 'Next time, we hit the convoy.']] },
+    { t: 'reward', cash: 700, rep: 40 }];
+  if (n === 2) return [
+    { t: 'say', lines: [[BRIGGS, 'The ' + G2 + ' convoy is rolling to the ' + L.name + '. Stop it.']] },
+    { t: 'chase', gang: g, car: 'van', hp: 420, label: 'Stop the ' + G2 + ' convoy' },
+    { t: 'say', lines: [[bro(), 'Convoy down. ' + L.boss + ' is holed up in the ' + L.name + '.'], [sib(), 'Take 3 of their blocks first. Then they are too weak to hold the place.']] },
+    { t: 'reward', cash: 900, rep: 50 }];
+  return [
+    { t: 'goto', at: () => ({ x: H.door.x, y: H.door.y }), label: 'Go to the ' + L.name },
+    { t: 'say', lines: [[L.boss, L.taunt], [bro(), 'Bors City police. You are under arrest. Or under the table. Your choice.']] },
+    { t: 'clearB', bld: H.kind, gang: g, n: 5, boss: L.boss.toUpperCase(), bossWeapon: L.weapon, label: 'Take down ' + L.boss },
+    { t: 'say', lines: [[BRIGGS, L.boss + ' is finished. The ' + G2 + ' will not hit your turf again.'], [sib(), 'Perk unlocked: ' + L.perk + '.']] },
+    { t: 'reward', cash: 2000, rep: 150 }];
+}
+function hqGuards() {
+  if (!G.isSim || G.game !== 'roam' || G.time < (G.hqT || 0)) return; G.hqT = G.time + 3;
+  for (const S of G.city.services || []) {
+    if (!S.gang || gangBroken(S.gang) || (G.mission && G.mission.S === S) || G.peds.length > CFG.world.maxPeds - 20) continue;
+    let near = false, inside = false; for (const q of allPlayers()) { const qp = posOf(q); if (dist(qp.x, qp.y, S.x + S.w / 2, S.y + S.h / 2) < 900) near = true; if (inRect(S, qp.x, qp.y)) inside = true; }
+    if (!near || inside) continue;
+    let n = 0; for (const p of G.peds) if (p.alive && p.hqOf === S) n++;
+    for (let i = n; i < 2; i++) { const r = S.rooms.hall; for (let k = 0; k < 20; k++) { const x = r[0] + 40 + Math.random() * (r[2] - 80), y = r[1] + 40 + Math.random() * (r[3] - 70); if (pedBlocked({ r: 13 }, x, y) || G.city.cellCost(x, y) !== 1) continue; const g = spawnGang(x, y, null, 0); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.hqOf = S; g.home = { x, y }; g.sight = 360; break; } }
+  }
+}
+// ---- v28: Bors Air destinations, contacts and their phone services (solo)
+function flyDestinations() {
+  const C = G.city, L = [], by = k => C.blocks.filter(b => b.district === k);
+  const add = (key, name, b, side) => { if (b) { const p = edgePoint(b, side || 'top', 0.5); L.push({ key, name, x: p.x, y: p.y }); } };
+  add('hq', 'BORS HQ', C.safehouse ? C.blocks.find(b => b.district === 'safehouse') : null);
+  add('beach', 'Bors Beach', by('beach')[3]); add('rich', 'Rich Hills', by('richhills')[2], 'bottom'); add('docks', 'the Docklands', by('docklands')[3], 'left');
+  return L;
+}
+const ROSA = 'Rosa', GINA = 'Gearbox Gina', DOYLE = 'Sgt. Doyle';
+const CONTACTS = {
+  c_gina: { service: 'Call Gina: full repair of the car you are in ($150)', cd: 60 },
+  c_rosa: { service: 'Visit Rosa: full health and armor, on the house', cd: 180 },
+  c_lou: { service: 'Call Lou: a tip on hidden gang cash', cd: 240 },
+  c_doyle: { service: 'Call Doyle: wanted stars vanish ($250)', cd: 180 }
+};
+function callWait(id) { const t = (G.callT || {})[id] || 0; return t > G.time ? Math.ceil(t - G.time) : 0; }
+function callContact(id) {
+  const P = G.player, C2 = CONTACTS[id]; if (!C2 || G.mode !== 'solo' || !P || !P.alive || G.busted) return;
+  if (callWait(id)) { toast('No answer\nTry again in ' + callWait(id) + 's', 1.3); return; }
+  const dating = storyAlign().picks.c_rosa === 'date';
+  let ok = false;
+  if (id === 'c_gina') {
+    if (!P.car || P.car.dead) { toast(GINA + ':\nYou\'re not even in a car, genius.', 1.8); return; }
+    if (!pay(150)) return; P.car.hp = P.car.maxHp; ok = true; toast(GINA + ':\nGood as new. Try not to drive into the river.', 2);
+  } else if (id === 'c_rosa') {
+    if (wantedOf(P).stars > 0) { toast(ROSA + ':\nLose the cops first, ' + (dating ? 'handsome.' : 'pal.'), 1.8); return; }
+    P.hp = P.maxHp; P.armor = 100; ok = true; toast(ROSA + ':\n' + (dating ? 'Dinner\'s on me. Stay safe out there.' : 'Patched you up. That\'s what friends are for.'), 2.2);
+  } else if (id === 'c_lou') {
+    const T = G.city.territories.filter(t => t.owner !== 'bors'); const b = T.length ? T[Math.floor(Math.random() * T.length)].blk : G.city.blocks[Math.floor(Math.random() * G.city.blocks.length)];
+    const p = edgePoint(b, pick(['top', 'bottom', 'left', 'right']), rand(0.2, 0.8)); G.tip = { x: p.x, y: p.y, amt: 400 }; ok = true; toast(LOU + ':\nThere\'s gang cash stashed at the green marker. You didn\'t hear it from me.', 2.4);
+  } else if (id === 'c_doyle') {
+    if (wantedOf(P).stars === 0) { toast(DOYLE + ':\nYou\'re clean. Don\'t waste my time.', 1.6); return; }
+    if (!pay(250)) return; clearWanted(P); for (const p of G.peds) if ((p.kind === 'cop' || p.kind === 'swat') && p.alive && p.target === P) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.home = { x: p.x, y: p.y }; }
+    ok = true; toast(DOYLE + ':\nPaperwork got lost. Funny how that happens.', 2);
+  }
+  if (ok) { G.callT[id] = G.time + C2.cd; sfx('pickup'); }
+}
+function tipTick() {
+  const P = G.player; if (!G.tip || !P || !P.alive) return;
+  if (dist(P.x, P.y, G.tip.x, G.tip.y) < 40 && !P.car) { addCash(G.tip.amt, P.x, P.y); toast('STASH FOUND\n+$' + G.tip.amt + '. Lou sends his regards.', 1.8); G.tip = null; }
+  if (G.wx && G.wx.level > 0.4 && G.time > (G.wetToast || 0) && P.car) { G.wetToast = G.time + 600; toast('WET ROADS\nThe rain makes the cars slide. Brake early.', 2); }
+}
+function contactScript(id) {
+  const H = G.city.safehouse, lb = G.city.blocks.filter(b => b.district === 'littlebors');
+  switch (id) {
+    case 'c_gina': return [
+      { t: 'say', lines: [[GINA, 'You the Bors Brothers? Somebody boosted my tow truck. Raiders, by the smell of it.'], [GINA, 'Get it back and I fix anything you drive. Any time.']] },
+      { t: 'chase', gang: 'raiders', car: 'van', hp: 360, label: 'Stop the stolen tow truck' },
+      { t: 'say', lines: [[GINA, 'A bit dented, but mine. Call me when your ride needs love.']] },
+      { t: 'reward', cash: 500, rep: 30 }];
+    case 'c_rosa': return [
+      { t: 'goto', at: () => { const B = G.city.bar; return B ? { x: B.door.x, y: B.door.y } : playerPos(); }, npc: ROSA, label: 'Meet Rosa at the Bors Bar' },
+      { t: 'say', lines: [[ROSA, 'You\'re the brothers everyone talks about. I\'m Rosa. New behind the bar.'], [ROSA, 'A loan shark is sending his Rats to "collect". I could use some help.']] },
+      { t: 'choice', key: 'c_rosa', noAlign: true, who: bro(), q: 'Rosa smiles. What do you say?', opts: [['Ask her out', 'date'], ['Offer friendship', 'friend']] },
+      { t: 'branch', key: 'c_rosa',
+        date: [{ t: 'say', lines: [[ROSA, 'Dinner after this? Deal. First, the Rats.']] }],
+        friend: [{ t: 'say', lines: [[ROSA, 'Friends it is. Friends who shoot loan sharks.']] }] },
+      { t: 'kill', at: () => playerPos(), n: 4, gang: 'rats', label: 'Chase off the loan shark\'s Rats' },
+      { t: 'say', lines: [[ROSA, 'Thank you. Come by any time, my door is open.']] },
+      { t: 'reward', cash: 400, rep: 30 }];
+    case 'c_lou': return [
+      { t: 'goto', at: () => edgePoint(lb[1] || G.city.blocks[0], 'top', 0.5), npc: LOU, label: 'Find Tiny Lou' },
+      { t: 'say', lines: [[LOU, 'Guys! The Dragons want their money back. With interest. Lots of interest.'], [sib(), 'Fine. Last time, Lou.']] },
+      { t: 'kill', at: () => playerPos(), n: 5, gang: 'dragons', label: 'Deal with Lou\'s debt collectors' },
+      { t: 'say', lines: [[LOU, 'You\'re the best. I hear things, you know. Call me and I\'ll tell you where the gangs hide their cash.']] },
+      { t: 'reward', cash: 500, rep: 30 }];
+    case 'c_doyle': return [
+      { t: 'say', lines: [[DOYLE, 'Sgt. Doyle. I\'m not a good cop and I\'m not a bad cop. I\'m an expensive cop.'], [DOYLE, 'The Rats know about my side jobs. Make that problem go away and I\'ll make yours go away.']] },
+      { t: 'kill', at: () => { const b = G.city.blocks.filter(q => q.district === 'docklands')[5] || G.city.blocks[0]; return edgePoint(b, 'left', 0.5); }, n: 5, gang: 'rats', label: 'Silence the Rats who know too much' },
+      { t: 'say', lines: [[DOYLE, 'Clean work. Call me when the stars are out. For a fee, of course.']] },
+      { t: 'reward', cash: 600, rep: 30 }];
+  }
+  return [{ t: 'reward', cash: 100 }];
+}
+// ---- v29a: casino heist (The Counting Room) and the BORS HQ garage tuning shop
+const CHEIST = { drill: 8, stack: 600 };
+function casinoHeistScript() {
+  return [
+    { t: 'say', lines: [[BRIGGS, 'Velvet\'s dirty cash sleeps in the Bors Casino counting room. Four fat stacks.'], [sib(), 'Evidence. In cash form. We\'re basically doing paperwork.']] },
+    { t: 'choice', key: 'cheist', noAlign: true, board: true, who: bro(), q: 'How do we hit the counting room?', opts: [['Quiet: drill the door', 'quiet'], ['Loud: blow it up', 'loud']] },
+    { t: 'branch', key: 'cheist',
+      quiet: [{ t: 'say', lines: [[sib(), 'Quiet it is. Fewer guards, but the drill takes a moment.']] }, { t: 'clearB', bld: 'casino', gang: 'cartel', n: 3, label: 'Take out casino security' }, { t: 'cvault', mode: 'drill' }],
+      loud: [{ t: 'say', lines: [[sib(), 'Loud it is. Here, take a C4. Every guard in the building will hear it.']] }, { t: 'clearB', bld: 'casino', gang: 'cartel', n: 6, label: 'Take out casino security' }, { t: 'cvault', mode: 'blast' }] },
+    { t: 'cloot', need: 3 },
+    { t: 'escape' },
+    { t: 'say', lines: [[BRIGGS, 'Velvet\'s books AND his cash. That will hurt him more than any arrest.'], [bro(), 'Do we... hand all of it in?'], [BRIGGS, 'Most of it.']] },
+    { t: 'reward', cash: 1500, rep: 120 }];
+}
+function casinoNav() {
+  const C = G.city, B = serviceOf('casino'); if (!B || !B.vdoor || !C.navRefresh) return; const d = B.vdoor;
+  C.navRefresh(d.x - 40, d.y - 40, d.x + d.w + 40, d.y + d.h + 40);
+  if (d.open) C.navOpen(d.x + d.w / 2, d.y - 34, d.y + d.h + 34);
+}
+function casinoOpen(by) {
+  const B = serviceOf('casino'); if (!B || B.vdoor.open) return;
+  B.vdoor.open = true; casinoNav(); addParticles('spark', B.vdoor.x + 25, B.vdoor.y, 14);
+  if (by && by.isPlayer) addHeat(G.cheist && G.cheist.mode === 'blast' ? 200 : 90, by);
+  toast('COUNTING ROOM OPEN\nGrab the cash!', 1.8); sfx('alarm', null, null, 0.7);
+}
+function casinoBlast(x, y, radius, by) {
+  const H = G.cheist; if (!H || !by || !by.isPlayer) return; const d = H.S.vdoor;
+  if (!d.open && dist(x, y, d.x + 25, d.y + 4) < Math.min(95, radius)) casinoOpen(by);
+}
+function casinoReset() {
+  const B = (G.cheist && G.cheist.S) || (G.city && serviceOf('casino')); G.cheist = null;
+  if (B && B.vdoor && B.vdoor.open) {
+    const VR = { x: B.rooms.vault[0], y: B.rooms.vault[1], w: B.rooms.vault[2], h: B.rooms.vault[3] };
+    for (const p of G.peds) if (p.alive && !p.car && inRect(VR, p.x, p.y)) {   // step everyone out onto the gaming floor before the door shuts
+      let sp = null; for (let k = 0; k < 40 && !sp; k++) { const x = B.vdoor.x + 25 + rand(-70, 70), y = B.vdoor.y - rand(24, 60); if (!inRect(VR, x, y) && !pedBlocked(p, x, y)) sp = { x, y }; }
+      if (!sp) sp = { x: B.door.x, y: B.door.y }; p.x = sp.x; p.y = sp.y; p.path = null; p.goal = null; }
+    B.vdoor.open = false; casinoNav();
+  }
+}
+const TUNE_KEY = 'gb_tune';
+const PAINTS = ['#d62828', '#1d3d97', '#f4f4f4', '#111111', '#e8b436', '#2ea44f', '#ff4fd8', '#7a3fd8'];
+const TUNE = { nitro: 800, armor: 600, paint: 150, nitroSec: 3, nitroCd: 12 };
+function loadTune() {
+  let d = null; try { d = JSON.parse(localStorage[TUNE_KEY] || 'null'); } catch (e) { d = null; }
+  G.tune = { v: 1, nitro: !!(d && d.nitro === true), armor: !!(d && d.armor === true), paint: d && Number.isInteger(d.paint) && d.paint >= 0 && d.paint < PAINTS.length ? d.paint : -1 };
+}
+function saveTune() { try { localStorage[TUNE_KEY] = JSON.stringify(G.tune); } catch (e) {} }
+function nitroOn(c) { return !!(G.player && c === G.player.car && G.nitroT > G.time); }
+function nitroTick() {
+  const P = G.player; if (!IN.nitro) return; IN.nitro = false;
+  if (!P || !P.car || !P.alive || !G.tune || !G.tune.nitro) return;
+  if (G.time < (G.nitroReady || 0)) return;
+  G.nitroT = G.time + TUNE.nitroSec; G.nitroReady = G.time + TUNE.nitroCd; G.nitroHintT = 0; sfx('rocket', P.car.x, P.car.y, 0.6);
+}
+function tuneMenu(c) {
+  const T = G.tune, P = G.player; if (!T || !P || P.car !== c) return;
+  const opts = [[T.nitro ? 'Nitro (owned)' : 'Nitro boost $' + TUNE.nitro, 'nitro'], [T.armor ? 'Armor plating (owned)' : 'Armor plating $' + TUNE.armor, 'armor'], ['Paint job $' + TUNE.paint, 'paint'], ['Done', 'x']];
+  showDialog([], { who: GINA + ' \u00b7 Bors Garage', q: 'Your ride, your rules. What do you want? Upgrades work on every car you drive.', opts }, k => {
+    if (!k || k === 'x' || P.car !== c) return;
+    if (k === 'nitro') { if (T.nitro) toast('You already have nitro\nPress N / NITRO while driving.', 1.6); else if (pay(TUNE.nitro)) { T.nitro = true; saveTune(); G.nitroHintT = G.time + 20; toast('NITRO INSTALLED\n' + (isTouch ? 'Tap NITRO' : 'Press N') + ' for a 3-second boost.', 2); sfx('mission'); } }
+    if (k === 'armor') { if (T.armor) toast('Armor already fitted', 1.2); else if (pay(TUNE.armor)) { T.armor = true; saveTune(); toast('ARMOR PLATING\nYour cars now take half damage.', 2); sfx('mission'); } }
+    if (k === 'paint') { if (pay(TUNE.paint)) { T.paint = (T.paint + 1) % PAINTS.length; saveTune(); c.color = PAINTS[T.paint]; try { const g = JSON.parse(localStorage[GARAGE_KEY] || 'null'); if (g) { g.col = c.color; localStorage[GARAGE_KEY] = JSON.stringify(g); } } catch (e) {} toast('FRESH PAINT\nLooking fast already.', 1.4); sfx('pickup'); } }
+    setTimeout(() => { if (G.phase === 'playing' && P.car === c && $('dialog').hidden) tuneMenu(c); }, 300);
+  });
+}
+// ---- v29b: HQ planning board, Story Act II (airport cargo heist, prison break, finale with two endings)
+function boardPos() { const S = G.city.safehouse; return { x: S.x + 34, y: S.y + S.h - 34 }; }
+function nearBoard(P) { const S = G.city && G.city.safehouse; if (!S || G.mode !== 'solo' || !P || !P.alive || P.car || G.busted) return false; const b = boardPos(); return dist(P.x, P.y, b.x, b.y) < 34; }
+function planningBoard() {
+  const al = storyAlign(), pk = al.picks;
+  const lbl = (k, a, b) => pk[k] === a ? a.toUpperCase() : pk[k] === b ? b.toUpperCase() : 'not set';
+  showDialog([], { who: 'Planning board \u00b7 BORS HQ', q: 'Pick the approach before the job. You can change it any time before you start the heist.', opts: [['Casino: ' + lbl('cheist', 'quiet', 'loud'), 'c'], ['Airport: ' + lbl('act8', 'stealth', 'assault'), 'a'], ['Done', 'x']] }, k => {
+    if (k === 'c') pk.cheist = pk.cheist === 'quiet' ? 'loud' : 'quiet';
+    else if (k === 'a') pk.act8 = pk.act8 === 'stealth' ? 'assault' : 'stealth';
+    else return;
+    saveMissions(); sfx('click'); setTimeout(() => { if (G.phase === 'playing' && $('dialog').hidden) planningBoard(); }, 200);
+  });
+}
+const VARGA_BOSS = 'IA DETECTIVE VARGA';
+function act2Script(id) {
+  const P = G.player, C = G.city, al = storyAlign(), rogueVelvet = al.picks.act6 === 'rogue';
+  const blk = k => C.blocks.filter(b => b.district === k);
+  switch (id) {
+    case 'act7': return [
+      { t: 'say', lines: [[BRIGGS, rogueVelvet ? 'Velvet paid you off, and now Varga is cleaning house. He\'s running with the evidence.' : 'Velvet is behind bars, but Varga ran. He\'s driving out of Rich Hills right now.'], [sib(), 'Then we catch him. I always wanted to rear-end Internal Affairs.']] },
+      { t: 'chase', gang: 'saints', car: 'sport', hp: 420, label: 'Catch Varga\'s getaway car' },
+      { t: 'goto', at: () => G.mission.carPos || playerPos(), label: 'Search the wreck' },
+      { t: 'say', lines: [[bro(), 'Varga wasn\'t in it. Just a decoy... and a flight manifest.'], [sib(), 'Cartel cargo. Bors International. Tonight. Velvet\'s money is flying out.']] },
+      { t: 'reward', cash: 900, rep: 60 }];
+    case 'act8': return [
+      { t: 'say', lines: [[BRIGGS, 'The Cartel is moving Velvet\'s cash to a cargo plane. One armored truck, a lot of guns.'], [sib(), 'An airport heist. Mom would be so proud.']] },
+      { t: 'choice', key: 'act8', noAlign: true, board: true, who: bro(), q: 'How do we do this?', opts: [['Stealth: fewer guards', 'stealth'], ['Assault: more guards, more cash', 'assault']] },
+      { t: 'branch', key: 'act8',
+        stealth: [{ t: 'kill', at: () => edgePoint(blk('airport')[2] || blk('airport')[0], 'top', 0.5), n: 4, gang: 'cartel', label: 'Quietly take out the tarmac guards' }],
+        assault: [{ t: 'kill', at: () => edgePoint(blk('airport')[2] || blk('airport')[0], 'top', 0.5), n: 8, gang: 'cartel', label: 'Storm the tarmac' }, { t: 'reward_cash', cash: 1000 }] },
+      { t: 'say', lines: [[sib(), 'The cargo truck is leaving! Stop it!']] },
+      { t: 'chase', gang: 'cartel', car: 'van', hp: 650, label: 'Stop the cargo truck' },
+      { t: 'goto', at: () => G.mission.carPos || playerPos(), label: 'Grab the cargo' },
+      { t: 'escape' },
+      { t: 'say', lines: [[BRIGGS, 'Cargo secured. The Cartel lost millions. And Varga lost his ride out of town.'], [bro(), 'He\'ll go to the one place nobody looks for a cop. Prison.']] },
+      { t: 'reward', cash: 2500, rep: 120 }];
+    case 'act9': return [
+      { t: 'goto', at: () => { const S = serviceOf('prison'); return { x: S.door.x, y: S.door.y }; }, label: 'Go to Bors Penitentiary' },
+      { t: 'say', lines: rogueVelvet ? [[VELVET + ' (radio)', 'Gentlemen. My associate Varga is about to be released... early. Make sure nobody stops him.'], [sib(), 'Or... we make sure HE doesn\'t get out. Your call.']] : [[BRIGGS, 'The Cartel staged a riot to spring Velvet. If he walks, everything we did is for nothing.'], [sib(), 'Velvet stays in. Varga too, if we find him.']] },
+      { t: 'choice', key: 'act9', who: bro(), q: 'Riot in the prison. What do you do?', opts: [['Stop the riot (Badge)', 'badge'], ['Let it burn, grab the files (Rogue)', 'rogue']] },
+      { t: 'branch', key: 'act9',
+        badge: [{ t: 'clearB', bld: 'prison', gang: 'cartel', n: 6, label: 'Stop the Cartel riot' }, { t: 'say', lines: [[bro(), 'Riot over. Velvet stays put. And he talked: Varga is holed up at Bors Arena.']] }, { t: 'reward', cash: 1500, rep: 120 }],
+        rogue: [{ t: 'clearB', bld: 'prison', gang: 'saints', n: 4, label: 'Get past Velvet\'s guards to the files' }, { t: 'say', lines: [[sib(), 'Files grabbed. Half of Bors City council is in here... and Varga\'s hideout: Bors Arena.']] }, { t: 'reward', cash: 2500, rep: 80 }] }];
+    case 'act10': {
+      const hero = al.badge >= al.rogue;
+      return [
+        { t: 'goto', at: () => { const S = C.blocks.find(b => b.district === 'stadium'); return edgePoint(S, 'top', 0.72); }, label: 'Corner Varga at Bors Arena' },
+        { t: 'say', lines: [[VARGA, 'The Bors Brothers. Bad for business, bad for the badge, bad for me.'], [VARGA, 'Everybody in this city has a price. Even you two.'], [bro(), hero ? 'Wrong. We have a badge.' : 'Sure. Ours just went up.']] },
+        { t: 'kill', at: () => playerPos(), n: 7, gang: 'saints', boss: VARGA_BOSS, bossHp: 1100, label: 'Take down Varga' },
+        { t: 'say', lines: hero ? [[BRIGGS, 'Varga in cuffs. Velvet\'s empire in evidence bags. You two are getting medals.'], [sib(), 'Medals! Do they come with donuts?'], [BRIGGS, 'THE END. Bors City is safer. For now.']] : [[VELVET + ' (radio)', 'Varga is gone. Bors City needs new management... and I need partners.'], [bro(), 'Partners? We\'re the management now, Councilman.'], [sib(), 'THE END. Long live the Kings of Bors City.']] },
+        { t: 'ending', kind: hero ? 'badge' : 'rogue' },
+        { t: 'reward', cash: 5000, rep: 300 }];
+    }
+  }
+  return [{ t: 'reward', cash: 100 }];
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
+  casinoReset();
   G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 180 : 20);
   if (M.marker.id) missionDone(M.marker.id);
+  if (G.mode === 'solo' && gangBroken('cartel')) reward = Math.round(reward * 1.2);
   const ps = allPlayers(), share = ps.length > 1 ? Math.ceil(reward / ps.length / 10) * 10 : reward;
   for (const q of ps) {
     if (q.isPlayer) { addCash(share, q.x, q.y); G.stats.score += 100; G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); }
@@ -4273,7 +4703,7 @@ function completeMission(reward, extra) {
 }
 function failMission(why) {
   const M = G.mission; if (!M) return;
-  closeDialog(true);
+  closeDialog(true); casinoReset();
   if (M.type === 'war' && M.terr) { M.terr.kills = 0; M.terr.coolT = G.time + 30; }
   G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : M.type === 'boss' ? 45 : 8);
   if (M.type === 'defend' && M.terr) turfLost(M.terr, why); else newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
@@ -4297,13 +4727,13 @@ const SHOP_ITEMS = [
 function openShop() { G.shopCooldownT = G.time + 3; if (G.mode === 'solo') G.paused = true; $('shopMsg').textContent = G.mode === 'solo' ? '' : 'The city keeps moving while you shop'; renderShop(); showScreen('shop'); }
 function renderShop() {
   $('shopTitle').textContent = 'Guns N\' Bors  ($' + G.stats.cash + ')';
-  $('shopItems').innerHTML = SHOP_ITEMS.map(it => '<div class="item"><span>' + it.label + '</span><button class="small ' + (G.stats.cash >= it.price ? 'btn-primary' : 'btn-glass') + '" data-id="' + it.id + '"' + (G.stats.cash >= it.price ? '' : ' disabled') + '>$' + it.price + '</button></div>').join('');
+  $('shopItems').innerHTML = SHOP_ITEMS.map(it => '<div class="item"><span>' + it.label + '</span><button class="small ' + (G.stats.cash >= priceOf(it) ? 'btn-primary' : 'btn-glass') + '" data-id="' + it.id + '"' + (G.stats.cash >= priceOf(it) ? '' : ' disabled') + '>$' + priceOf(it) + '</button></div>').join('');
   for (const b of $('shopItems').querySelectorAll('button')) b.onclick = () => buyItem(b.dataset.id);
 }
 function buyItem(id) {
   const P = G.player, it = SHOP_ITEMS.find(i => i.id === id);
-  if (!it || G.stats.cash < it.price) return;
-  G.stats.cash -= it.price;
+  if (!it || G.stats.cash < priceOf(it)) return;
+  G.stats.cash -= priceOf(it);
   switch (id) { case 'health': P.hp = Math.min(P.maxHp, P.hp + CFG.player.shopHealth); break; case 'armor': P.armor = 100; break; case 'smg': giveWeapon(P, 'smg', 60); break; case 'shotgun': giveWeapon(P, 'shotgun', 10); break; case 'taser': giveWeapon(P, 'taser', 0); break; case 'donut': giveWeapon(P, 'donut', 3); break; case 'molotov': giveWeapon(P, 'molotov', 4); break; case 'grenade': giveWeapon(P, 'grenade', 5); break; case 'bazooka': giveWeapon(P, 'bazooka', 3); break; case 'katana': giveWeapon(P, 'katana', 0); break; case 'sniper': giveWeapon(P, 'sniper', 10); break; case 'c4': giveWeapon(P, 'c4', 3); break; }
   sfx('cash'); $('shopMsg').textContent = 'Bought ' + it.label; renderShop();
 }
@@ -4334,6 +4764,7 @@ function inputInit() {
     if (e.code === 'KeyQ') IN.cycle = 1;
     if (e.code === 'KeyF' && !e.repeat) trySkill();
     if (e.code === 'KeyX' && !e.repeat) IN.boom = true;
+    if (e.code === 'KeyN' && !e.repeat) IN.nitro = true;
     if (e.code === 'KeyJ' && !e.repeat) IN.missions = true;
     if (!$('dialog').hidden && !e.repeat && (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space')) { const b = $('dlgBtns').querySelector('button[data-k="next"]'); if (b) b.click(); }
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
@@ -4373,6 +4804,7 @@ function inputInit() {
   $('btnWpn').addEventListener('pointerdown', e => { e.preventDefault(); IN.cycle = 1; });
   $('btnSkill').addEventListener('pointerdown', e => { e.preventDefault(); trySkill(); });
   $('btnBoom').addEventListener('pointerdown', e => { e.preventDefault(); IN.boom = true; });
+  $('btnNitro').addEventListener('pointerdown', e => { e.preventDefault(); IN.nitro = true; });
   $('btnPause').addEventListener('pointerdown', e => { e.preventDefault(); IN.pause = true; });
   $('btnMute').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleMute(); });
   $('btnMissions').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.missions = true; });
@@ -4593,6 +5025,7 @@ function updatePlayerFoot(dt) {
     if (IN.aimActive) P.a = turnToward(P.a, IN.aimA, C.turn * 2 * dt);
     else if (P.moving) P.a = turnToward(P.a, Math.atan2(P.vy, P.vx), C.turn * dt);
   }
+  if (IN.interact && nearBoard(P)) { planningBoard(); IN.interact = false; }
   if (IN.interact && nearBed(P)) { sleepInSafehouse(); IN.interact = false; }
   if (IN.interact && nearCounter(P)) { buyBrew(); IN.interact = false; }
   if (IN.interact) { const st = nearStation(P); if (st) { useStation(st); IN.interact = false; } }
@@ -4688,6 +5121,7 @@ function drawGround(V) {
     else if (b.district === 'richhills') { ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let k = 0; k < 2; k++) ctx.fillRect(b.x + 24 + k * b.w / 2, b.y + 150, b.w / 2 - 48, 26); ctx.fillStyle = '#3e6e30'; ctx.fillRect(b.x, b.y + b.h - 30, b.w, 14); }
     else if (b.district === 'docklands') { ctx.strokeStyle = 'rgba(232,197,71,.6)'; ctx.lineWidth = 3; ctx.setLineDash([16, 10]); line(ctx, b.x + 10, b.y + 108, b.x + b.w - 10, b.y + 108); ctx.setLineDash([]); }
     else if (b.district === 'trailer') { ctx.fillStyle = 'rgba(60,40,20,.18)'; for (let k = 0; k < 30; k++) ctx.fillRect(b.x + ((k * 67) % b.w), b.y + ((k * 113) % b.h), 6, 3); }
+    else if (b.district === 'prison' && b.bridge && G.city.services && (G.city.services.find(q => q.kind === 'prison') || {}).blk === b) { const PS = G.city.services.find(q => q.kind === 'prison'); drawServiceFloor(PS); const br = b.bridge; ctx.fillStyle = '#7a5a34'; ctx.fillRect(br.x, br.y, br.w, br.h); }
     else if (b.district === 'prison' && b.bridge) { const br = b.bridge; ctx.fillStyle = '#7a5a34'; ctx.fillRect(br.x, br.y, br.w, br.h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.beginPath(); for (let y = br.y + 4; y < br.y + br.h; y += 6) { ctx.moveTo(br.x, y); ctx.lineTo(br.x + br.w, y); } ctx.stroke(); }
     else if (b.district === 'beach') {
       ctx.fillStyle = 'rgba(160,120,60,.12)'; for (let k = 0; k < 40; k++) { const x = b.x + ((k * 73) % b.w), y = b.y + 60 + ((k * 131) % (b.h - 160)); ctx.fillRect(x, y, 3, 2); }
@@ -4715,8 +5149,8 @@ function drawGround(V) {
       ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = V2.x; x < V2.x + V2.w; x += 12) { ctx.moveTo(x, V2.y); ctx.lineTo(x, V2.y + V2.h); } ctx.stroke();
       for (const L of S.loot) if (!L.taken) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(L.x - 12, L.y - 6, 26, 16); ctx.fillStyle = '#3f9a45'; ctx.fillRect(L.x - 14, L.y - 9, 26, 16); ctx.fillStyle = '#7dff4d'; ctx.fillRect(L.x - 12, L.y - 6, 22, 3); ctx.fillStyle = '#e8c547'; ctx.fillRect(L.x - 2, L.y - 9, 3, 16); }
     }
-    else if ((b.district === 'hospital' || b.district === 'policehq' || b.district === 'barber' || b.district === 'casino' || b.district === 'mall') && G.city.services) {
-      const S = G.city.services.find(q => q.kind === b.district); if (S) drawServiceFloor(S);
+    else if ((b.district === 'hospital' || b.district === 'policehq' || b.district === 'barber' || b.district === 'casino' || b.district === 'mall' || b.district === 'ganghq' || b.district === 'terminal') && G.city.services) {
+      const S = G.city.services.find(q => q.blk === b || q.kind === b.district); if (S) drawServiceFloor(S);
     }
     else if (b.district === 'bar' && G.city.bar) {
       const S = G.city.bar, t = S.t;
@@ -4728,6 +5162,7 @@ function drawGround(V) {
     else if (b.district === 'safehouse' && G.city.safehouse) {
       const S = G.city.safehouse, t = S.t;
       ctx.fillStyle = '#8a6a4a'; ctx.fillRect(S.x + t, S.y + t, S.w - 2 * t, S.h - 2 * t);
+      if (G.mode === 'solo') { const bp = boardPos(); ctx.fillStyle = '#3a2a1a'; ctx.fillRect(bp.x - 18, bp.y - 26, 36, 8); ctx.fillStyle = '#e8e2d0'; ctx.fillRect(bp.x - 16, bp.y - 25, 32, 5); ctx.fillStyle = '#d62828'; ctx.fillRect(bp.x - 10, bp.y - 24, 4, 3); ctx.fillStyle = '#2a5bd7'; ctx.fillRect(bp.x + 4, bp.y - 24, 4, 3); ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); ctx.fillStyle = '#e8b436'; circle(ctx, bp.x, bp.y, 11); ctx.fillStyle = '#fff'; ctx.font = 'bold 8px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('PLAN', bp.x, bp.y + 1); ctx.globalAlpha = 1; }
       ctx.strokeStyle = 'rgba(0,0,0,.12)'; ctx.lineWidth = 1; ctx.beginPath(); for (let y = S.y + t + 8; y < S.y + S.h - t; y += 9) { ctx.moveTo(S.x + t, y); ctx.lineTo(S.x + S.w - t, y); } ctx.stroke();
       ctx.fillStyle = '#7b2d2d'; ctx.fillRect(S.x + 40, S.y + 36, 70, 44); ctx.strokeStyle = '#e8c547'; ctx.lineWidth = 2; ctx.strokeRect(S.x + 44, S.y + 40, 62, 36);
       const bd = S.bed; ctx.fillStyle = '#3d4f7a'; ctx.fillRect(bd.x - 22, bd.y - 26, 44, 56); ctx.fillStyle = '#f2f2f2'; ctx.fillRect(bd.x - 18, bd.y + 12, 36, 14); ctx.fillStyle = '#5b6fa3'; ctx.fillRect(bd.x - 22, bd.y - 26, 44, 34);
@@ -5028,12 +5463,14 @@ function drawMarkers(V) {
     ctx.globalAlpha = 0.2; ctx.fillStyle = color; circle(ctx, x, y, r); ctx.globalAlpha = 1;
     if (label) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y); }
   };
-  if (!G.mission) for (const m of C.missions) if (m.id === G.activeId && inV(V, m.x, m.y) && t > (m.cooldownT || 0) && markerOpen(m)) { if (m.type === 'boss') { ring(m.x, m.y, 30, '#ffd24d', 'BOSS'); ring(m.x, m.y, 38 + 4 * Math.sin(t * 3), '#ff3b3b', ''); } else if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
+  if (!G.mission) for (const m of C.missions) if (m.id === G.activeId && inV(V, m.x, m.y) && t > (m.cooldownT || 0) && markerOpen(m)) { if (m.type === 'boss') { ring(m.x, m.y, 30, '#ffd24d', 'BOSS'); ring(m.x, m.y, 38 + 4 * Math.sin(t * 3), '#ff3b3b', ''); } else if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, m.gangSaga ? GANGS[m.gangSaga].color : '#ffd24d', m.type === 'story' ? (m.gangSaga ? 'GANG' : 'STORY') : m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
   const gs = C.places.gunshop; if (inV(V, gs.x, gs.y)) ring(gs.x, gs.y, 20, '#7dff4d', 'GUNS');
+  if (G.tip && inV(V, G.tip.x, G.tip.y)) ring(G.tip.x, G.tip.y, 22 + 3 * Math.sin(G.time * 4), '#7dff4d', 'STASH');
   const S = C.safehouse; if (S && G.mode === 'solo') { if (inV(V, S.garage.x, S.garage.y)) ring(S.garage.x, S.garage.y, 34, '#4dc3ff', 'GARAGE'); if (inV(V, S.bed.x, S.bed.y) && (G.roofA || 0) < 0.5) ring(S.bed.x, S.bed.y, 16, '#7dd3ff', ''); }
   const sp = C.places.spray; if (inV(V, sp.x, sp.y)) ring(sp.x, sp.y, 32, '#d24dff', 'SPRAY');
   const hs = C.places.hospital; if (inV(V, hs.x, hs.y)) { ctx.fillStyle = '#fff'; ctx.fillRect(hs.x - 3, hs.y - 10, 6, 20); ctx.fillRect(hs.x - 10, hs.y - 3, 20, 6); ctx.fillStyle = '#ff3b3b'; ctx.fillRect(hs.x - 2, hs.y - 9, 4, 18); ctx.fillRect(hs.x - 9, hs.y - 2, 18, 4); }
   const ps = C.places.police; if (inV(V, ps.x, ps.y)) { ctx.fillStyle = '#2b6bff'; circle(ctx, ps.x, ps.y, 9); ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('P', ps.x, ps.y); }
+  if (G.mission && G.mission.type === 'story' && G.mission.drop && G.mission.steps[G.mission.si] && G.mission.steps[G.mission.si].t === 'escape') { const o = G.mission.drop; if (inV(V, o.x, o.y, 60)) ring(o.x, o.y, 44, '#7dff4d', 'DROP-OFF'); }
   if (G.mission && G.mission.type === 'heist' && G.mission.phase === 2 && G.mission.objective) { const o = G.mission.objective; if (inV(V, o.x, o.y, 60)) ring(o.x, o.y, 44, '#7dff4d', 'DROP-OFF'); }
   if (G.mission && G.mission.type === 'delivery' && G.mission.phase === 1) { const g = C.places.garage; if (inV(V, g.x, g.y)) ring(g.x, g.y, 36, '#ffd24d', 'GARAGE'); }
 }
@@ -5152,7 +5589,7 @@ function drawScreen() {
     ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc(s.ox + dx, s.oy + dy, 26, 0, TAU); ctx.fill();
   }
   const am = !G.mission && G.game === 'roam' ? activeMarker() : null;
-  const obj = G.mission ? G.mission.objective : am ? { x: am.x, y: am.y } : null;
+  const obj = G.mission ? G.mission.objective : am ? { x: am.x, y: am.y } : G.tip ? { x: G.tip.x, y: G.tip.y } : null;
   if (obj && P) {
     const pp = playerPos(), dx = obj.x - G.cam.x, dy = obj.y - G.cam.y, sx = cw / 2 + dx * scale, sy = ch / 2 + dy * scale;
     if (sx < 30 || sx > cw - 30 || sy < 70 || sy > ch - 30) {
@@ -5185,7 +5622,7 @@ function drawMini() {
   if (G.game === 'roam') {
     if (!G.mission) for (const mm of C.missions) if (mm.id === G.activeId && G.time > (mm.cooldownT || 0) && markerOpen(mm)) dot(mm.x, mm.y, mm.type === 'boss' ? '#ffffff' : mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
-    for (const S of C.services || []) dot(S.x + S.w / 2, S.y + S.h / 2, SERVICE_LOOK[S.kind].dot, R * 1.4);
+    for (const S of C.services || []) dot(S.x + S.w / 2, S.y + S.h / 2, S.gang && gangBroken(S.gang) ? '#777777' : SERVICE_LOOK[S.kind].dot, R * (S.gang ? 1.7 : 1.4));
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
     drawTerritoriesMini(m, k);
     for (const st of C.gas || []) dot(st.x, st.y, st.burntT > G.time ? '#555555' : '#ff9d2e', R * 1.2);
@@ -5287,7 +5724,7 @@ function updateHUD() {
     { const L2 = G.city && G.city.territories, show = !!(L2 && L2.length && G.game === 'roam'), tt = show ? 'Turf ' + terrOwned() + '/' + L2.length : ''; const el = $('turfHud'); if (el.hidden === show) el.hidden = !show; if (el.textContent !== tt) el.textContent = tt; }
     const s = G.wanted.stars;
     $('stars').innerHTML = s ? '<span>' + '★'.repeat(s) + '</span><span class="off">' + '★'.repeat(Math.max(0, 7 - s)) + '</span>' : '';
-    const M = G.mission, am = !M ? activeMarker() : null; $('objective').hidden = !M && !am; if (M) $('objective').textContent = M.text; else if (am) $('objective').textContent = MISSION_INFO[am.id].title + ': ' + (G.time > (am.cooldownT || 0) && markerOpen(am) ? 'go to the marker' : 'not available right now');
+    const M = G.mission, am = !M ? activeMarker() : null; $('objective').hidden = !M && !am && !G.tip; if (M) $('objective').textContent = M.text; else if (!am && G.tip) $('objective').textContent = 'Lou\'s tip: grab the hidden gang cash'; else if (am) $('objective').textContent = MISSION_INFO[am.id].title + ': ' + (G.time > (am.cooldownT || 0) && markerOpen(am) ? 'go to the marker' : 'not available right now');
     $('timer').hidden = true;
   } else { $('cash').textContent = ''; $('stars').innerHTML = ''; $('objective').hidden = true; $('timer').hidden = false; }
   $('board').hidden = G.mode !== 'mp';
@@ -5299,6 +5736,7 @@ function updateHUD() {
   const nearCar = P.alive && !P.car ? nearestEnterableCar(P, 90) : null;
   if (P.alive && !G.busted) {
     if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : (P.car.kind === 'bike' ? 'E: get off  ·  G: shoot' : 'E: get out  ·  G: drive-by'));
+    else if (nearBoard(P)) hint = isTouch ? '' : 'E: planning board (heist plans)';
     else if (nearBed(P)) hint = isTouch ? '' : 'E: sleep (heal + save)';
     else if (nearStation(P)) hint = isTouch ? '' : 'E: ' + stationHint(nearStation(P));
     else if (nearVault(P)) hint = isTouch ? '' : 'E: drill the vault (sets off the alarm)';
@@ -5306,6 +5744,7 @@ function updateHUD() {
     else if (nearCounter(P)) hint = isTouch ? '' : 'E: Bors Brew ($' + BREW_PRICE + ', +200 HP)';
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
+    if (!hint && !isTouch && P.car && G.tune && G.tune.nitro && G.time >= (G.nitroReady || 0) && G.time < (G.nitroHintT || 0)) hint = 'N: nitro boost';
     if (!hint && !isTouch && G.c4 && G.c4.length) hint = 'X: detonate C4 (' + G.c4.length + ')';
     if (!hint && !isTouch && G.time < 25 && G.game === 'roam' && !G.activeId && !G.mission) hint = 'J or the MISSIONS button: choose your next job';
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
@@ -5317,10 +5756,11 @@ function updateHUD() {
   const chatOff = G.mode !== 'mp' || G.phase !== 'playing'; if ($('btnChat').hidden !== chatOff) $('btnChat').hidden = chatOff; if (chatOff) $('chatPanel').hidden = true;
   if (isTouch) {
     const inCar = !!P.car;
-    const bed = !inCar && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P), stat = !inCar && !bed && !brew && !drill && !crewM && nearStation(P);
-    $('btnAct').hidden = !(P.alive && (inCar || nearCar || bed || brew || drill || crewM || stat)); $('btnAct').textContent = inCar ? 'EXIT' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : stat ? STATION_BTN[stat.type] : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
+    const plan = !inCar && nearBoard(P), bed = !inCar && !plan && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P), stat = !inCar && !bed && !brew && !drill && !crewM && nearStation(P);
+    $('btnAct').hidden = !(P.alive && (inCar || nearCar || plan || bed || brew || drill || crewM || stat)); $('btnAct').textContent = inCar ? 'EXIT' : plan ? 'PLAN' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : stat ? STATION_BTN[stat.type] : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
     $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar; $('btnShoot').hidden = !(inCar && P.alive);
     $('btnBoom').hidden = !(P.alive && G.c4 && G.c4.length);
+    { const nb = $('btnNitro'), show = !!(inCar && G.tune && G.tune.nitro), lbl = G.time < (G.nitroReady || 0) ? Math.ceil(G.nitroReady - G.time) + 's' : 'NITRO'; if (nb.hidden === show) nb.hidden = !show; if (nb.textContent !== lbl) nb.textContent = lbl; }
     $('btnWpn').hidden = inCar || playerWeaponList(P).length < 2;
     $('btnPause').hidden = false;
   }
@@ -6227,7 +6667,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = myLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.compT = 0; G.gambleNet = 0; G.patronT = 0; G.decalT = 0; G.wx = { level: 0, target: 0, until: 0, next: 60 + Math.random() * 120 }; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.compT = 0; G.gambleNet = 0; G.patronT = 0; G.hqT = 0; G.nitroT = 0; G.nitroReady = 0; G.cheist = null; G.ironT = 0; G.loungeT = 0; G.callT = {}; G.tip = null; G.wetToast = 0; G.decalT = 0; G.wx = { level: 0, target: 0, until: 0, next: 60 + Math.random() * 120 }; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
@@ -6254,6 +6694,7 @@ function startSolo() {
   setupWorld(Math.floor(Math.random() * 1e9), 'solo');
   populateWorld(); spawnPartner(); rebuildHash();
   const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); loadTerritories(); loadMissions(); rebuildHash();
+  if (gangBroken('raiders')) { giveWeapon(G.player, 'c4', 2); giveWeapon(G.player, 'grenade', 3); }
   enterPlay();
   toast(G.mapChangedNote ? 'BORS CITY GREW!\nNew map: your old turf is up for grabs again.' : resumed ? 'Welcome back to Bors City\nYour cash and weapons are still here.' : 'Welcome to Bors City\nBadges on. Rules off.', 3);
   if (G.mapChangedNote) { G.mapChangedNote = false; saveTerritories(); }
@@ -6296,7 +6737,7 @@ function update(dt) {
   const P = G.player;
   if (!P.alive) { if (G.time >= G.deadT) respawnPlayer(false); }
   else if (G.busted) { if (G.time >= G.deadT) respawnPlayer(true); }
-  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); c4Tick(); partnerUpdate(dt); crewUpdate(dt);
+  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); c4Tick(); nitroTick(); partnerUpdate(dt); crewUpdate(dt);
   netPre(dt);
   if (G.isSim) helisUpdate(dt); else helisMirror(dt);
   if (G.isSim) {
@@ -6366,7 +6807,7 @@ function quitToMenu() {
   $('bestLine').textContent = [G.stats.best ? 'Best solo score: ' + G.stats.best : '', saveLine()].filter(Boolean).join('  ·  ');
   engineUpdate(0, 0, false); sirenUpdate(0, false, 0);
 }
-function init() { uiInit(); inputInit(); menuInit(); netInit(); chatInit(); $('verTag').textContent = 'v' + GAME_VERSION; showScreen('menu');
+function init() { loadTune(); uiInit(); inputInit(); menuInit(); netInit(); chatInit(); $('verTag').textContent = 'v' + GAME_VERSION; showScreen('menu');
   window.addEventListener('pagehide', saveProgress); document.addEventListener('visibilitychange', () => { if (document.hidden) saveProgress(); }); }
 init();
 
