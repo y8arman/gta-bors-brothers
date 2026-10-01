@@ -181,12 +181,20 @@
   body.phoneL #radio { left: 50px; bottom: auto; top: 50px; max-width: 42vw; font-size: 11px; padding: 4px 8px; }
   body.phoneL #streak { font-size: 20px; top: auto; bottom: 24%; }
   body.phoneL #skillTxt { display: none; }
+  #verTag { position: fixed; left: 8px; bottom: 3px; z-index: 12; font: 10px system-ui, -apple-system, sans-serif; letter-spacing: 1px; color: rgba(255,255,255,.55); text-shadow: 0 1px 2px #000; pointer-events: none; }
+  #btnBoom { right: 174px; bottom: 150px; background: rgba(255,60,60,.35); } body.phoneL #btnBoom { right: 150px; bottom: 16px; }
+  #btnChat { left: 14px; top: 140px; width: 46px; height: 34px; border-radius: 8px; font-size: 11px; } body.phoneL #btnChat { left: 8px; top: 88px; width: 34px; height: 28px; font-size: 9px; }
+  #chatPanel { position: absolute; left: 66px; top: 140px; display: flex; flex-direction: column; gap: 4px; pointer-events: auto; } body.phoneL #chatPanel { left: 48px; top: 60px; }
+  #chatPanel button { min-height: 30px; padding: 4px 10px; font-size: 13px; text-align: left; background: rgba(8,12,30,.85); border: 1px solid rgba(255,255,255,.25); } body.phoneL #chatPanel button { min-height: 24px; font-size: 11px; padding: 2px 8px; }
+  #turfHud { font-size: 13px; font-weight: 700; color: #6fa0ff; margin-top: 1px; }
+  body.phoneL #turfHud { position: absolute; right: 100%; top: 2px; margin: 0 8px 0 0; white-space: nowrap; font-size: 11px; }
   #rotate { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <canvas id="menuBg"></canvas>
+<div id="verTag"></div>
 
 <div id="hud" hidden>
   <div id="brand"><span class="gta">GTA</span><span>BORS BROTHERS</span><span id="cheatsOn"></span></div>
@@ -194,7 +202,7 @@
   <div class="bar" id="arwrap"><div id="ar"></div></div>
   <div id="hpText"></div>
   <div id="topc"><div id="stars"></div><div id="timer" hidden>0:00</div><div id="objective" hidden></div></div>
-  <div id="topr"><div id="cash">$0</div><div id="weapon">Pistol</div><div id="ammo"></div><div id="skillTxt"></div></div>
+  <div id="topr"><div id="cash">$0</div><div id="turfHud" hidden></div><div id="weapon">Pistol</div><div id="ammo"></div><div id="skillTxt"></div></div>
   <div id="board" hidden></div>
   <div id="feed"></div>
   <canvas id="mini" width="170" height="130"></canvas>
@@ -207,6 +215,9 @@
   <button class="tbtn" id="btnHand" hidden>DRIFT</button>
   <button class="tbtn" id="btnSkill" hidden>RUSH</button>
   <button class="tbtn" id="btnShoot" hidden>SHOOT</button>
+  <button class="tbtn" id="btnBoom" hidden>BOOM</button>
+  <button class="tbtn" id="btnChat" hidden>CHAT</button>
+  <div id="chatPanel" hidden></div>
   <button class="tbtn" id="btnPause" hidden>II</button>
   <div id="streak"></div><div id="radio"></div><div id="slowFx" hidden></div>
   <div id="rotate" hidden>Landscape works best</div>
@@ -246,7 +257,7 @@
     </div>
     <div class="panel" id="helpPanel" hidden>
       <h2>Controls</h2>
-      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy), F signature move, G drive-by, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
+      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
       <button id="helpBack" class="btn-glass">Back</button>
     </div>
   </div>
@@ -322,7 +333,11 @@ const CFG = {
     bazooka: { key: 'bazooka', name: 'Bazooka', rate: 0.6, proj: 'rocket', speed: 640, range: 700, boomR: 120, boomDmg: 160, ammoMax: 12, pickup: 2, unit: 'rockets', arms: 'rifle', sfx: 'rocket', kick: 7, band: [200, 400], burst: 1 },
     grenade: { key: 'grenade', name: 'Grenade', rate: 1.2, proj: 'grenade', range: 360, fuse: 1.8, boomR: 110, boomDmg: 130, ammoMax: 15, pickup: 3, unit: 'left', arms: 'none', sfx: 'throw', kick: 1, band: [120, 300], burst: 1 },
     molotov: { key: 'molotov', name: 'Molotov', rate: 1.2, proj: 'molotov', range: 330, fireR: 70, fireSec: 6, ammoMax: 12, pickup: 2, unit: 'left', arms: 'none', sfx: 'throw', kick: 1, band: [120, 300], burst: 1 },
-    donut:   { key: 'donut', name: 'Donut Decoy', rate: 1, proj: 'donut', range: 320, ammoMax: 9, pickup: 2, unit: 'left', arms: 'none', sfx: 'throw', kick: 0, band: [120, 300], burst: 1 }
+    donut:   { key: 'donut', name: 'Donut Decoy', rate: 1, proj: 'donut', range: 320, ammoMax: 9, pickup: 2, unit: 'left', arms: 'none', sfx: 'throw', kick: 0, band: [120, 300], burst: 1 },
+    // v20: player-only
+    sniper:  { key: 'sniper', name: 'Sniper Rifle', rate: 0.8, dmg: 120, spread: 0.003, range: 1150, pellets: 1, auto: false, ammoMax: 30, pickup: 6, arms: 'rifle', sfx: 'sniper', kick: 5, band: [300, 700], burst: 1 },
+    katana:  { key: 'katana', name: 'Katana', melee: true, rate: 2.6, dmg: 62, range: 54, arms: 'katana', sfx: 'bat', kick: 1, band: [30, 60], burst: 1 },
+    c4:      { key: 'c4', name: 'C4', rate: 2, proj: 'c4', range: 200, boomR: 130, boomDmg: 170, ammoMax: 6, pickup: 2, unit: 'charges', arms: 'none', sfx: 'throw', kick: 0, band: [120, 300], burst: 1 }
   },
   world: { civTarget: 40, trafficTarget: 22, spawnRadius: 1500, despawnRadius: 2100, gangPerGroup: 3, corpseSeconds: 25, wreckSeconds: 35, maxPeds: 150, maxCars: 70 },
   wanted: { thresholds: [15, 50, 110, 200, 320, 460, 620], decayPerSec: 4, cooldownSec: 8 },
@@ -514,7 +529,7 @@ function applyMyRole(R) {
   const P = G.player; if (!P || !P.isPlayer || G.mode !== 'mp' || !players[uid]) return;
   const ri = roleInfo(R[uid]);
   if (P.char !== ri.key || P.roleCode !== ri.code) {
-    P.char = ri.key; P.roleCode = ri.code; P.look = lookForRole(ri.key);
+    P.char = ri.key; P.roleCode = ri.code; P.look = ri.key === 'ac' ? lookForRole(ri.key) : myLook(ri.key);
     const mx = Math.round(CFG.player.hp * perkOf(P).hp);
     if (P.maxHp !== mx) { const f = P.maxHp ? P.hp / P.maxHp : 1; P.maxHp = mx; P.hp = Math.min(mx, Math.max(1, Math.round(mx * f))); }
     G.skill = { readyT: 0, endT: 0, hit: [] };
@@ -527,7 +542,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 19;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 21;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -693,6 +708,8 @@ function sfx(kind, x, y, mul) {
       case 'rocket': playNoise(v * 0.9, s.pan, 0.45, 'bandpass', 700, 0.6, t); playTone(v * 0.4, s.pan, 0.3, 'sawtooth', 160, 60, t); break;
       case 'throw': playNoise(v * 0.35, s.pan, 0.12, 'bandpass', 1200, 1, t); break;
       case 'glass': playNoise(v * 0.6, s.pan, 0.25, 'highpass', 3500, 1, t); playNoise(v * 0.6, s.pan, 0.5, 'lowpass', 400, 0.5, t + 0.05); break;
+      case 'sniper': playNoise(v * 1.3, s.pan, 0.45, 'lowpass', 1600, 0.6, t); playTone(v * 0.6, s.pan, 0.3, 'sine', 140, 40, t); break;
+      case 'beep': playTone(v * 0.3, s.pan, 0.06, 'square', 1800, 1800, t); break;
     }
   } catch (e) {}
 }
@@ -780,6 +797,7 @@ function drawPedInto(ctx, L, arms, frame) {
   else if (arms === 'pistol') { arm(0, sh - 0.5, 14.5, 3); arm(0, -sh, 9.5, -4.5); ctx.fillStyle = '#1a1a1a'; ctx.fillRect(12.5, 1.2, 9.5, 3.2); }
   else if (arms === 'rifle') { arm(0, sh - 0.5, 12, 3); arm(0, -sh, 11.5, -2); ctx.fillStyle = '#5a3b1a'; ctx.fillRect(5, -0.5, 6, 4.2); ctx.fillStyle = '#222'; ctx.fillRect(9, 0, 18, 3.4); ctx.fillRect(12, 3, 3, 3); }
   else if (arms === 'bat') { arm(0, sh - 0.5, 11, 9); arm(0, -sh, 8, -5.5); ctx.fillStyle = '#8b5a2b'; roundRect(ctx, 10, 7.2, 19, 3.8, 1.8); ctx.fill(); }
+  else if (arms === 'katana') { arm(0, sh - 0.5, 11, 9); arm(0, -sh, 8, -5.5); ctx.fillStyle = '#1b1b1b'; ctx.fillRect(8.5, 7.2, 5, 3.6); ctx.fillStyle = '#c9a227'; ctx.fillRect(13, 6.6, 1.6, 4.8); ctx.fillStyle = '#dfe4ea'; roundRect(ctx, 14.5, 7.8, 22, 2.4, 1.2); ctx.fill(); }
   epaulettes();
   head();
   ctx.restore();
@@ -834,7 +852,7 @@ function buildCity(seed) {
   const city = { seed, cols, rows, block, road, sw, pitch, W, H, blocks: [], buildings: [], props: [], nodes: [], turfs: [], places: {}, missions: [] };
   const cc = Math.floor(cols / 2), cr = Math.floor(rows / 2);
   const parks = new Set([1 + ',' + (rows - 2), (cols - 3) + ',' + 1]);
-  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : 'residential';
+  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : 'residential';
   const addB = (b, blk) => { b.block = blk; blk.buildings.push(b); city.buildings.push(b); return b; };
   const addP = (p, blk) => { blk.props.push(p); city.props.push(p); return p; };
   const ePt = (blk, side, t) => side === 'top' ? { x: blk.x + blk.w * t, y: blk.y - sw / 2 } : side === 'bottom' ? { x: blk.x + blk.w * t, y: blk.y + blk.h + sw / 2 } : side === 'left' ? { x: blk.x - sw / 2, y: blk.y + blk.h * t } : { x: blk.x + blk.w + sw / 2, y: blk.y + blk.h * t };
@@ -937,6 +955,30 @@ function buildCity(seed) {
         vault: { x: x0 + t, y: vy + 10, w: W2 - 2 * t, h: y0 + H2 - t - vy - 10 },
         loot: [0, 1, 2, 3].map(i => ({ x: x0 + 40 + i * ((W2 - 80) / 3), y: ly, taken: false })),
         tellers: [{ x: x0 + 52, y: y0 + 110 }, { x: x0 + 106, y: y0 + 110 }], drill: null, openT: 0, alarm: false };
+    } else if (blk.district === 'hospital' || blk.district === 'policehq' || blk.district === 'barber') {
+      // v21: enterable service buildings with a door on the top street
+      const K = blk.district, dims = { hospital: [220, 150], policehq: [230, 170], barber: [170, 124] }[K];
+      const W2 = dims[0], H2 = dims[1], x0 = bx + (block - W2) / 2, y0 = by + 40, t = 8, door = 50, dx = x0 + W2 / 2 - door / 2;
+      const col = { hospital: '#e9eef2', policehq: '#5d6b85', barber: '#a7322f' }[K];
+      blk.base = K === 'policehq' ? '#6c727c' : rp(GRASS);
+      addB({ x: x0, y: y0, w: dx - x0, h: t, kind: 'wall', color: col, height: 1 }, blk);
+      addB({ x: dx + door, y: y0, w: x0 + W2 - dx - door, h: t, kind: 'wall', color: col, height: 1 }, blk);
+      addB({ x: x0, y: y0 + H2 - t, w: W2, h: t, kind: 'wall', color: col, height: 1 }, blk);
+      addB({ x: x0, y: y0 + t, w: t, h: H2 - 2 * t, kind: 'wall', color: col, height: 1 }, blk);
+      addB({ x: x0 + W2 - t, y: y0 + t, w: t, h: H2 - 2 * t, kind: 'wall', color: col, height: 1 }, blk);
+      addP({ x: x0 + W2 / 2, y: y0 + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);
+      const R2 = { x: x0, y: y0, w: W2, h: H2, t, kind: K, door: { x: x0 + W2 / 2, y: y0 - sw / 2 - 20 } };
+      city.services = city.services || []; city.services.push(R2); city.stations = city.stations || [];
+      if (K === 'hospital') {
+        addB({ x: x0 + 20, y: y0 + 86, w: 64, h: 14, kind: 'counter', color: '#7aa6c2', height: 0 }, blk);
+        city.stations.push({ type: 'heal', x: x0 + 92, y: y0 + 66, b: R2 }, { type: 'armor', x: x0 + W2 - 44, y: y0 + H2 - 50, b: R2 });
+      } else if (K === 'policehq') {
+        addB({ x: x0 + 20, y: y0 + 64, w: 56, h: 14, kind: 'counter', color: '#2f3b55', height: 0 }, blk);
+        city.stations.push({ type: 'locker', x: x0 + 48, y: y0 + H2 - 54, b: R2 }, { type: 'armory', x: x0 + W2 - 48, y: y0 + H2 - 54, b: R2 });
+      } else {
+        city.stations.push({ type: 'barber', x: x0 + 58, y: y0 + 78, b: R2 });
+      }
+      for (let k = 0; k < 2; k++) addP({ x: bx + rr(20, block - 20), y: by + rr(block - 70, block - 20), r: 7, canopy: rr(12, 16), type: 'tree', pedBlock: true, carBlock: true }, blk);
     } else if (blk.district === 'bar') {
       // The Bors Bar: enterable, door on the top street, counter at the back, pool table, regulars
       blk.base = '#5d6168';
@@ -1751,11 +1793,16 @@ function followPath(p, speed, dt) {
   p.lastX = p.x; p.lastY = p.y;
   return true;
 }
+function bodyLOS(p, tgt) {   // straight walk only if the whole body fits through (not just a thin ray), so nobody snags on door frames
+  if (!hasLOS(p.x, p.y, tgt.x, tgt.y)) return false;
+  const a = Math.atan2(tgt.y - p.y, tgt.x - p.x), o = (p.r || 13) * 0.85, ox = -Math.sin(a) * o, oy = Math.cos(a) * o;
+  return hasLOS(p.x + ox, p.y + oy, tgt.x + ox, tgt.y + oy) && hasLOS(p.x - ox, p.y - oy, tgt.x - ox, tgt.y - oy);
+}
 function followPathTo(p, tgt, speed, dt, opts) {
   opts = opts || {};
   const d = dist(p.x, p.y, tgt.x, tgt.y);
   if (d < 14) { p.path = null; p.wx = p.wy = 0; return false; }
-  if (d < 110 && hasLOS(p.x, p.y, tgt.x, tgt.y) && !p.path) { setWant(p, Math.atan2(tgt.y - p.y, tgt.x - p.x), speed); return true; }
+  if (d < 110 && !p.path && bodyLOS(p, tgt)) { setWant(p, Math.atan2(tgt.y - p.y, tgt.x - p.x), speed); return true; }
   if (!p.path || G.time > p.repathT || (p.pathEnd && dist(p.pathEnd.x, p.pathEnd.y, tgt.x, tgt.y) > 60)) {
     p.path = findPath(p.x, p.y, tgt.x, tgt.y, opts); p.pathI = 0; p.pathEnd = { x: tgt.x, y: tgt.y }; p.repathT = G.time + (opts.repath || 1.0);
     if (!p.path) { setWant(p, Math.atan2(tgt.y - p.y, tgt.x - p.x), speed); return true; }
@@ -2126,7 +2173,7 @@ function giveWeapon(p, w, ammo) {
     if (isNew && (p.weapon === 'pistol' || p.weapon === 'bat' || p.weapon === 'none')) p.weapon = w;
   } else p.weapon = w;
 }
-const ALL_WEAPONS = ['bat', 'pistol', 'smg', 'shotgun', 'taser', 'bazooka', 'grenade', 'molotov', 'donut'];
+const ALL_WEAPONS = ['bat', 'pistol', 'smg', 'shotgun', 'taser', 'bazooka', 'grenade', 'molotov', 'donut', 'sniper', 'katana', 'c4'];
 function playerWeaponList(p) { return ALL_WEAPONS.filter(w => p.owned && p.owned[w]); }
 function giveAllWeapons(P) { P.owned = {}; for (const w of ALL_WEAPONS) { P.owned[w] = true; const W = WEAPONS[w]; if (W.ammoMax) P.ammo[w] = W.ammoMax; } }
 function selectWeapon(p, w) { if (p.owned && p.owned[w]) p.weapon = w; }
@@ -2196,6 +2243,7 @@ function fireWeapon(p, aim) {
     if (p.isPlayer && G.mode === 'mp') netFire(p.x, p.y, p.x + Math.cos(aim) * 30, p.y + Math.sin(aim) * 30, 'bat');
     return true;
   }
+  if (W.proj === 'c4' && p.isPlayer && (G.c4 || []).length + G.projs.filter(q => q.kind === 'c4' && !q.fx).length >= C4MAX) { p.fireT = now + 0.4; if (G.time > (G.c4MsgT || 0)) { G.c4MsgT = G.time + 1.2; toast(C4MAX + ' charges max\n' + (isTouch ? 'Tap BOOM' : 'Press X') + ' to detonate', 1.2); } return false; }
   if (W.proj && p.isPlayer && G.game === 'dm' && G.time < (G.heavyOkT || 0)) {
     p.fireT = now + 0.3;
     if (G.time > (G.heavyMsgT || 0)) { G.heavyMsgT = G.time + 1; toast('Heavy weapons unlock in ' + Math.ceil(G.heavyOkT - G.time) + 's', 0.8); }
@@ -2525,7 +2573,7 @@ function projUpdate(dt) {
       } else {
         if (!wallX && !wallY) { pr.x = nx; pr.y = ny; }
         if (!flying || wallX || wallY) {
-          if (!pr.fx) { if (pr.kind === 'molotov') landMolotov(pr.x, pr.y, pr.by); else if (pr.kind === 'donut') landDonut(pr.x, pr.y, pr.by); }
+          if (!pr.fx) { if (pr.kind === 'molotov') landMolotov(pr.x, pr.y, pr.by); else if (pr.kind === 'donut') landDonut(pr.x, pr.y, pr.by); else if (pr.kind === 'c4') placeC4(pr.x, pr.y, pr.by); }
           done = true;
         }
       }
@@ -2550,6 +2598,7 @@ function projUpdate(dt) {
   for (let i = G.decoys.length - 1; i >= 0; i--) if (G.time > G.decoys[i].until) G.decoys.splice(i, 1);
 }
 function drawProjectiles(V) {
+  for (const k of G.c4 || []) { const q = c4Pos(k); if (inV(V, q.x, q.y)) drawC4Box(q.x, q.y, (G.time * 3) % 1 < 0.5); }
   for (const f of G.fires) {
     if (!inV(V, f.x, f.y, f.r)) continue;
     const k = clamp((f.until - G.time) / 1.5, 0, 1), g = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
@@ -2565,6 +2614,7 @@ function drawProjectiles(V) {
     if (pr.kind === 'rocket') { ctx.rotate(pr.a); ctx.fillStyle = '#3d4a2f'; ctx.fillRect(-7, -2.5, 14, 5); ctx.fillStyle = '#c0392b'; ctx.fillRect(5, -2.5, 3, 5); ctx.fillStyle = 'rgba(255,190,60,.9)'; circle(ctx, -9, 0, 3 + Math.random() * 2); }
     else if (pr.kind === 'grenade') { ctx.fillStyle = '#3f5f2a'; circle(ctx, 0, 0, 4.5); ctx.fillStyle = '#222'; ctx.fillRect(-1.5, -6.5, 3, 3); }
     else if (pr.kind === 'molotov') { ctx.rotate(age * 12); ctx.fillStyle = '#7a4a1a'; ctx.fillRect(-5, -2.5, 10, 5); ctx.fillStyle = 'rgba(255,150,30,.95)'; circle(ctx, 6, 0, 2.5 + Math.random() * 1.5); }
+    else if (pr.kind === 'c4') { ctx.rotate(age * 6); drawC4Box(0, 0, true); }
     else { ctx.scale(0.55, 0.55); drawDonut(0, 0); }
     ctx.restore();
   }
@@ -3431,6 +3481,151 @@ function turfLost(T, why) {
   newsAll('BLOCK LOST' + (why ? ' (' + why + ')' : '') + '\nThe ' + GANGS[T.gang].name + ' took it back. ' + terrOwned() + '/' + G.city.territories.length + ' blocks left.', 2.4, 'fail');
   if (G.player) banter('lost', true);
 }
+// ---- v20: C4 (placed charges, max 3, detonated with X / BOOM; they stick to cars)
+const C4MAX = 3;
+function placeC4(x, y, by) {
+  if (!by || !by.isPlayer) return;
+  let car = null; for (const c of G.cars) if (!c.dead && carDist(c, x, y) < 8) { car = c; break; }
+  const k = { x, y, car: null, ox: 0, oy: 0 };
+  if (car) { const cs = Math.cos(-car.a), sn = Math.sin(-car.a), dx = x - car.x, dy = y - car.y; k.car = car; k.ox = dx * cs - dy * sn; k.oy = dx * sn + dy * cs; }
+  G.c4.push(k); sfx('beep', x, y);
+  if (car) toast('C4 STUCK TO A ' + car.kind.toUpperCase() + '\n' + (isTouch ? 'Tap BOOM' : 'Press X') + ' when ready', 1.2);
+}
+function c4Pos(k) {
+  const c = k.car; if (!c || G.cars.indexOf(c) < 0) return k;
+  const cs = Math.cos(c.a), sn = Math.sin(c.a);
+  k.x = c.x + k.ox * cs - k.oy * sn; k.y = c.y + k.ox * sn + k.oy * cs; return k;
+}
+function c4Tick() {
+  if (!IN.boom) return; IN.boom = false;
+  const P = G.player; if (!P || !P.alive || G.busted || !G.c4 || !G.c4.length) return;
+  const list = G.c4; G.c4 = [];
+  for (const k of list) { const q = c4Pos(k); if (isFinite(q.x) && isFinite(q.y)) detonate(q.x, q.y, WEAPONS.c4, P); }
+  toast('KA-BOORS!', 0.9);
+}
+function drawC4Box(x, y, lit) {
+  ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x - 5, y - 2, 12, 8);
+  ctx.fillStyle = '#7a6a4a'; ctx.fillRect(x - 6, y - 4, 12, 8);
+  ctx.fillStyle = '#333'; ctx.fillRect(x - 6, y - 1, 12, 2);
+  ctx.fillStyle = lit ? '#ff2b2b' : '#5a1010'; circle(ctx, x + 3, y - 2, 1.6);
+}
+// ---- v20: quick chat for multiplayer
+const CHAT = ['Follow me!', 'Need backup!', 'Get in the car!', 'Nice one!', 'Donuts?', '*fist bump*'];
+function chatInit() {
+  const pnl = $('chatPanel');
+  pnl.innerHTML = CHAT.map((t, i) => '<button data-i="' + i + '">' + esc(t) + '</button>').join('');
+  for (const b of pnl.querySelectorAll('button')) b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); sendChat(+b.dataset.i); });
+  $('btnChat').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); pnl.hidden = !pnl.hidden; });
+}
+function sendChat(i) {
+  $('chatPanel').hidden = true;
+  if (G.mode !== 'mp' || !roomRef || G.phase !== 'playing' || !(i >= 0 && i < CHAT.length)) return;
+  if (G.time < (G.chatT || 0)) return;
+  G.chatT = G.time + 1.5;
+  roomRef.child('chat').push({ u: uid, i, ts: TS() });
+  showBubble(uid, i);
+}
+function onChat(c) {
+  if (!c || c.u === uid || G.phase !== 'playing' || serverNow() - (c.ts || 0) > 6000) return;
+  const i = Number(c.i); if (!Number.isInteger(i) || i < 0 || i >= CHAT.length || !G.remotes[c.u]) return;
+  showBubble(c.u, i); feed(dispName(c.u) + ': ' + CHAT[i]); sfx('pickup', null, null, 0.4);
+}
+function showBubble(id, i) { G.bubbles[id] = { text: CHAT[i], until: G.time + 3 }; }
+function drawBubbles(V) {
+  for (const id in G.bubbles) {
+    const b = G.bubbles[id]; if (G.time > b.until) { delete G.bubbles[id]; continue; }
+    let pos = null;
+    if (id === uid && G.player) pos = playerPos(); else { const r = G.remotes[id]; if (r && r.ped.alive) pos = posOf(r.ped); }
+    if (!pos || !inV(V, pos.x, pos.y, 80)) continue;
+    ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const w = ctx.measureText(b.text).width + 16, x = pos.x, y = pos.y - 52;
+    ctx.globalAlpha = clamp(b.until - G.time, 0, 1);
+    ctx.fillStyle = 'rgba(255,255,255,.95)'; roundRect(ctx, x - w / 2, y - 11, w, 22, 10); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x - 5, y + 10); ctx.lineTo(x + 5, y + 10); ctx.lineTo(x, y + 17); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#111'; ctx.fillText(b.text, x, y + 1); ctx.globalAlpha = 1;
+  }
+}
+// ---- v21: service buildings (Bors Memorial, Police HQ, Beard Barber)
+const SERVICE_LOOK = {
+  hospital: { label: 'BORS MEMORIAL', c1: '#d9dee3', c2: '#e6eaee', dot: '#ff6b6b', floor: '#eef3f6' },
+  policehq: { label: 'POLICE HQ', c1: '#2f3b55', c2: '#38466a', dot: '#4d8bff', floor: '#b9bec7' },
+  barber:   { label: 'BEARD BARBER', c1: '#7a2522', c2: '#8f2c28', dot: '#ffd24d', floor: '#e8e2d3' }
+};
+const STATION_BTN = { heal: 'HEAL', armor: 'ARMOR', locker: 'SHRED', armory: 'RAID', barber: 'TRIM' };
+const PRICE = { heal: 100, armor: 200, locker: 300, barber: 50 };
+const BEARDS = [['Classic', null], ['Jet black', '#141414'], ['Ginger', '#b5521f'], ['Silver fox', '#bdbdbd'], ['Golden', '#d8b04a'], ['Bors blue', '#2a5bd7']];
+function myLook(ch) {
+  const L = brotherLook(ch), i = G.settings.beardIdx | 0;
+  if (i > 0 && i < BEARDS.length) L.beard = BEARDS[i][1];
+  return L;
+}
+function nearStation(P) {
+  const L = G.city && G.city.stations; if (!L || G.game !== 'roam' || !P || !P.alive || P.car || G.busted) return null;
+  for (const st of L) if (dist(P.x, P.y, st.x, st.y) < 40) return st;
+  return null;
+}
+function stationHint(st) {
+  const cd = t => G.time < (G[t] || 0) ? ' (ready in ' + Math.ceil(G[t] - G.time) + 's)' : '';
+  switch (st.type) {
+    case 'heal': return 'full check-up ($' + PRICE.heal + ')';
+    case 'armor': return 'body armor ($' + PRICE.armor + ')';
+    case 'locker': return 'shred your file: clears stars ($' + PRICE.locker + ')' + cd('lockerT');
+    case 'armory': return 'raid the armory (4 stars!)' + cd('armoryT');
+    case 'barber': return 'beard trim: ' + BEARDS[((G.settings.beardIdx | 0) + 1) % BEARDS.length][0] + ' ($' + PRICE.barber + ')';
+  }
+  return '';
+}
+function pay(n) { if (G.stats.cash < n) { toast('Not enough cash\nThat costs $' + n, 1.4); return false; } G.stats.cash -= n; return true; }
+function useStation(st) {
+  const P = G.player;
+  if (G.time < (G.stationT || 0)) return; G.stationT = G.time + 0.6;
+  switch (st.type) {
+    case 'heal':
+      if (P.hp >= P.maxHp) { toast('You look fine\nThe doctor says: go away.', 1.4); return; }
+      if (!pay(PRICE.heal)) return; P.hp = P.maxHp; toast('FULL CHECK-UP\nYour insurance covers nothing. -$' + PRICE.heal, 1.8); sfx('pickup'); return;
+    case 'armor':
+      if (P.armor >= 100) { toast('Armor already full', 1.2); return; }
+      if (!pay(PRICE.armor)) return; P.armor = 100; toast('BODY ARMOR\nKevlar: now in Bors sizes. -$' + PRICE.armor, 1.8); sfx('pickup'); return;
+    case 'locker':
+      if (G.time < (G.lockerT || 0)) { toast('The shredder is overheating\nReady in ' + Math.ceil(G.lockerT - G.time) + 's', 1.4); return; }
+      if (G.wanted.stars === 0) { toast('Your file is spotless\nFor once.', 1.4); return; }
+      if (!pay(PRICE.locker)) return; G.lockerT = G.time + 240;
+      if (G.isSim) { clearWanted(P); for (const p of G.peds) if ((p.kind === 'cop' || p.kind === 'swat') && p.alive && p.target === P) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.home = { x: p.x, y: p.y }; } }
+      else { netEvent({ t: 'respray' }); G.wanted.stars = 0; }
+      toast('EVIDENCE SHREDDED\nReturn to sender. Stars cleared.', 2.2); sfx('mission'); return;
+    case 'armory':
+      if (G.time < (G.armoryT || 0)) { toast('Armory restocking\nReady in ' + Math.ceil(G.armoryT - G.time) + 's', 1.4); return; }
+      G.armoryT = G.time + 180;
+      giveWeapon(P, 'bazooka', 3); giveWeapon(P, 'grenade', 3); giveWeapon(P, 'sniper', 10); giveWeapon(P, 'smg', 60); P.armor = 100;
+      { const W = wantedOf(P), need = Math.max(0, 210 - (G.isSim ? W.heat : 0)); addHeat(G.isSim ? need : 210, P); }
+      toast('ARMORY RAIDED!\nBazooka, grenades, sniper, armor. SWAT is on the way.', 2.4); sfx('alarm', null, null, 0.8); return;
+    case 'barber': {
+      if ((P.char !== 'mafl' && P.char !== 'bary')) { toast('Grow a beard first\nAssistant Consultants are clean-shaven.', 1.6); return; }
+      if (!pay(PRICE.barber)) return;
+      G.settings.beardIdx = ((G.settings.beardIdx | 0) + 1) % BEARDS.length; saveSettings();
+      P.look = myLook(P.char); toast('BEARD-IFULLY DONE\n' + BEARDS[G.settings.beardIdx][0] + ' beard', 1.8); sfx('pickup'); return;
+    }
+  }
+}
+function drawServiceFloor(S) {
+  const t = S.t, L = SERVICE_LOOK[S.kind];
+  ctx.fillStyle = L.floor; ctx.fillRect(S.x + t, S.y + t, S.w - 2 * t, S.h - 2 * t);
+  ctx.strokeStyle = 'rgba(0,0,0,.07)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = S.x + t; x < S.x + S.w - t; x += 16) { ctx.moveTo(x, S.y + t); ctx.lineTo(x, S.y + S.h - t); } ctx.stroke();
+  const mark = (x, y, c, txt) => { ctx.fillStyle = c; circle(ctx, x, y, 12); ctx.fillStyle = '#fff'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(txt, x, y + 1); };
+  if (S.kind === 'hospital') {
+    for (let k = 0; k < 2; k++) { const bx = S.x + 110 + k * 50, by = S.y + 24; ctx.fillStyle = '#ffffff'; ctx.fillRect(bx, by, 36, 26); ctx.fillStyle = '#9fc3dd'; ctx.fillRect(bx, by, 36, 9); }
+    ctx.fillStyle = '#ff3b3b'; ctx.fillRect(S.x + S.w - 52, S.y + 22, 8, 24); ctx.fillRect(S.x + S.w - 60, S.y + 30, 24, 8);
+  } else if (S.kind === 'policehq') {
+    ctx.fillStyle = '#2b2b2b'; for (let k = 0; k < 4; k++) ctx.fillRect(S.x + 22 + k * 12, S.y + S.h - 30, 9, 18);
+    ctx.fillStyle = '#4a4a4a'; ctx.fillRect(S.x + S.w - 80, S.y + S.h - 30, 60, 16); ctx.fillStyle = '#c0392b'; ctx.fillRect(S.x + S.w - 76, S.y + S.h - 26, 10, 8);
+    ctx.fillStyle = 'rgba(77,139,255,.25)'; ctx.fillRect(S.x + S.w / 2 - 30, S.y + 20, 60, 26); ctx.fillStyle = '#1d3d97'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('TO SERVE & PROTECT', S.x + S.w / 2, S.y + 34);
+  } else {
+    ctx.fillStyle = '#c9c2b0'; ctx.fillRect(S.x + t + 4, S.y + t + 4, S.w - 2 * t - 8, 10);
+    for (let k = 0; k < 2; k++) { const cx = S.x + 58 + k * 60, cy = S.y + 78; ctx.fillStyle = '#2b2b2b'; circle(ctx, cx, cy - 18, 10); ctx.fillStyle = '#7a2522'; circle(ctx, cx, cy - 18, 7); }
+    ctx.fillStyle = '#e8e8e8'; ctx.fillRect(S.x + S.w - 34, S.y + 20, 10, 40); ctx.fillStyle = '#d62828'; for (let y = S.y + 22; y < S.y + 58; y += 8) ctx.fillRect(S.x + S.w - 34, y, 10, 3);
+  }
+  for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
@@ -3460,7 +3655,10 @@ const SHOP_ITEMS = [
   { id: 'donut', label: 'Donut Decoy x3 (works every time)', price: 80 },
   { id: 'molotov', label: 'Molotov x4 (cocktail hour)', price: 250 },
   { id: 'grenade', label: 'Grenades x5 (pineapple express)', price: 300 },
-  { id: 'bazooka', label: 'Bazooka + 3 rockets (Bors Boom Supply)', price: 600 }
+  { id: 'bazooka', label: 'Bazooka + 3 rockets (Bors Boom Supply)', price: 600 },
+  { id: 'katana', label: 'Katana (sharp. Like your wit.)', price: 250 },
+  { id: 'sniper', label: 'Sniper Rifle + 10 rounds (long-distance policing)', price: 500 },
+  { id: 'c4', label: 'C4 x3 (some assembly required)', price: 450 }
 ];
 function openShop() { G.shopCooldownT = G.time + 3; if (G.mode === 'solo') G.paused = true; $('shopMsg').textContent = G.mode === 'solo' ? '' : 'The city keeps moving while you shop'; renderShop(); showScreen('shop'); }
 function renderShop() {
@@ -3472,7 +3670,7 @@ function buyItem(id) {
   const P = G.player, it = SHOP_ITEMS.find(i => i.id === id);
   if (!it || G.stats.cash < it.price) return;
   G.stats.cash -= it.price;
-  switch (id) { case 'health': P.hp = Math.min(P.maxHp, P.hp + CFG.player.shopHealth); break; case 'armor': P.armor = 100; break; case 'smg': giveWeapon(P, 'smg', 60); break; case 'shotgun': giveWeapon(P, 'shotgun', 10); break; case 'taser': giveWeapon(P, 'taser', 0); break; case 'donut': giveWeapon(P, 'donut', 3); break; case 'molotov': giveWeapon(P, 'molotov', 4); break; case 'grenade': giveWeapon(P, 'grenade', 5); break; case 'bazooka': giveWeapon(P, 'bazooka', 3); break; }
+  switch (id) { case 'health': P.hp = Math.min(P.maxHp, P.hp + CFG.player.shopHealth); break; case 'armor': P.armor = 100; break; case 'smg': giveWeapon(P, 'smg', 60); break; case 'shotgun': giveWeapon(P, 'shotgun', 10); break; case 'taser': giveWeapon(P, 'taser', 0); break; case 'donut': giveWeapon(P, 'donut', 3); break; case 'molotov': giveWeapon(P, 'molotov', 4); break; case 'grenade': giveWeapon(P, 'grenade', 5); break; case 'bazooka': giveWeapon(P, 'bazooka', 3); break; case 'katana': giveWeapon(P, 'katana', 0); break; case 'sniper': giveWeapon(P, 'sniper', 10); break; case 'c4': giveWeapon(P, 'c4', 3); break; }
   sfx('cash'); $('shopMsg').textContent = 'Bought ' + it.label; renderShop();
 }
 function closeShop() { showScreen(null); G.paused = false; G.shopCooldownT = G.time + 4; }
@@ -3501,6 +3699,7 @@ function inputInit() {
     if (e.code.indexOf('Digit') === 0) { const n = +e.code.slice(5); if (n >= 1 && n <= 9) IN.weaponSel = n; }
     if (e.code === 'KeyQ') IN.cycle = 1;
     if (e.code === 'KeyF' && !e.repeat) trySkill();
+    if (e.code === 'KeyX' && !e.repeat) IN.boom = true;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -3537,6 +3736,7 @@ function inputInit() {
   $('btnAct').addEventListener('pointerdown', e => { e.preventDefault(); IN.interact = true; });
   $('btnWpn').addEventListener('pointerdown', e => { e.preventDefault(); IN.cycle = 1; });
   $('btnSkill').addEventListener('pointerdown', e => { e.preventDefault(); trySkill(); });
+  $('btnBoom').addEventListener('pointerdown', e => { e.preventDefault(); IN.boom = true; });
   $('btnPause').addEventListener('pointerdown', e => { e.preventDefault(); IN.pause = true; });
 }
 function resize() {
@@ -3744,6 +3944,7 @@ function updatePlayerFoot(dt) {
   }
   if (IN.interact && nearBed(P)) { sleepInSafehouse(); IN.interact = false; }
   if (IN.interact && nearCounter(P)) { buyBrew(); IN.interact = false; }
+  if (IN.interact) { const st = nearStation(P); if (st) { useStation(st); IN.interact = false; } }
   if (IN.interact && nearVault(P)) { startDrill(P); IN.interact = false; }
   if (IN.interact) { const cm = nearCrew(P); if (cm) { toggleRecruit(cm); IN.interact = false; } }
   if (IN.interact) {
@@ -3789,7 +3990,7 @@ function updateCamera(dt) {
   else { tx += clamp(P.vx * 0.25, -80, 80); ty += clamp(P.vy * 0.25, -80, 80); }
   const k = Math.min(1, 6 * dt);
   if (cam.snap) { cam.x = tx; cam.y = ty; cam.snap = false; } else { cam.x += (tx - cam.x) * k; cam.y += (ty - cam.y) * k; }
-  const zt = P.car ? 1 - 0.2 * clamp(Math.abs(P.car.vf) / CFG.car.maxSpeed, 0, 1) : 1;
+  const zt = P.car ? 1 - 0.2 * clamp(Math.abs(P.car.vf) / CFG.car.maxSpeed, 0, 1) : (P.alive && P.weapon === 'sniper' ? 0.72 : 1);
   cam.zoom += (zt - cam.zoom) * Math.min(1, 2 * dt);
   scale = baseScale * cam.zoom;
   VIEW.w = cw / scale; VIEW.h = ch / scale;
@@ -3844,6 +4045,9 @@ function drawGround(V) {
       ctx.fillStyle = '#4c535c'; ctx.fillRect(V2.x, V2.y, V2.w, V2.h);
       ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = V2.x; x < V2.x + V2.w; x += 12) { ctx.moveTo(x, V2.y); ctx.lineTo(x, V2.y + V2.h); } ctx.stroke();
       for (const L of S.loot) if (!L.taken) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(L.x - 12, L.y - 6, 26, 16); ctx.fillStyle = '#3f9a45'; ctx.fillRect(L.x - 14, L.y - 9, 26, 16); ctx.fillStyle = '#7dff4d'; ctx.fillRect(L.x - 12, L.y - 6, 22, 3); ctx.fillStyle = '#e8c547'; ctx.fillRect(L.x - 2, L.y - 9, 3, 16); }
+    }
+    else if ((b.district === 'hospital' || b.district === 'policehq' || b.district === 'barber') && G.city.services) {
+      const S = G.city.services.find(q => q.kind === b.district); if (S) drawServiceFloor(S);
     }
     else if (b.district === 'bar' && G.city.bar) {
       const S = G.city.bar, t = S.t;
@@ -4004,7 +4208,7 @@ function drawBuilding(b) {
   }
 }
 function inSafehouse(x, y) { const S = G.city && G.city.safehouse; return !!S && x > S.x && x < S.x + S.w && y > S.y && y < S.y + S.h; }
-function inInterior(x, y) { const C = G.city; return !!C && (inRect(C.bar, x, y) || inRect(C.safehouse, x, y) || inRect(C.bank, x, y)); }
+function inInterior(x, y) { const C = G.city; return !!C && (inRect(C.bar, x, y) || inRect(C.safehouse, x, y) || inRect(C.bank, x, y) || (C.services || []).some(S => inRect(S, x, y))); }
 function inRect(S, x, y) { return !!S && x > S.x && x < S.x + S.w && y > S.y && y < S.y + S.h; }
 function drawRoof(V, S, key, label, c1, c2, neon) {
   if (!S || !inV(V, S.x + S.w / 2, S.y + S.h / 2, 200)) return;
@@ -4023,6 +4227,7 @@ function drawRoof(V, S, key, label, c1, c2, neon) {
 function drawSafehouseRoof(V) {
   drawRoof(V, G.city.safehouse, 'roofA', 'BORS HQ', '#6b3a2a', '#7e4632', false);
   drawRoof(V, G.city.bar, 'barRoofA', 'THE BORS BAR', '#2b2b33', '#35353f', true);
+  for (const S of G.city.services || []) { const L2 = SERVICE_LOOK[S.kind]; drawRoof(V, S, 'roof_' + S.kind, L2.label, L2.c1, L2.c2, false); }
   drawRoof(V, G.city.bank, 'bankRoofA', 'BORS NATIONAL BANK', '#6d7078', '#7c8089', false);
   drawBankOverlay(V);
 }
@@ -4141,6 +4346,7 @@ function drawOverheads(V) {
   for (const id in G.remotes) { const q = G.remotes[id].ped; if (q.alive && q.car && inV(V, q.car.x, q.car.y, 40)) drawLabel(q.car.x, q.car.y - 30, q.name, q.color || '#fff', q.hp / q.maxHp); }
   const P = G.player;
   if (P && P.alive && (!P.car || P.car.kind === 'bike')) drawLabel(P.x, P.y - 22, P.name, P.color || '#fff', P.hp / P.maxHp);
+  drawBubbles(V);
   if (G.mission && G.mission.objective) { const o = G.mission.objective; if (inV(V, o.x, o.y, 0)) { ctx.strokeStyle = 'rgba(255,210,77,.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(o.x, o.y, 22 + 4 * Math.sin(G.time * 5), 0, TAU); ctx.stroke(); } }
 }
 function drawEffects(V) {
@@ -4230,6 +4436,7 @@ function drawMini() {
   if (G.game === 'roam') {
     if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0) && markerOpen(mm)) dot(mm.x, mm.y, mm.type === 'boss' ? '#ffffff' : mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
+    for (const S of C.services || []) dot(S.x + S.w / 2, S.y + S.h / 2, SERVICE_LOOK[S.kind].dot, R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
     drawTerritoriesMini(m, k);
     for (const st of C.gas || []) dot(st.x, st.y, st.burntT > G.time ? '#555555' : '#ff9d2e', R * 1.2);
@@ -4311,7 +4518,7 @@ function togglePause(on) {
     $('pauseTitle').textContent = G.mode === 'solo' ? 'Paused' : 'Menu (the game keeps running)';
     $('endSessionBtn').hidden = !(G.mode === 'mp' && isHost);
     $('quitBtn').textContent = G.mode === 'solo' ? 'Back to menu' : 'Leave room';
-    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0) + '  ·  Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')' + (G.city && G.city.territories ? '  ·  Territories ' + terrOwned() + '/' + G.city.territories.length : '');
+    $('pauseStats').textContent = 'Score ' + G.stats.score + '  ·  Cash $' + G.stats.cash + '  ·  Kills ' + G.stats.kills + '  ·  Missions ' + (G.stats.missions || 0) + '  ·  Rogue Rep: ' + repTitle(repGet()) + ' (' + repGet() + ')' + (G.city && G.city.territories ? '  ·  Territories ' + terrOwned() + '/' + G.city.territories.length : '') + '  \u00b7  v' + GAME_VERSION;
     showScreen('pause');
   } else showScreen(null);
 }
@@ -4327,6 +4534,7 @@ function updateHUD() {
   $('ammo').textContent = !W || W.infinite || W.melee ? '' : G.cheats.guns ? '∞' : ((P.ammo[P.weapon] || 0) < 5000 ? (P.ammo[P.weapon] || 0) + ' ' + (W.unit || 'rounds') : '');
   if (G.game === 'roam') {
     $('cash').textContent = '$' + G.stats.cash;
+    { const L2 = G.city && G.city.territories, show = !!(L2 && L2.length && G.game === 'roam'), tt = show ? 'Turf ' + terrOwned() + '/' + L2.length : ''; const el = $('turfHud'); if (el.hidden === show) el.hidden = !show; if (el.textContent !== tt) el.textContent = tt; }
     const s = G.wanted.stars;
     $('stars').innerHTML = s ? '<span>' + '★'.repeat(s) + '</span><span class="off">' + '★'.repeat(Math.max(0, 7 - s)) + '</span>' : '';
     const M = G.mission; $('objective').hidden = !M; if (M) $('objective').textContent = M.text;
@@ -4342,20 +4550,24 @@ function updateHUD() {
   if (P.alive && !G.busted) {
     if (P.car) hint = isTouch ? '' : (P.car.dead && P.car.burnT ? 'GET OUT! (E)' : (P.car.kind === 'bike' ? 'E: get off  ·  G: shoot' : 'E: get out  ·  G: drive-by'));
     else if (nearBed(P)) hint = isTouch ? '' : 'E: sleep (heal + save)';
+    else if (nearStation(P)) hint = isTouch ? '' : 'E: ' + stationHint(nearStation(P));
     else if (nearVault(P)) hint = isTouch ? '' : 'E: drill the vault (sets off the alarm)';
     else if (nearCrew(P)) hint = isTouch ? '' : (nearCrew(P).following ? 'E: dismiss ' + nearCrew(P).name : 'E: recruit' + (G.isSim ? ' (' + crewCount() + '/' + CREW.max + ')' : ''));
     else if (nearCounter(P)) hint = isTouch ? '' : 'E: Bors Brew ($' + BREW_PRICE + ', +200 HP)';
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
+    if (!hint && !isTouch && G.c4 && G.c4.length) hint = 'X: detonate C4 (' + G.c4.length + ')';
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
   }
   $('hint').hidden = !hint; $('hint').textContent = hint;
   skillHUD();
+  const chatOff = G.mode !== 'mp' || G.phase !== 'playing'; if ($('btnChat').hidden !== chatOff) $('btnChat').hidden = chatOff; if (chatOff) $('chatPanel').hidden = true;
   if (isTouch) {
     const inCar = !!P.car;
-    const bed = !inCar && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P);
-    $('btnAct').hidden = !(P.alive && (inCar || nearCar || bed || brew || drill || crewM)); $('btnAct').textContent = inCar ? 'EXIT' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
+    const bed = !inCar && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P), stat = !inCar && !bed && !brew && !drill && !crewM && nearStation(P);
+    $('btnAct').hidden = !(P.alive && (inCar || nearCar || bed || brew || drill || crewM || stat)); $('btnAct').textContent = inCar ? 'EXIT' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : stat ? STATION_BTN[stat.type] : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
     $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar; $('btnShoot').hidden = !(inCar && P.alive);
+    $('btnBoom').hidden = !(P.alive && G.c4 && G.c4.length);
     $('btnWpn').hidden = inCar || playerWeaponList(P).length < 2;
     $('btnPause').hidden = false;
   }
@@ -4736,6 +4948,7 @@ function attachListeners() {
   roomRef.child('news').on('child_added', s => { const n = s.val(); if (n && n.u !== uid && G.phase === 'playing' && serverNow() - (n.ts || 0) < 6000) { toast(n.x, n.d || 1.5); if (n.s) sfx(n.s); newsBanter(n.x, n.s); } });
   roomRef.child('world').on('value', s => onWorld(s.val()));
   roomRef.child('pickups').on('value', s => onPickupList(s.val()));
+  roomRef.child('chat').on('child_added', s => onChat(s.val()));
 }
 function attachHostListeners() {
   if (hostListening || !roomRef) return; hostListening = true;
@@ -4764,7 +4977,7 @@ function hostStart() {
   const old = Object.keys(players).filter(id => (players[id].ver || 0) !== GAME_VERSION);
   if (old.length) { msg(old.map(id => players[id].name || '?').join(', ') + ' must update to version ' + GAME_VERSION + ' first'); return; }
   const mode = (meta && meta.mode) || 'roam';
-  const upd = { hits: null, fx: null, feed: null, state: null, ev: null, msg: null, news: null, world: null, pickups: null, cars: null };
+  const upd = { hits: null, fx: null, feed: null, state: null, ev: null, msg: null, news: null, world: null, pickups: null, cars: null, chat: null };
   if (mode === 'dm') {
     const cars = {}, kinds = ['sedan', 'compact', 'sport', 'van', 'taxi', 'bike'];
     for (let i = 0; i < 16; i++) { const sp = randomRoadSpawn(G.city.W / 2, G.city.H / 2, 0, 9000); if (!sp) continue; const k = pick(kinds); cars['c' + i] = { x: Math.round(sp.x), y: Math.round(sp.y), a: Math.round(sp.a * 100) / 100, k, col: pick(CAR_KINDS[k].colors) }; }
@@ -5255,8 +5468,8 @@ function setupWorld(seed, mode) {
   const st = G.city.start;
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
-  P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = brotherLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0;
+  P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = myLook(P.char);
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
@@ -5323,7 +5536,7 @@ function update(dt) {
   const P = G.player;
   if (!P.alive) { if (G.time >= G.deadT) respawnPlayer(false); }
   else if (G.busted) { if (G.time >= G.deadT) respawnPlayer(true); }
-  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); partnerUpdate(dt); crewUpdate(dt);
+  updatePlayer(dt); skillUpdate(dt); projUpdate(dt); c4Tick(); partnerUpdate(dt); crewUpdate(dt);
   netPre(dt);
   if (G.isSim) helisUpdate(dt); else helisMirror(dt);
   if (G.isSim) {
@@ -5337,11 +5550,11 @@ function update(dt) {
   updateCamera(dt);
   engineUpdate(P.car ? P.car.vf : 0, P.car ? P.car.throttle : 0, !!P.car && P.alive);
   if (G.game === 'roam') { let sd = 1e9, on = false; const pp = playerPos(); for (const c of G.cars) if (c.siren && (c.driver || c.npcDrv)) { on = true; sd = Math.min(sd, dist(c.x, c.y, pp.x, pp.y)); } sirenUpdate(sd, on, dt); }
-  if (G.time - hudT > 0.1) { hudT = G.time; updateHUD(); }
+  if (G.time - hudT > 0.1 || G.time < hudT) { hudT = G.time; updateHUD(); }   // also after a restart (game time starts at 0 again)
   if (G.mode === 'solo' && G.time > (G.saveT || 0)) { G.saveT = G.time + 10; saveProgress(); }
 }
 function playerDied(src) {
-  const P = G.player; P.alive = false; G.deadT = G.time + 3.2; P.wx = P.wy = 0;
+  const P = G.player; P.alive = false; G.deadT = G.time + 3.2; P.wx = P.wy = 0; G.c4 = [];
   if (P.car) {
     const c = P.car;
     if (G.mode === 'mp' && G.game === 'dm') netFreeCar();
@@ -5357,7 +5570,7 @@ function bustPlayer(T) {
   if (T && !T.isPlayer) { if (T.kind === 'remote' && !isBusted(T)) { sendMsg(T.uid, { t: 'bust' }); T.busted = true; T.bustT = G.time; clearWanted(T); } return; }
   const P = G.player; if (G.busted || !P.alive || G.game !== 'roam') return;
   if (P.car) playerExitCar();
-  G.busted = true; G.deadT = G.time + 3.2; P.wx = P.wy = 0; P.vx = P.vy = 0;
+  G.busted = true; G.c4 = []; G.deadT = G.time + 3.2; P.wx = P.wy = 0; P.vx = P.vy = 0;
   bigText('BORSTED!', 'Arrested by your ex-colleagues. Awkward.\n' + (G.cheats.guns ? '10% of your cash gone' : 'Weapons confiscated, 10% of your cash gone')); banter('busted', true); addRep(-25); sfx('busted');
   G.wanted.heat = 0; G.wanted.stars = 0; G.stats.cash = Math.floor(G.stats.cash * 0.9);
   if (!G.cheats.guns) { P.owned = { pistol: true, bat: true }; P.weapon = 'pistol'; for (const k in P.ammo) P.ammo[k] = 0; }
@@ -5392,7 +5605,7 @@ function quitToMenu() {
   $('bestLine').textContent = [G.stats.best ? 'Best solo score: ' + G.stats.best : '', saveLine()].filter(Boolean).join('  ·  ');
   engineUpdate(0, 0, false); sirenUpdate(0, false, 0);
 }
-function init() { uiInit(); inputInit(); menuInit(); netInit(); showScreen('menu');
+function init() { uiInit(); inputInit(); menuInit(); netInit(); chatInit(); $('verTag').textContent = 'v' + GAME_VERSION; showScreen('menu');
   window.addEventListener('pagehide', saveProgress); document.addEventListener('visibilitychange', () => { if (document.hidden) saveProgress(); }); }
 init();
 
