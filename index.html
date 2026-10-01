@@ -286,7 +286,7 @@
     </div>
     <div class="panel" id="helpPanel" hidden>
       <h2>Controls</h2>
-      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, N nitro (after the garage upgrade), J opens the mission list, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
+      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out. With Mouse gestures enabled: double left-click performs E; triple left-click performs F on foot or N in a car; holding left and right together performs the G drive-by.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, N nitro (after the garage upgrade), J opens the mission list, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
       <button id="helpBack" class="btn-glass">Back</button>
     </div>
   </div>
@@ -297,6 +297,7 @@
     <h2>Settings</h2>
     <div class="settings">
       <label>Controls</label><select id="setControls"><option value="mouse">Mouse: point to move</option><option value="classic">Classic: WASD + mouse aim</option></select>
+      <label>Mouse gestures</label><select id="setMouseGestures"><option value="on">On</option><option value="off">Off</option></select>
       <label>Difficulty</label><select id="setDiff"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select>
       <label>Time of day</label><select id="setNight"><option value="day">Day</option><option value="night">Night</option></select>
       <label>Rain</label><select id="setRain"><option value="on">On</option><option value="off">Off (faster on old phones)</option></select>
@@ -334,7 +335,6 @@
 </div>
 
 <script>
-// v34: stability build based on v33; version-isolated multiplayer rooms.
 // ============================================================
 //  CONFIG (the only block you need to edit for multiplayer)
 // ============================================================
@@ -1476,7 +1476,7 @@ const G = {
   hash: new SpatialHash(120),
   wanted: null, wantedOf: {}, netShots: [], netBooms: [],
   mission: null, stats: { kills: 0, cash: 0, score: 0, best: 0, civKills: 0, missions: 0 },
-  settings: { controls: 'mouse', difficulty: 'normal', night: false, sound: true, char: 'mafl', partner: false },
+  settings: { controls: 'mouse', mouseGestures: true, difficulty: 'normal', night: false, sound: true, char: 'mafl', partner: false },
   cheats: { god: false, guns: false, beard: false, slow: false, rush: false, army: false }, cheatBuf: '',
   cam: { x: 0, y: 0, zoom: 1, shake: 0, sx: 0, sy: 0 },
   fx: { flash: 0, hintT: 0 },
@@ -5041,12 +5041,44 @@ function closeShop() { showScreen(null); G.paused = false; G.shopCooldownT = G.t
 // ============================================================
 const IN = { mx: 0, my: 0, run: false, aimA: 0, aimActive: false, aimAuto: false, fire: false, throttle: 0, heading: null, steerKb: 0, handbrake: false, interact: false, weaponSel: 0, cycle: 0, pause: false, click: null, manual: false, cursorD: 0 };
 const keys = {};
-const mouse = { x: 0, y: 0, l: false, r: false, seen: false, downT: 0, downX: 0, downY: 0, moved: false };
+const mouse = { x: 0, y: 0, l: false, r: false, seen: false, downT: 0, downX: 0, downY: 0, moved: false, chordArmed: true };
+const MG = { count: 0, lastT: 0, lastX: 0, lastY: 0, timer: 0, token: 0, suppressUntil: 0 };
+const MGAP = 250, MGDIST = 18, MGLONG = 220;
 const sticks = { left: null, right: null };
 const btn = { brake: false, hand: false, shoot: false };
 const STICK_R = 60;
 const isTouch = (navigator.maxTouchPoints || 0) > 0;
 let canvas, ctx, cw = 0, ch = 0, dpr = 1, scale = 1, baseScale = 1;
+
+function resetMouseGestures() {
+  MG.token++; MG.count = 0; MG.lastT = 0; if (MG.timer) clearTimeout(MG.timer); MG.timer = 0;
+}
+function gameplayGestureOK() {
+  return G.settings.mouseGestures !== false && !isTouch && G.phase === 'playing' && G.player && G.player.alive && !G.busted && $('pause').hidden && $('settings').hidden && $('shop').hidden && $('missions').hidden;
+}
+function mouseE() {
+  if (!gameplayGestureOK()) return;
+  if (!$('dialog').hidden) { const b = $('dlgBtns').querySelector('button[data-k="next"]'); if (b) { b.click(); return; } }
+  IN.interact = true;
+}
+function mouseSpecial() {
+  if (!gameplayGestureOK()) return;
+  if (G.player.car) IN.nitro = true; else trySkill();
+}
+function registerMouseGesture(x, y, heldMs, moved) {
+  if (!gameplayGestureOK() || heldMs > MGLONG || moved) { resetMouseGestures(); return; }
+  const now = performance.now();
+  if (now < MG.suppressUntil) return;
+  if (!MG.count || now - MG.lastT > MGAP || Math.hypot(x - MG.lastX, y - MG.lastY) > MGDIST) MG.count = 1; else MG.count++;
+  MG.lastT = now; MG.lastX = x; MG.lastY = y;
+  if (MG.timer) clearTimeout(MG.timer);
+  if (MG.count >= 3) { resetMouseGestures(); MG.suppressUntil = now + MGAP; mouseSpecial(); return; }
+  if (MG.count === 2) {
+    const tok = ++MG.token;
+    MG.timer = setTimeout(() => { if (tok !== MG.token || MG.count !== 2) return; resetMouseGestures(); mouseE(); }, MGAP);
+  }
+}
+function resetPointerState() { for (const k in keys) keys[k] = false; mouse.l = mouse.r = false; mouse.chordArmed = true; resetMouseGestures(); }
 
 function inputInit() {
   canvas = $('game'); ctx = canvas.getContext('2d');
@@ -5067,13 +5099,15 @@ function inputInit() {
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
-  window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; mouse.l = mouse.r = false; });
+  window.addEventListener('blur', resetPointerState);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) resetPointerState(); });
   canvas.addEventListener('pointerdown', e => {
     audioInit(); audioResume();
     if (e.pointerType === 'mouse') {
       mouse.x = e.clientX; mouse.y = e.clientY; mouse.seen = true;
       if (e.button === 0) { mouse.l = true; mouse.downT = performance.now(); mouse.downX = e.clientX; mouse.downY = e.clientY; mouse.moved = false; }
       if (e.button === 2) mouse.r = true;
+      if (!mouse.l && !mouse.r) mouse.chordArmed = true;
       return;
     }
     const s = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY, t0: performance.now(), moved: false };
@@ -5085,8 +5119,10 @@ function inputInit() {
   });
   const endPointer = e => {
     if (e.pointerType === 'mouse') {
-      if (e.button === 0 || e.type === 'pointercancel') { if (mouse.l && !mouse.moved && performance.now() - mouse.downT < 260) IN.click = screenToWorld(e.clientX, e.clientY); mouse.l = false; }
+      if (e.button === 0 || e.type === 'pointercancel') { const held = performance.now() - mouse.downT, moved = mouse.moved; if (mouse.l && !moved && held < 260) IN.click = screenToWorld(e.clientX, e.clientY); mouse.l = false; if (e.type !== 'pointercancel') registerMouseGesture(e.clientX, e.clientY, held, moved); }
       if (e.button === 2 || e.type === 'pointercancel') mouse.r = false;
+      if (!mouse.l && !mouse.r) mouse.chordArmed = true;
+      if (e.type === 'pointercancel') resetMouseGestures();
       return;
     }
     for (const k of ['left', 'right']) { const s = sticks[k]; if (s && s.id === e.pointerId) { if (!s.moved && performance.now() - s.t0 < 260) IN.click = screenToWorld(s.x, s.y); sticks[k] = null; } }
@@ -5138,7 +5174,7 @@ function readInput() {
       if (P.car) { IN.heading = IN.aimA; IN.throttle = clamp((d - 50) / 220, 0, 1); }
       else if (d > 26) { const k = clamp((d - 26) / 130, 0.4, 1); mx = Math.cos(IN.aimA) * k; my = Math.sin(IN.aimA) * k; IN.run = k > 0.85; }
     }
-    if (mouse.r) { if (P.car) { IN.throttle = -1; IN.manual = true; } else IN.fire = true; }
+    if (mouse.r) { if (P.car) { if (!mouse.l) { IN.throttle = -1; IN.manual = true; } } else IN.fire = true; }
     if (keys.Space && !P.car) IN.fire = true;
   } else {
     if (mouse.l && !P.car) IN.fire = true;
@@ -5261,11 +5297,13 @@ function tryEnterCar(c) {
   if (c.kind === 'bike') banter('bike');
 }
 function enterCar(P, c) {
+  mouse.chordArmed = !mouse.l && !mouse.r; resetMouseGestures();
   P.car = c; c.driver = P; c.ai = null; c.route = null; c.panicked = false; c.siren = false; c.parked = false; c.proxy = false;
   P.x = c.x; P.y = c.y; P.a = c.a; P.wx = P.wy = P.vx = P.vy = 0; P.goal = null; P.path = null;
   sfx('door', c.x, c.y);
 }
 function playerExitCar() {
+  resetMouseGestures(); mouse.chordArmed = false;
   const P = G.player, c = P.car; if (!c) return;
   if (G.mode === 'mp' && G.game === 'dm') netFreeCar();
   c.driver = null; P.car = null; c.throttle = 0; c.steer = 0; c.handbrake = false; c.abandonedT = G.time;
@@ -5354,7 +5392,7 @@ function updatePlayerCar(dt) {
   P.x = c.x; P.y = c.y; P.a = c.a;
   if (c.kind === 'bike' && c.lastCrashT === G.time && preSp > 300 && !G.cheats.god) { playerExitCar(); P.ragT = G.time + 1; P.vx = Math.cos(c.a) * preSp * 0.5; P.vy = Math.sin(c.a) * preSp * 0.5; damagePed(P, 20, { kind: 'fall' }); toast('WIPEOUT!\nHelmet: optional. Regret: mandatory.', 1.6); return; }
   if (G.cheats.god) P.hp = P.maxHp;
-  if ((keys.KeyG || btn.shoot) && !c.dead && c.driver === P && !G.busted) driveBy(P, c);
+  if ((keys.KeyG || btn.shoot || (G.settings.mouseGestures !== false && mouse.l && mouse.r && mouse.chordArmed)) && !c.dead && c.driver === P && !G.busted) driveBy(P, c);
   if (c.dead && !G.isSim && G.mode === 'mp') { playerExitCar(); toast('Bailed out!', 0.8); return; }
   if (c.dead && c.burnT && G.time > G.fx.hintT) { G.fx.hintT = G.time + 1.5; toast('GET OUT!', 0.8); }
 }
@@ -5961,8 +5999,8 @@ function loadSettings() { try { Object.assign(G.settings, JSON.parse(localStorag
 function saveSettings() { try { localStorage.gb_settings = JSON.stringify(G.settings); } catch (e) {} }
 function saveBest() { if (G.mode === 'solo' && G.stats.score > G.stats.best) { G.stats.best = G.stats.score; try { localStorage.gb_best = G.stats.best; } catch (e) {} } }
 function syncPartnerSeg() { for (const b of $('partnerSeg').querySelectorAll('button')) b.classList.toggle('on', (b.dataset.p === 'on') === (G.settings.partner === true)); }
-function syncSettingsUI() { $('setControls').value = G.settings.controls; $('setDiff').value = G.settings.difficulty; $('setNight').value = G.settings.night ? 'night' : 'day'; $('setSound').value = G.settings.sound ? 'on' : 'off'; $('setPartner').value = G.settings.partner === false ? 'off' : 'on'; $('setRain').value = G.settings.rain === false ? 'off' : 'on'; }
-function readSettingsUI() { G.settings.controls = $('setControls').value; G.settings.difficulty = $('setDiff').value; G.settings.night = $('setNight').value === 'night'; G.settings.sound = $('setSound').value === 'on'; setSoundEnabled(G.settings.sound); G.settings.partner = $('setPartner').value !== 'off'; G.settings.pv = 1; G.settings.rain = $('setRain').value !== 'off'; saveSettings(); syncPartnerSeg();
+function syncSettingsUI() { $('setControls').value = G.settings.controls; $('setMouseGestures').value = G.settings.mouseGestures === false ? 'off' : 'on'; $('setDiff').value = G.settings.difficulty; $('setNight').value = G.settings.night ? 'night' : 'day'; $('setSound').value = G.settings.sound ? 'on' : 'off'; $('setPartner').value = G.settings.partner === false ? 'off' : 'on'; $('setRain').value = G.settings.rain === false ? 'off' : 'on'; }
+function readSettingsUI() { G.settings.controls = $('setControls').value; G.settings.mouseGestures = $('setMouseGestures').value !== 'off'; resetMouseGestures(); G.settings.difficulty = $('setDiff').value; G.settings.night = $('setNight').value === 'night'; G.settings.sound = $('setSound').value === 'on'; setSoundEnabled(G.settings.sound); G.settings.partner = $('setPartner').value !== 'off'; G.settings.pv = 1; G.settings.rain = $('setRain').value !== 'off'; saveSettings(); syncPartnerSeg();
   if (G.phase === 'playing' && G.mode === 'solo') { if (!G.settings.partner && G.partner) removePartner(); else if (G.settings.partner && !G.partner) spawnPartner(); } }
 function getName() { const n = $('name').value.trim().slice(0, 12) || (BROTHERS[G.settings.char] || BROTHERS.mafl).name; try { localStorage.gb_name = n; } catch (e) {} return n; }
 function showMainPanel(which) { $('mainPanel').hidden = which !== 'main'; $('helpPanel').hidden = which !== 'help'; $('roomPanel').hidden = which !== 'room'; }
@@ -5989,7 +6027,7 @@ function uiInit() {
   $('pauseSettings').onclick = () => { settingsReturn = 'pause'; syncSettingsUI(); showScreen('settings'); };
   $('settingsBack').onclick = () => { readSettingsUI(); showScreen(settingsReturn); };
   $('resetSave').onclick = () => { if (confirm('Delete your saved cash, weapons, territories and mission progress? Rogue Rep and best score stay.')) { resetProgress(); try { delete localStorage[TERR_KEY]; delete localStorage[MIS_KEY]; } catch (e) {} $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
-  for (const id of ['setControls', 'setDiff', 'setNight', 'setSound', 'setPartner', 'setRain']) $(id).onchange = readSettingsUI;
+  for (const id of ['setControls', 'setMouseGestures', 'setDiff', 'setNight', 'setSound', 'setPartner', 'setRain']) $(id).onchange = readSettingsUI;
   $('helpBtn').onclick = () => showMainPanel('help');
   $('helpBack').onclick = () => showMainPanel('main');
   $('resumeBtn').onclick = () => togglePause(false);
@@ -6001,6 +6039,7 @@ function uiInit() {
   $('name').addEventListener('keydown', e => { if (e.key === 'Enter') $('soloBtn').click(); });
 }
 function togglePause(on) {
+  resetPointerState();
   if (G.phase !== 'playing') return;
   if (!$('dialog').hidden && on !== false) return;
   const open = on == null ? $('pause').hidden : on;
@@ -6058,15 +6097,18 @@ function updateHUD() {
   { const mb = $('btnMute'), on = G.settings.sound !== false; if (mb.hidden) mb.hidden = false; if (mb.dataset.on !== String(on)) { mb.dataset.on = String(on); mb.innerHTML = speakerIcon(on); mb.classList.toggle('off', !on); } }
   { const mb = $('btnMissions'), show = G.game === 'roam' && G.phase === 'playing'; if (mb.hidden === show) mb.hidden = !show; mb.classList.toggle('has', show && !G.mission && !G.activeId && G.isSim && missionList().some(x => x.state === 'open')); }
   const chatOff = G.mode !== 'mp' || G.phase !== 'playing'; if ($('btnChat').hidden !== chatOff) $('btnChat').hidden = chatOff; if (chatOff) $('chatPanel').hidden = true;
+  const activeC4 = !!(P.alive && G.c4 && G.c4.some(q => !q.dead && (!q.by || q.by === P)));
+  $('btnBoom').hidden = !activeC4;
+  $('btnPause').hidden = false;
   if (isTouch) {
     const inCar = !!P.car;
     const plan = !inCar && nearBoard(P), bed = !inCar && !plan && nearBed(P), brew = !inCar && !bed && nearCounter(P), drill = !inCar && !bed && !brew && nearVault(P), crewM = !inCar && !bed && !brew && !drill && nearCrew(P), stat = !inCar && !bed && !brew && !drill && !crewM && nearStation(P);
     $('btnAct').hidden = !(P.alive && (inCar || nearCar || plan || bed || brew || drill || crewM || stat)); $('btnAct').textContent = inCar ? 'EXIT' : plan ? 'PLAN' : bed ? 'SLEEP' : brew ? 'DRINK' : drill ? 'DRILL' : stat ? STATION_BTN[stat.type] : crewM ? (crewM.following ? 'DISMISS' : 'RECRUIT') : (nearCar && (nearCar.driver || nearCar.npcDrv) ? 'JACK' : 'ENTER');
     $('btnBrake').hidden = !inCar; $('btnHand').hidden = !inCar; $('btnShoot').hidden = !(inCar && P.alive);
-    $('btnBoom').hidden = !(P.alive && G.c4 && G.c4.length);
+    // BOOM visibility is handled above for both desktop and touch.
     { const nb = $('btnNitro'), show = !!(inCar && G.tune && G.tune.nitro), lbl = G.time < (G.nitroReady || 0) ? Math.ceil(G.nitroReady - G.time) + 's' : 'NITRO'; if (nb.hidden === show) nb.hidden = !show; if (nb.textContent !== lbl) nb.textContent = lbl; }
     $('btnWpn').hidden = inCar || playerWeaponList(P).length < 2;
-    $('btnPause').hidden = false;
+    // Pause visibility is handled above for both desktop and touch.
   }
 }
 
@@ -7085,6 +7127,7 @@ function bustPlayer(T) {
   if (!G.cheats.guns) { P.owned = { pistol: true, bat: true }; P.weapon = 'pistol'; for (const k in P.ammo) P.ammo[k] = 0; }
 }
 function respawnPlayer(busted) {
+  resetPointerState();
   const P = G.player; hideBig();
   if (G.mode === 'mp' && G.game === 'dm') { netRespawn(); return; }
   const pt = busted ? G.city.places.police : G.city.places.hospital;
@@ -7108,6 +7151,7 @@ function backToLobby() {
   $('hud').hidden = true; hideBig(); showScreen('menu'); renderLobby(); engineUpdate(0, 0, false); sirenUpdate(0, false, 0);
 }
 function quitToMenu() {
+  resetPointerState();
   closeDialog(true);
   if (G.mode === 'mp') { leaveRoom(); return; }
   saveProgress(); saveBest(); running = false; G.phase = 'menu'; G.paused = false;
