@@ -188,6 +188,11 @@
   #chatPanel button { min-height: 30px; padding: 4px 10px; font-size: 13px; text-align: left; background: rgba(8,12,30,.85); border: 1px solid rgba(255,255,255,.25); } body.phoneL #chatPanel button { min-height: 24px; font-size: 11px; padding: 2px 8px; }
   #turfHud { font-size: 13px; font-weight: 700; color: #6fa0ff; margin-top: 1px; }
   body.phoneL #turfHud { position: absolute; right: 100%; top: 2px; margin: 0 8px 0 0; white-space: nowrap; font-size: 11px; }
+  #btnMute { position: absolute; left: 60px; top: 90px; width: 40px; height: 40px; min-height: 0; padding: 0; border-radius: 8px; font-size: 18px; line-height: 1; pointer-events: auto; background: rgba(0,0,0,.45); border: 1px solid rgba(255,255,255,.35); color: #fff; }
+  #btnMute.off { background: rgba(160,30,30,.6); }
+  #btnMute svg { display: block; margin: auto; pointer-events: none; }
+  body.phoneL #btnMute { left: 8px; top: 100px; width: 34px; height: 30px; font-size: 15px; }
+  body.phoneL #btnChat { top: 136px; }
   #rotate { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
@@ -219,6 +224,7 @@
   <button class="tbtn" id="btnChat" hidden>CHAT</button>
   <div id="chatPanel" hidden></div>
   <button class="tbtn" id="btnPause" hidden>II</button>
+  <button id="btnMute" hidden title="Sound on/off"></button>
   <div id="streak"></div><div id="radio"></div><div id="slowFx" hidden></div>
   <div id="rotate" hidden>Landscape works best</div>
 </div>
@@ -318,7 +324,7 @@ const CFG = {
   netHz: 15, interpDelayMs: 120,
   worldHz: 8, worldInterpMs: 200, interestRadius: 1150,   // free roam: host world snapshots
   pvpDamage: 2.5,             // player vs player damage multiplier (players have 5x health)
-  city: { cols: 12, rows: 10, block: 300, road: 120, sidewalk: 20 },
+  city: { cols: 14, rows: 12, block: 300, road: 120, sidewalk: 20 },
   view: { w: 1120, h: 630 },  // world pixels visible on a desktop screen (roughly)
   ped: { walk: 150, run: 265, accel: 1100, turn: 14, radius: 13, hp: 100 },
   player: { hp: 500, regenAfter: 6, regenTo: 200, regenRate: 20, healthPickup: 200, shopHealth: 250 },
@@ -542,7 +548,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 21;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 22;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -852,7 +858,7 @@ function buildCity(seed) {
   const city = { seed, cols, rows, block, road, sw, pitch, W, H, blocks: [], buildings: [], props: [], nodes: [], turfs: [], places: {}, missions: [] };
   const cc = Math.floor(cols / 2), cr = Math.floor(rows / 2);
   const parks = new Set([1 + ',' + (rows - 2), (cols - 3) + ',' + 1]);
-  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : 'residential';
+  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : (rows >= 12 && r === rows - 1 && c <= cols - 3) ? 'beach' : (rows >= 12 && cols >= 14 && r >= rows - 3 && r <= rows - 2 && c >= cols - 5 && c <= cols - 3) ? 'airport' : (rows >= 12 && r >= rows - 3 && r <= rows - 2 && c >= 1 && c <= 4) ? 'littlebors' : 'residential';
   const addB = (b, blk) => { b.block = blk; blk.buildings.push(b); city.buildings.push(b); return b; };
   const addP = (p, blk) => { blk.props.push(p); city.props.push(p); return p; };
   const ePt = (blk, side, t) => side === 'top' ? { x: blk.x + blk.w * t, y: blk.y - sw / 2 } : side === 'bottom' ? { x: blk.x + blk.w * t, y: blk.y + blk.h + sw / 2 } : side === 'left' ? { x: blk.x - sw / 2, y: blk.y + blk.h * t } : { x: blk.x + blk.w + sw / 2, y: blk.y + blk.h * t };
@@ -995,6 +1001,39 @@ function buildCity(seed) {
       city.bar = { x: x0, y: y0, w: W2, h: H2, t, door: { x: x0 + W2 / 2, y: y0 - sw / 2 - 20 }, counter: { x: x0 + W2 / 2, y: cy - 22 }, tender: { x: x0 + W2 / 2, y: cy + 16 + 17 },
         spots: [{ x: x0 + 40, y: y0 + 46 }, { x: x0 + 62, y: y0 + 72 }, { x: x0 + W2 / 2 - 50, y: cy - 20 }, { x: x0 + W2 / 2 + 52, y: cy - 20 }] };
       for (let k = 0; k < 3; k++) { const tx = bx + rr(20, block - 20), ty = by + rr(block - 70, block - 20); addP({ x: tx, y: ty, r: 7, canopy: rr(12, 16), type: 'tree', pedBlock: true, carBlock: true }, blk); }
+    } else if (blk.district === 'beach') {
+      // v22: Bors Beach & Boardwalk: boardwalk up top, sand, palms, umbrellas, a lifeguard tower, sea at the bottom
+      blk.base = '#e8d39a';
+      const wy = by + block - 96;
+      addB({ x: bx + 6, y: wy, w: block - 12, h: 90, kind: 'water', color: '#2c6f9e', height: 0, sea: true }, blk);
+      addB({ x: bx + rr(40, block - 80), y: wy - 52, w: 26, h: 26, kind: 'lifeguard', color: '#e74c3c', height: 1 }, blk);
+      const UMB = ['#e74c3c', '#2e86ab', '#f1c40f', '#27ae60', '#ff8fc7'];
+      for (let k = 0; k < 4; k++) addP({ x: bx + 30 + k * 70 + rr(-10, 10), y: by + rr(110, 150), r: 0, type: 'umbrella', col: rp(UMB) }, blk);
+      for (let k = 0; k < 3; k++) addP({ x: bx + 40 + k * 110 + rr(-15, 15), y: by + rr(70, 88), r: 6, canopy: rr(15, 18), type: 'tree', palm: true, pedBlock: true, carBlock: true }, blk);
+      if (c % 3 === 1) addB({ x: bx + block - 70, y: by + 64, w: 40, h: 28, kind: 'kiosk', color: '#ff8fc7', height: 1 }, blk);
+    } else if (blk.district === 'airport') {
+      // v22: Bors International: tarmac with taxi lines, hangars, a parked jet and the control tower
+      blk.base = '#5a5d63'; blk.tarmac = true;
+      const v = (c + r) % 3;
+      if (v === 0) addB({ x: bx + 30, y: by + 40, w: block - 60, h: 150, kind: 'hangar', color: '#9aa3ad', height: 2 }, blk);
+      else if (v === 1) addB({ x: bx + 50, y: by + block / 2 - 12, w: block - 100, h: 24, kind: 'plane', color: '#f4f6f7', height: 1, pad: 90 }, blk);
+      else { addB({ x: bx + block / 2 - 26, y: by + block / 2 - 26, w: 52, h: 52, kind: 'ctower', color: '#c9ced6', height: 3 }, blk); addB({ x: bx + 30, y: by + 30, w: 70, h: 40, kind: 'warehouse', color: '#7d8590', height: 1 }, blk); }
+    } else if (blk.district === 'littlebors') {
+      // v22: Little Bors: tight rows of lantern-lit shophouses around a market lane (Lucky Dragons turf)
+      blk.base = '#6e5f50';
+      const LB = ['#b8322a', '#c0392b', '#d4a017', '#1f8a70', '#8e2c2c', '#c76b1f'];
+      const m = 18, gap = 56, rh = (block - 2 * m - gap) / 2;
+      for (let j = 0; j < 2; j++) {
+        let x = bx + m; const y = by + m + j * (rh + gap), hh = rh * rr(0.8, 0.95);
+        while (x < bx + block - m - 30) {
+          const w = Math.min(rr(36, 54), bx + block - m - x); if (w < 28) break;
+          addB({ x, y: j ? y + (rh - hh) : y, w: w - 2, h: hh, kind: 'house', color: rp(LB), height: 1, seed: rnd(), narrow: true, pagoda: true }, blk);
+          x += w;
+        }
+      }
+      const ly = by + m + rh + gap / 2;
+      for (let k = 0; k < 3; k++) addB({ x: bx + 40 + k * 84, y: ly - 9, w: 34, h: 18, kind: 'stall', color: rp(['#e74c3c', '#f1c40f', '#27ae60']), height: 0 }, blk);
+      for (let k = 0; k < 6; k++) addP({ x: bx + 26 + k * 50, y: ly + (k % 2 ? 16 : -16), r: 0, type: 'lantern' }, blk);
     } else if (blk.district === 'financial') {
       // Financial District: glass skyscrapers, one with a rooftop helipad, small plaza trees
       blk.base = '#6c727c';
@@ -1069,11 +1108,11 @@ function buildCity(seed) {
   ];
   city.territories = [];
   for (const b of city.blocks) {
-    if (['residential', 'oldtown', 'harbour', 'industrial'].indexOf(b.district) < 0) continue;
-    if ((b.c * 3 + b.r * 5) % 4 !== 0) continue;
+    if (['residential', 'oldtown', 'harbour', 'industrial', 'littlebors'].indexOf(b.district) < 0) continue;
+    if (b.district !== 'littlebors' && (b.c * 3 + b.r * 5) % 4 !== 0) continue;
     if ((b.c === 0 || b.c === cols - 1) && (b.r === 0 || b.r === rows - 1)) continue;          // corner gang hideouts stay as they are
     if (Math.abs(b.c - (cc - 1)) <= 1 && Math.abs(b.r - cr) <= 1) continue;                    // not right next to the start
-    city.territories.push({ i: city.territories.length, key: b.c + ',' + b.r, blk: b, x: b.x + b.w / 2, y: b.y + b.h / 2, gang: (b.x + b.w / 2) > W / 2 ? 'rats' : 'saints', owner: null, kills: 0, killT: 0, coolT: 0, spawnT: 0 });
+    city.territories.push({ i: city.territories.length, key: b.c + ',' + b.r, blk: b, x: b.x + b.w / 2, y: b.y + b.h / 2, gang: b.district === 'littlebors' ? 'dragons' : (b.x + b.w / 2) > W / 2 ? 'rats' : 'saints', owner: null, kills: 0, killT: 0, coolT: 0, spawnT: 0 });
   }
   city.turfs = [blockAt(0, 0), blockAt(cols - 1, 0), blockAt(0, rows - 1), blockAt(cols - 1, rows - 1)];
   city.start = ePt(blockAt(cc - 1, cr), 'bottom', 0.5);
@@ -3146,10 +3185,16 @@ function applyGasState(v) {
   L.forEach((st, i) => { st.burntT = bits[i] === '1' ? G.time + 5 : 0; });
 }
 // ---- v17: gang territories (San Andreas style). Host/solo decides, everyone sees the blue blocks.
-const GANGS = { rats: { name: 'Harbour Rats', color: '#ff3b3b', shirt: '#b3261e', pants: '#2b1a12' }, saints: { name: 'Old Town Saints', color: '#b04dff', shirt: '#6a2c91', pants: '#1b1b2a' } };
+const GANGS = { rats: { name: 'Harbour Rats', color: '#ff3b3b', shirt: '#b3261e', pants: '#2b1a12' }, saints: { name: 'Old Town Saints', color: '#b04dff', shirt: '#6a2c91', pants: '#1b1b2a' }, dragons: { name: 'Lucky Dragons', color: '#14c8b4', shirt: '#0f8a7c', pants: '#1a1a1a' } };
+function gangAt(x, y) {
+  const C = G.city; if (!C) return 'saints';
+  const c = clamp(Math.floor(x / C.pitch), 0, C.cols - 1), r = clamp(Math.floor(y / C.pitch), 0, C.rows - 1), b = C.blocks[r * C.cols + c];
+  if (b && b.district === 'littlebors') return 'dragons';
+  return x > C.W / 2 ? 'rats' : 'saints';
+}
 const TERR = { killsToStart: 3, killWindow: 90, waves: 3, warSec: 150, leaveDist: 950, reward: 300, income: 50, incomeSec: 120, bankCap: 3000 };
 const TERR_KEY = 'gb_turf';
-function gangDress(p) { const C = G.city; if (!C) return; p.gang = p.x > C.W / 2 ? 'rats' : 'saints'; const g = GANGS[p.gang]; p.look = Object.assign({}, p.look, { shirt: g.shirt, pants: g.pants }); }
+function gangDress(p) { const C = G.city; if (!C) return; p.gang = gangAt(p.x, p.y); const g = GANGS[p.gang]; p.look = Object.assign({}, p.look, { shirt: g.shirt, pants: g.pants }); }
 function terrOwned() { const L = G.city && G.city.territories; return L ? L.filter(T => T.owner === 'bors').length : 0; }
 function terrRect(T) { const b = T.blk, sw = G.city.sw; return { x: b.x - sw, y: b.y - sw, w: b.w + 2 * sw, h: b.h + 2 * sw }; }
 function terrAt(x, y) { const L = G.city && G.city.territories; if (!L) return null; for (const T of L) if (inRect(terrRect(T), x, y)) return T; return null; }
@@ -3230,16 +3275,18 @@ function territoryUpdate() {
 function saveTerritories() {
   if (G.mode !== 'solo') return;
   const own = G.city.territories.filter(T => T.owner === 'bors' && !T.cheat).map(T => T.key);
-  try { localStorage[TERR_KEY] = JSON.stringify({ v: 1, own, bank: Math.round(G.terrBank || 0), fin: G.finaleDone && !G.finaleCheat ? 1 : 0 }); } catch (e) {}
+  try { localStorage[TERR_KEY] = JSON.stringify({ v: 1, map: G.city.cols + 'x' + G.city.rows, own, bank: Math.round(G.terrBank || 0), fin: G.finaleDone && !G.finaleCheat ? 1 : 0 }); } catch (e) {}
 }
 function loadTerritories() {
   G.terrBank = 0; G.incomeT = 0; G.lastTerr = null; G.finaleDone = false; G.finaleCheat = false;
   if (G.mode !== 'solo' || !G.city.territories) return;
   let d = null; try { d = JSON.parse(localStorage[TERR_KEY] || 'null'); } catch (e) { d = null; }
   if (!d || d.v !== 1 || !Array.isArray(d.own)) return;
-  const keys = new Set(d.own.filter(k => typeof k === 'string'));
+  const sameMap = d.map === G.city.cols + 'x' + G.city.rows;
+  const keys = new Set(sameMap ? d.own.filter(k => typeof k === 'string') : []);
   for (const T of G.city.territories) if (keys.has(T.key)) T.owner = 'bors';
-  G.finaleDone = d.fin === 1;
+  G.finaleDone = sameMap && d.fin === 1;
+  if (!sameMap && d.own.length) G.mapChangedNote = true;
   const b = Number(d.bank); G.terrBank = isFinite(b) ? clamp(Math.round(b), 0, TERR.bankCap) : 0;
 }
 function applyTerrState(v) {
@@ -3363,8 +3410,9 @@ function crewUpdate(dt) {
   }
 }
 // ---- v19: the finale. Own half the city and the rival bosses call you out at Bors Arena.
+function bossNeed() { const L = G.city && G.city.territories; return L ? Math.ceil(L.length / 2) : 9; }
 const BOSS = { need: 9, hp: 1400, secs: 300, leave: 950, reward: 10000 };
-function markerOpen(m) { if (m.type !== 'boss') return true; const L = G.city && G.city.territories; return !!L && terrOwned() >= BOSS.need && terrOwned() < L.length; }
+function markerOpen(m) { if (m.type !== 'boss') return true; const L = G.city && G.city.territories; return !!L && terrOwned() >= bossNeed() && terrOwned() < L.length; }
 function bossDress(p) { p.boss = true; p.maxHp = BOSS.hp; p.name = p.gang === 'rats' ? 'RAT KING' : 'SAINT PETER'; p.look = Object.assign({}, p.look, { hat: 'cap', glasses: true, scale: 1.2, build: 'muscle' }); }
 function bossStart(M, nP) {
   const S = G.city.blocks.find(b => b.district === 'stadium'), cx = S.x + S.w / 2, cy = S.y + S.h / 2;
@@ -3626,6 +3674,14 @@ function drawServiceFloor(S) {
   }
   for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
 }
+function speakerIcon(on) {   // drawn icon (no emoji font needed)
+  return '<svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/>' +
+    (on ? '<path d="M16 9a4 4 0 0 1 0 6"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11"/>' : '<path d="M16 9l5 6M21 9l-5 6"/>') + '</svg>';
+}
+function toggleMute() {
+  audioInit(); G.settings.sound = G.settings.sound === false; setSoundEnabled(G.settings.sound); saveSettings(); if (typeof syncSettingsUI === 'function') syncSettingsUI();
+  toast(G.settings.sound ? 'SOUND ON' : 'MUTED\nShh. The cops are listening.', 1);
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
@@ -3738,6 +3794,7 @@ function inputInit() {
   $('btnSkill').addEventListener('pointerdown', e => { e.preventDefault(); trySkill(); });
   $('btnBoom').addEventListener('pointerdown', e => { e.preventDefault(); IN.boom = true; });
   $('btnPause').addEventListener('pointerdown', e => { e.preventDefault(); IN.pause = true; });
+  $('btnMute').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleMute(); });
 }
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -4034,6 +4091,20 @@ function drawGround(V) {
       if (!burnt) { ctx.fillStyle = '#d62828'; ctx.fillRect(b.x + 30, b.y + 42, b.w - 60, 9); ctx.fillStyle = '#fff'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS FUEL', b.x + b.w / 2, b.y + 47); }
       ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 30, b.y + 42, b.w - 60, 84);
     }
+    else if (b.district === 'beach') {
+      ctx.fillStyle = 'rgba(160,120,60,.12)'; for (let k = 0; k < 40; k++) { const x = b.x + ((k * 73) % b.w), y = b.y + 60 + ((k * 131) % (b.h - 160)); ctx.fillRect(x, y, 3, 2); }
+      ctx.fillStyle = '#8a5a34'; ctx.fillRect(b.x, b.y + 30, b.w, 26); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = b.x + 6; x < b.x + b.w; x += 9) { ctx.moveTo(x, b.y + 30); ctx.lineTo(x, b.y + 56); } ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.55)'; const t = G.time, wy = b.y + b.h - 96; for (let x = b.x + 6; x < b.x + b.w - 6; x += 18) ctx.fillRect(x, wy - 3 + Math.sin(t * 2 + x * 0.05) * 2, 12, 3);
+    }
+    else if (b.district === 'airport') {
+      ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 4; ctx.setLineDash([26, 18]); line(ctx, b.x + 10, b.y + b.h - 40, b.x + b.w - 10, b.y + b.h - 40); ctx.setLineDash([]);
+      ctx.strokeStyle = '#e8c547'; ctx.lineWidth = 2; line(ctx, b.x + 20, b.y + 22, b.x + b.w - 20, b.y + 22); line(ctx, b.x + b.w - 22, b.y + 22, b.x + b.w - 22, b.y + b.h - 60);
+      ctx.fillStyle = 'rgba(255,255,255,.6)'; for (let k = 0; k < 5; k++) ctx.fillRect(b.x + 18 + k * 12, b.y + b.h - 26, 6, 18);
+    }
+    else if (b.district === 'littlebors') {
+      ctx.fillStyle = '#8a2c2c'; const ly = b.y + 18 + (b.h - 36 - 56) / 2; ctx.fillRect(b.x, ly + 6, b.w, 44);
+      ctx.strokeStyle = 'rgba(232,197,71,.5)'; ctx.lineWidth = 1.5; line(ctx, b.x, ly + 10, b.x + b.w, ly + 10); line(ctx, b.x, ly + 46, b.x + b.w, ly + 46);
+    }
     else if (b.district === 'river') { ctx.fillStyle = '#6f695e'; ctx.fillRect(b.x, b.y, b.w, 6); ctx.fillRect(b.x, b.y + b.h - 6, b.w, 6); }
     else if (b.district === 'residential') { for (const lot of b.lots) { ctx.fillStyle = lot.color; ctx.fillRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); } ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 2; for (const lot of b.lots) ctx.strokeRect(lot.x + 2, lot.y + 2, lot.w - 4, lot.h - 4); }
     else if (b.district === 'harbour') { ctx.strokeStyle = 'rgba(0,0,0,.1)'; ctx.lineWidth = 1; ctx.beginPath(); for (let gx = b.x; gx <= b.x + b.w; gx += 40) { ctx.moveTo(gx, b.y); ctx.lineTo(gx, b.y + b.h); } ctx.stroke(); ctx.fillStyle = '#e8c547'; ctx.fillRect(b.x + b.w * 0.5, b.y + 20, 3, b.h - 40); for (const pr of b.piers || []) { ctx.fillStyle = '#7a5a36'; ctx.fillRect(pr.x, pr.y, pr.w, pr.h); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = pr.x + 6; x < pr.x + pr.w; x += 7) { ctx.moveTo(x, pr.y); ctx.lineTo(x, pr.y + pr.h); } ctx.stroke(); } }
@@ -4091,6 +4162,8 @@ function drawGroundProps(V) {
       case 'tree': ctx.fillStyle = 'rgba(0,0,0,.28)'; circle(ctx, p.x + 6, p.y + 6, p.canopy * 0.9); ctx.fillStyle = '#4a2f17'; circle(ctx, p.x, p.y, 4); break;
       case 'lamp': ctx.fillStyle = '#2b2b30'; circle(ctx, p.x, p.y, 3.5); ctx.fillStyle = G.settings.night ? '#fff0b0' : '#b9b9c2'; circle(ctx, p.x, p.y, 2); break;
       case 'bench': ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(-13, -2, 28, 8); ctx.fillStyle = '#7a5230'; ctx.fillRect(-14, -4, 28, 8); ctx.restore(); break;
+      case 'umbrella': ctx.fillStyle = 'rgba(0,0,0,.2)'; circle(ctx, p.x + 4, p.y + 5, 15); ctx.fillStyle = p.col || '#e74c3c'; circle(ctx, p.x, p.y, 15); ctx.fillStyle = 'rgba(255,255,255,.75)'; for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.arc(p.x, p.y, 15, k * Math.PI / 2, k * Math.PI / 2 + Math.PI / 4); ctx.closePath(); ctx.fill(); } ctx.fillStyle = '#333'; circle(ctx, p.x, p.y, 2); break;
+      case 'lantern': { const g = 0.6 + 0.4 * Math.sin(G.time * 3 + p.x); ctx.fillStyle = 'rgba(255,90,40,' + (0.25 * g).toFixed(2) + ')'; circle(ctx, p.x, p.y, 11); ctx.fillStyle = '#d62828'; circle(ctx, p.x, p.y, 5); ctx.fillStyle = '#ffd24d'; ctx.fillRect(p.x - 1, p.y - 7, 2, 3); break; }
       case 'pump': { const st = (G.city.gas || []).find(q => q.pumps.includes(p)), burnt = st && st.burntT > G.time; ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(p.x - 6, p.y - 8, 14, 18); ctx.fillStyle = burnt ? '#2b2b2b' : '#c0392b'; ctx.fillRect(p.x - 7, p.y - 10, 14, 18); if (!burnt) { ctx.fillStyle = '#f2f2f2'; ctx.fillRect(p.x - 5, p.y - 8, 10, 6); ctx.fillStyle = '#222'; ctx.fillRect(p.x + 7, p.y - 4, 3, 8); } break; }
       case 'bollard': ctx.fillStyle = '#2a2a2a'; circle(ctx, p.x, p.y, 4); ctx.fillStyle = '#555'; circle(ctx, p.x, p.y, 2); break;
       case 'hydrant': ctx.fillStyle = '#c0392b'; circle(ctx, p.x, p.y, 3.5); ctx.fillStyle = '#e74c3c'; circle(ctx, p.x, p.y, 1.8); break;
@@ -4098,6 +4171,51 @@ function drawGroundProps(V) {
   }
 }
 function drawBuilding(b) {
+  if (b.kind === 'plane') {
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.moveTo(cx - 10 + 12, cy - 80 + 14); ctx.lineTo(cx + 20 + 12, cy + 14); ctx.lineTo(cx - 10 + 12, cy + 80 + 14); ctx.lineTo(cx - 30 + 12, cy + 14); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#d7dde3'; ctx.beginPath(); ctx.moveTo(cx - 10, cy - 80); ctx.lineTo(cx + 22, cy - 6); ctx.lineTo(cx + 22, cy + 6); ctx.lineTo(cx - 10, cy + 80); ctx.lineTo(cx - 28, cy + 6); ctx.lineTo(cx - 28, cy - 6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(b.x + 10, cy - 34); ctx.lineTo(b.x + 30, cy - 4); ctx.lineTo(b.x + 30, cy + 4); ctx.lineTo(b.x + 10, cy + 34); ctx.lineTo(b.x, cy + 4); ctx.lineTo(b.x, cy - 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = b.color; roundRect(ctx, b.x, b.y, b.w, b.h, 12); ctx.fill();
+    ctx.fillStyle = '#2a5bd7'; ctx.fillRect(b.x + 12, cy - 2, b.w - 30, 4);
+    ctx.fillStyle = '#1b2a57'; for (let x = b.x + 30; x < b.x + b.w - 30; x += 10) circle(ctx, x, cy - 6, 1.6);
+    ctx.fillStyle = '#9fd3ff'; circle(ctx, b.x + b.w - 10, cy, 5);
+    ctx.fillStyle = '#e8c547'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS AIR', cx - 30, cy + 7);
+    return;
+  }
+  if (b.kind === 'stall') {
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(b.x + 3, b.y + 3, b.w, b.h);
+    for (let x = b.x, k = 0; x < b.x + b.w; x += 6, k++) { ctx.fillStyle = k % 2 ? '#fff' : b.color; ctx.fillRect(x, b.y, Math.min(6, b.x + b.w - x), b.h); }
+    return;
+  }
+  if (b.kind === 'lifeguard') {
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(b.x + 8, b.y + 8, b.w, b.h);
+    ctx.fillStyle = '#f4f6f7'; ctx.fillRect(b.x, b.y, b.w, b.h); ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, 9); ctx.fillStyle = '#fff'; ctx.fillRect(b.x + b.w / 2 - 6, b.y + 13, 12, 3); ctx.fillRect(b.x + b.w / 2 - 1.5, b.y + 9, 3, 11);
+    return;
+  }
+  if (b.kind === 'kiosk') {
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(b.x + 5, b.y + 5, b.w, b.h);
+    ctx.fillStyle = '#fff'; ctx.fillRect(b.x, b.y, b.w, b.h); for (let x = b.x, k = 0; x < b.x + b.w; x += 5, k++) if (k % 2) { ctx.fillStyle = b.color; ctx.fillRect(x, b.y, 5, 9); }
+    ctx.fillStyle = '#c98a4b'; circle(ctx, b.x + b.w / 2, b.y + 18, 5); ctx.fillStyle = '#ff8fc7'; circle(ctx, b.x + b.w / 2, b.y + 15, 4);
+    return;
+  }
+  if (b.kind === 'hangar') {
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.fillRect(b.x + 12, b.y + 12, b.w, b.h);
+    ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; ctx.beginPath(); for (let y = b.y + 10; y < b.y + b.h; y += 10) { ctx.moveTo(b.x + 2, y); ctx.lineTo(b.x + b.w - 2, y); } ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.fillRect(b.x, b.y, b.w, b.h * 0.4);
+    ctx.fillStyle = '#2a2d33'; ctx.fillRect(b.x + 20, b.y + b.h - 8, b.w - 40, 8);
+    ctx.fillStyle = '#1b2a57'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('HANGAR ' + (1 + Math.floor(b.x / 997) % 9), b.x + b.w / 2, b.y + b.h / 2);
+    return;
+  }
+  if (b.kind === 'ctower') {
+    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    ctx.fillStyle = 'rgba(0,0,0,.3)'; circle(ctx, cx + 16, cy + 16, b.w / 2);
+    ctx.fillStyle = b.color; circle(ctx, cx, cy, b.w / 2); ctx.fillStyle = '#2b3a4a'; circle(ctx, cx, cy, b.w / 2 - 6); ctx.fillStyle = 'rgba(120,200,255,.55)'; circle(ctx, cx, cy, b.w / 2 - 9);
+    ctx.fillStyle = '#e8eef3'; circle(ctx, cx, cy, 9); ctx.fillStyle = (G.time * 1.5) % 2 < 1 ? '#ff3b3b' : '#5a1414'; circle(ctx, cx, cy, 3);
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(G.time * 1.2); ctx.fillStyle = '#d0d4da'; ctx.fillRect(-2, -16, 4, 12); ctx.restore();
+    return;
+  }
   if (b.kind === 'gasshop') {
     const st = (G.city.gas || []).find(q => q.blk === b.block), burnt = st && st.burntT > G.time;
     ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(b.x + 8, b.y + 8, b.w, b.h);
@@ -4198,6 +4316,7 @@ function drawBuilding(b) {
     ctx.fillStyle = shade(b.color, -0.22); if (horiz) ctx.fillRect(b.x, b.y + b.h / 2, b.w, b.h / 2); else ctx.fillRect(b.x + b.w / 2, b.y, b.w / 2, b.h);
     ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1.5; if (horiz) line(ctx, b.x, b.y + b.h / 2, b.x + b.w, b.y + b.h / 2); else line(ctx, b.x + b.w / 2, b.y, b.x + b.w / 2, b.y + b.h);
     if (!b.narrow) { ctx.fillStyle = '#5a4a44'; ctx.fillRect(b.x + b.w * 0.7, b.y + b.h * 0.22, 8, 8); }
+    if (b.pagoda) { ctx.fillStyle = '#e8c547'; if (horiz) { ctx.fillRect(b.x - 2, b.y + b.h / 2 - 1.5, b.w + 4, 3); ctx.fillRect(b.x - 3, b.y, 3, 5); ctx.fillRect(b.x + b.w, b.y, 3, 5); } else { ctx.fillRect(b.x + b.w / 2 - 1.5, b.y - 2, 3, b.h + 4); ctx.fillRect(b.x, b.y - 3, 5, 3); ctx.fillRect(b.x, b.y + b.h, 5, 3); } }
   } else if (b.kind === 'warehouse') {
     ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; ctx.beginPath(); for (let x = b.x + 20; x < b.x + b.w; x += 20) { ctx.moveTo(x, b.y + 4); ctx.lineTo(x, b.y + b.h - 4); } ctx.stroke();
     ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(b.x + 10, b.y + b.h / 2 - 6, b.w - 20, 12);
@@ -4232,11 +4351,12 @@ function drawSafehouseRoof(V) {
   drawBankOverlay(V);
 }
 function drawBuildings(V) {
-  for (const b of G.city.buildings) { if (b.x > V.x1 + 20 || b.x + b.w < V.x0 - 20 || b.y > V.y1 + 20 || b.y + b.h < V.y0 - 20) continue; drawBuilding(b); }
+  for (const b of G.city.buildings) { const m = b.pad || 20; if (b.x > V.x1 + m || b.x + b.w < V.x0 - m || b.y > V.y1 + m || b.y + b.h < V.y0 - m) continue; drawBuilding(b); }
   drawSafehouseRoof(V);
   for (const p of G.city.props) {
     if (p.type !== 'tree' || !inV(V, p.x, p.y, 40)) continue;
     const v = Math.abs(Math.floor(p.x * 13 + p.y * 7)) % 3;
+    if (p.palm) { ctx.strokeStyle = '#2f7a2a'; ctx.lineWidth = 5; ctx.lineCap = 'round'; for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3 + p.x * 0.01; line(ctx, p.x, p.y, p.x + Math.cos(a) * p.canopy * 1.2, p.y + Math.sin(a) * p.canopy * 1.2); } ctx.fillStyle = '#7a5a2b'; circle(ctx, p.x, p.y, 4); continue; }
     ctx.fillStyle = ['#2f5a25', '#2b5f2e', '#3a5e22'][v]; circle(ctx, p.x, p.y, p.canopy);
     ctx.fillStyle = ['#3f7a30', '#3b7e3a', '#4d7d2b'][v]; circle(ctx, p.x - p.canopy * 0.22, p.y - p.canopy * 0.22, p.canopy * 0.66);
   }
@@ -4561,6 +4681,7 @@ function updateHUD() {
   }
   $('hint').hidden = !hint; $('hint').textContent = hint;
   skillHUD();
+  { const mb = $('btnMute'), on = G.settings.sound !== false; if (mb.hidden) mb.hidden = false; if (mb.dataset.on !== String(on)) { mb.dataset.on = String(on); mb.innerHTML = speakerIcon(on); mb.classList.toggle('off', !on); } }
   const chatOff = G.mode !== 'mp' || G.phase !== 'playing'; if ($('btnChat').hidden !== chatOff) $('btnChat').hidden = chatOff; if (chatOff) $('chatPanel').hidden = true;
   if (isTouch) {
     const inCar = !!P.car;
@@ -5497,7 +5618,8 @@ function startSolo() {
   populateWorld(); spawnPartner(); rebuildHash();
   const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); loadTerritories(); rebuildHash();
   enterPlay();
-  toast(resumed ? 'Welcome back to Bors City\nYour cash and weapons are still here.' : 'Welcome to Bors City\nBadges on. Rules off.', 2.4);
+  toast(G.mapChangedNote ? 'BORS CITY GREW!\nNew map: your old turf is up for grabs again.' : resumed ? 'Welcome back to Bors City\nYour cash and weapons are still here.' : 'Welcome to Bors City\nBadges on. Rules off.', 3);
+  if (G.mapChangedNote) { G.mapChangedNote = false; saveTerritories(); }
   startLoop();
 }
 function startMatch() {
