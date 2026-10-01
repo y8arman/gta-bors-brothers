@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070b1e">
-<title>GTA BORS Brothers</title>
+<title>Bors Bros V23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&display=swap">
@@ -193,6 +193,20 @@
   #btnMute svg { display: block; margin: auto; pointer-events: none; }
   body.phoneL #btnMute { left: 8px; top: 100px; width: 34px; height: 30px; font-size: 15px; }
   body.phoneL #btnChat { top: 136px; }
+  #btnMissions { position: absolute; left: 106px; top: 90px; height: 40px; min-height: 0; padding: 0 12px; border-radius: 8px; font: 13px 'Russo One', system-ui, sans-serif; letter-spacing: 1px; pointer-events: auto; background: rgba(255,207,63,.85); color: #2a1300; border: 1px solid #9a4a0f; }
+  #btnMissions.has { animation: misPulse 1.2s ease-in-out infinite; }
+  @keyframes misPulse { 50% { box-shadow: 0 0 0 4px rgba(255,207,63,.45); } }
+  body.phoneL #btnMissions { left: 48px; top: 100px; height: 30px; padding: 0 7px; font-size: 10px; letter-spacing: 0; }
+  #missionPanel { width: min(560px, 100%); max-height: 92vh; overflow: auto; }
+  #missionList { display: flex; flex-direction: column; gap: 6px; }
+  .mcat { font-family: var(--display); font-size: 13px; letter-spacing: 1px; color: var(--gold); margin: 8px 0 0; }
+  .mrow { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.06); border-radius: 10px; padding: 8px 10px; }
+  .mrow.active { background: rgba(255,207,63,.18); box-shadow: inset 0 0 0 1px rgba(255,207,63,.6); }
+  .mrow.locked { opacity: .55; }
+  .mrow .mtxt { flex: 1; min-width: 0; font-family: system-ui, -apple-system, sans-serif; }
+  .mrow .mtxt b { display: block; font-size: 14px; color: #fff; } .mrow .mtxt small { display: block; font-size: 12px; opacity: .8; line-height: 1.3; }
+  .mrow button { min-height: 34px; padding: 6px 12px; font-size: 13px; flex: none; }
+  body.phoneL #missionPanel { padding: 12px 12px 8px; gap: 6px; } body.phoneL .mrow { padding: 5px 8px; } body.phoneL .mrow .mtxt b { font-size: 12px; } body.phoneL .mrow .mtxt small { font-size: 10.5px; } body.phoneL .mrow button { min-height: 28px; padding: 3px 9px; font-size: 11px; }
   #rotate { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
@@ -224,6 +238,7 @@
   <button class="tbtn" id="btnChat" hidden>CHAT</button>
   <div id="chatPanel" hidden></div>
   <button class="tbtn" id="btnPause" hidden>II</button>
+  <button id="btnMissions" hidden>MISSIONS</button>
   <button id="btnMute" hidden title="Sound on/off"></button>
   <div id="streak"></div><div id="radio"></div><div id="slowFx" hidden></div>
   <div id="rotate" hidden>Landscape works best</div>
@@ -263,7 +278,7 @@
     </div>
     <div class="panel" id="helpPanel" hidden>
       <h2>Controls</h2>
-      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
+      <p class="help"><b>Mouse</b> (default on desktop): hold the left button to walk toward the cursor, further away means run. Right button or Space shoots. Click a car to walk over and get in. In a car: hold the left button to drive toward the cursor, right button brakes and reverses, Space drifts, E gets out.<br><br><b>Keyboard</b>: WASD moves, Shift walks, E enters and exits cars, 1 to 9 or the mouse wheel switch weapons (5 taser, 6 bazooka, 7 grenade, 8 molotov, 9 donut decoy; mouse wheel or Q for sniper, katana and C4), F signature move, G drive-by, X detonates C4, J opens the mission list, Esc opens the menu.<br><br><b>Phone</b>: left thumb moves or drives. Right thumb: hold to shoot with auto-aim, drag to aim yourself. Tap a car to get in.</p>
       <button id="helpBack" class="btn-glass">Back</button>
     </div>
   </div>
@@ -296,6 +311,9 @@
   </div>
 </div>
 
+<div id="missions" class="screen dim" hidden>
+  <div class="panel" id="missionPanel"><h2>Missions</h2><p class="help" id="missionSub"></p><div id="missionList"></div><button id="missionClose" class="btn-glass">Close</button></div>
+</div>
 <div id="shop" class="screen dim" hidden>
   <div class="panel"><h2 id="shopTitle">Guns N' Bors</h2><div id="shopItems" style="display:flex;flex-direction:column;gap:8px;width:100%"></div><p class="msg" id="shopMsg"></p><button id="shopClose" class="btn-glass">Leave</button></div>
 </div>
@@ -353,7 +371,7 @@ const CFG = {
     hard:   { acc: 1.5, react: 0.6, dmg: 1.4, count: 1.4 }
   },
   economy: { killGang: 40, killCop: 20, mission: { hit: 500, delivery: 400, survive: 600 }, price: { smgAmmo: 150, shotgun: 200, armor: 250, health: 100, respray: 200 } },
-  cheats: { god: 'BORSGOD', guns: 'BORSGUNS', donuts: 'DONUTS', rogue: 'ROGUE', clean: 'CLEANSLATE', beard: 'BIGBEARD', slow: 'SLOWMO', rush: 'RUSHHOUR', night: 'NIGHTSHIFT', rain: 'BORSRAIN' },   // type during play, or enter in the pause menu
+  cheats: { god: 'BORSGOD', guns: 'BORSGUNS', donuts: 'DONUTS', rogue: 'ROGUE', clean: 'CLEANSLATE', beard: 'BIGBEARD', slow: 'SLOWMO', rush: 'RUSHHOUR', night: 'NIGHTSHIFT', rain: 'BORSRAIN', army: 'GANGARMY' },   // type during play, or enter in the pause menu
   colors: ['#ff4d4d', '#4dc3ff', '#7dff4d', '#ffd24d', '#d24dff', '#ff9a4d', '#4dffd2', '#ff4da6']
 };
 
@@ -548,7 +566,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 22;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 23;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -1097,14 +1115,14 @@ function buildCity(seed) {
   city.places.spray = { ...lanePt(blockAt(cols - 1, rows - 2), 'top', 0.5), type: 'spray', label: 'Body shop' };
   city.places.garage = { ...lanePt(blockAt(cols - 2, rows - 1), 'left', 0.5), type: 'garage', label: 'Garage' };
   city.missions = [
-    { ...ePt(blockAt(cc, cr), 'top', 0.5), type: 'hit', label: 'Gang hit' },
-    { ...ePt(blockAt(1, cr), 'right', 0.5), type: 'delivery', label: 'Hot delivery' },
-    { ...ePt(blockAt(cols - 3, 1), 'bottom', 0.5), type: 'survive', label: 'Turf war' },
-    { ...ePt(blockAt(cc + 2, cr + 1), 'left', 0.5), type: 'donut', label: 'Donut Duty' },
-    { ...ePt(blockAt(2, rows - 2), 'top', 0.5), type: 'rampage', label: 'Rampage' },
-    { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage' },
-    { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist' },
-    { ...ePt(blockAt(cc, rows - 1), 'top', 0.3), type: 'boss', label: 'Showdown at Bors Arena' }
+    { ...ePt(blockAt(cc, cr), 'top', 0.5), type: 'hit', label: 'Gang hit', id: 'story1' },
+    { ...ePt(blockAt(1, cr), 'right', 0.5), type: 'delivery', label: 'Hot delivery', id: 'story2' },
+    { ...ePt(blockAt(cols - 3, 1), 'bottom', 0.5), type: 'survive', label: 'Turf war', id: 'story3' },
+    { ...ePt(blockAt(cc + 2, cr + 1), 'left', 0.5), type: 'donut', label: 'Donut Duty', id: 'side1' },
+    { ...ePt(blockAt(2, rows - 2), 'top', 0.5), type: 'rampage', label: 'Rampage', id: 'chal1' },
+    { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage', id: 'chal2' },
+    { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist', id: 'heist1' },
+    { ...ePt(blockAt(cc, rows - 1), 'top', 0.3), type: 'boss', label: 'Showdown at Bors Arena', id: 'story4' }
   ];
   city.territories = [];
   for (const b of city.blocks) {
@@ -1303,7 +1321,7 @@ const G = {
   wanted: null, wantedOf: {}, netShots: [], netBooms: [],
   mission: null, stats: { kills: 0, cash: 0, score: 0, best: 0, civKills: 0, missions: 0 },
   settings: { controls: 'mouse', difficulty: 'normal', night: false, sound: true, char: 'mafl', partner: false },
-  cheats: { god: false, guns: false, beard: false, slow: false, rush: false }, cheatBuf: '',
+  cheats: { god: false, guns: false, beard: false, slow: false, rush: false, army: false }, cheatBuf: '',
   cam: { x: 0, y: 0, zoom: 1, shake: 0, sx: 0, sy: 0 },
   fx: { flash: 0, hintT: 0 },
   paused: false, nextId: 1, remotes: {}, turfState: [], helis: [], projs: [], fires: [], decoys: []
@@ -1755,6 +1773,27 @@ function spawnCopCar(sp, extra, target) {
   const d = makePed('cop', sp.x, sp.y, { weapon: 'pistol' }); d.car = c; d.state = 'drive'; d.sight = 740; c.driver = d;
   G.peds.push(d); G.cars.push(c); return c;
 }
+// v23: parking happens in driveways, lots and forecourts inside the block, never in a driving lane
+const PARK_DISTRICTS = { residential: 1, industrial: 1, harbour: 1, airport: 1, gas: 1, beach: 1, park: 1 };
+function parkingSlot(px, py, minD, maxD, kind) {
+  const C = G.city, K = CAR_KINDS[kind] || CAR_KINDS.sedan, probe = { L: K.L + 8, W: K.W + 6 };
+  for (let i = 0; i < 60; i++) {
+    const b = C.blocks[Math.floor(Math.random() * C.blocks.length)]; if (!PARK_DISTRICTS[b.district]) continue;
+    const side = Math.floor(Math.random() * 4), t = rand(0.22, 0.78), inset = K.W / 2 + 6;
+    let x, y, a;
+    if (side === 0) { x = b.x + b.w * t; y = b.y + inset; a = 0; } else if (side === 1) { x = b.x + b.w * t; y = b.y + b.h - inset; a = Math.PI; }
+    else if (side === 2) { x = b.x + inset; y = b.y + b.h * t; a = Math.PI / 2; } else { x = b.x + b.w - inset; y = b.y + b.h * t; a = -Math.PI / 2; }
+    const d = dist(px, py, x, y); if (d < minD || d > maxD) continue;
+    if (carBlocked(probe, x, y, a) || carNear(x, y, 80)) continue;
+    let nearSpot = false;
+    for (const k in C.places) { const q = C.places[k]; if (dist(q.x, q.y, x, y) < 70) nearSpot = true; }
+    for (const m of C.missions) if (dist(m.x, m.y, x, y) < 70) nearSpot = true;
+    if (nearSpot) continue;
+    return { x, y, a };
+  }
+  return null;
+}
+function isRoadObstacle(e) { return e && e.type === 'car' && (e.dead || (!e.driver && !e.npcDrv && !e.pdrv)); }
 function spawnParkedCar(lp, kind) {
   const c = makeCar(kind || pick(['sedan', 'compact', 'sport', 'van', 'taxi']), lp.x, lp.y, lp.a, {}); c.parked = true; G.cars.push(c); return c;
 }
@@ -1798,11 +1837,11 @@ function spawnerUpdate(dt) {
     const c = G.cars[i]; if (c === P.car || (c.driver && isPlayerPed(c.driver))) continue;
     const d = minD(c.x, c.y), seen = nearPlayerView(c.x, c.y, 100), far = d > R.despawnRadius && !seen;
     if (c.dead && !c.burnT && G.time > c.wreckT && !seen) { removeCar(i); continue; }
-    if (c.ai === 'traffic' && c.driver) { if (far) removeCar(i); continue; }
+    if (c.ai === 'traffic' && c.driver) { if (far || (c.blockedT > 10 && !seen)) removeCar(i); continue; }
     if (c.marked || c.parked) continue;
     if (c.kind === 'tank' && !c.dead && !seen && (!anyWanted || d > 1800)) { removeCar(i); continue; }
     if (c.kind === 'police' && !c.driver && !anyWanted && d > 1200 && !seen) { removeCar(i); continue; }
-    if (!c.driver && !seen && (d > R.despawnRadius + 600 || G.time - (c.abandonedT || 0) > 45)) { removeCar(i); continue; }
+    if (!c.driver && !seen && (d > R.despawnRadius + 600 || G.time - (c.abandonedT || 0) > 20 || c.clearMe)) { removeCar(i); continue; }
   }
   if (G.cars.length > R.maxCars) {
     const cand = G.cars.filter(c => c !== P.car && !c.driver && !c.marked && !nearPlayerView(c.x, c.y, 100)).sort((a, b) => minD(b.x, b.y) - minD(a.x, a.y));
@@ -2013,7 +2052,7 @@ function laneLookahead(c) {
   const a = c.prevNode, b = c.nextNode; if (!a || !b) return null;
   const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
   const t = ((c.x - a.x) * ux + (c.y - a.y) * uy) / L;
-  const lp = lanePoint(a, b, clamp(t + (60 + Math.abs(c.vf) * 0.25) / L, 0, 1));
+  const lp = lanePoint(a, b, clamp(t + (60 + Math.abs(c.vf) * 0.25) / L, 0, 1), c.passT > G.time ? -20 : 20);
   return { x: lp.x, y: lp.y, t, remaining: (1 - t) * L, ux, uy };
 }
 function pickNextNode(prev, cur) {
@@ -2024,12 +2063,12 @@ function pickNextNode(prev, cur) {
   return straight && chance(0.62) ? straight : pick(nb);
 }
 function aheadBlocked(c) {
-  const cs = Math.cos(c.a), sn = Math.sin(c.a), look = 70 + Math.abs(c.vf) * 0.45; let res = null;
+  const cs = Math.cos(c.a), sn = Math.sin(c.a), look = 70 + Math.abs(c.vf) * 0.45, passing = c.passT > G.time; let res = null; c.blocker = null;
   for (const e of G.hash.query(c.x + cs * look / 2, c.y + sn * look / 2, look / 2 + 60)) {
     if (e === c) continue;
     const dx = e.x - c.x, dy = e.y - c.y, f = dx * cs + dy * sn, l = Math.abs(-dx * sn + dy * cs);
-    if (e.type === 'car') { if (f > c.L * 0.3 && f < look + e.L / 2 && l < c.W / 2 + e.W / 2 + 8) { const s = Math.max(0, e.vx * cs + e.vy * sn); if (res === null || s < res) res = s; } }
-    else if (e.type === 'ped' && e.alive && !e.car && f > 0 && f < look * 0.8 + 10 && l < c.W / 2 + 18) res = 0;
+    if (e.type === 'car') { if (passing && isRoadObstacle(e) && l > 12) continue; if (f > c.L * 0.3 && f < look + e.L / 2 && l < c.W / 2 + e.W / 2 + 8) { const s = Math.max(0, e.vx * cs + e.vy * sn); if (res === null || s < res) { res = s; c.blocker = e; } } }
+    else if (e.type === 'ped' && e.alive && !e.car && f > 0 && f < look * 0.8 + 10 && l < c.W / 2 + 13) { res = 0; c.blocker = e; }   // v23: people on the sidewalk next to the lane no longer stop traffic
   }
   return res;
 }
@@ -2053,12 +2092,16 @@ function trafficAI(c, dt) {
   carSteerToward(c, Math.atan2(la.y - c.y, la.x - c.x));
   let target = c.cruise;
   const n = c.nextNode, dn = dist(c.x, c.y, n.x, n.y);
-  if (dn < 55 && (!n.occ || n.occ === c || now - n.occT > 4 || !n.occ.driver)) { n.occ = c; n.occT = now; }
+  if (dn < 55 && (!n.occ || n.occ === c || now - n.occT > 4 || !n.occ.driver || now - (n.occT0 || 0) > 6)) { if (n.occ !== c) n.occT0 = now; n.occ = c; n.occT = now; }
   if (c.prevNode.occ === c && dist(c.x, c.y, c.prevNode.x, c.prevNode.y) > 70) c.prevNode.occ = null;
-  if (dn < 120 && dn > 55 && n.occ && n.occ !== c && n.occ.driver && now - n.occT < 4) target = 0;
+  if (dn < 120 && dn > 55 && n.occ && n.occ !== c && n.occ.driver && now - n.occT < 4 && now - (n.occT0 || 0) < 6) target = 0;
   if (dn < 140 && dn > 55) { const nb = nodeNeighbors(n); if (nb.length > 2 && chance(0.02)) target = Math.min(target, 110); }
   const blk = aheadBlocked(c);
   if (blk !== null) { target = Math.min(target, blk * 0.9); if (blk < 25) target = 0; }
+  // v23: a parked, abandoned or wrecked car in the lane: wait a moment, then drive around it through the other lane
+  if (blk !== null && blk < 25 && isRoadObstacle(c.blocker)) { c.obstT = (c.obstT || 0) + dt; if (c.obstT > 1 && !(c.passT > now) && la.remaining > 60) { c.passT = now + 3.2; c.obstT = 0; } if (c.obstT > 6 && !nearPlayerView(c.blocker.x, c.blocker.y, 120)) c.blocker.clearMe = true; } else c.obstT = 0;
+  if (c.passT > now && (la.remaining < 30 || c.stuckT > 0.8)) c.passT = 0;   // back into the own lane before the intersection
+  if (c.passT > now) target = Math.min(c.cruise, 120);
   throttleFor(c, target);
   if (target <= 0 && blk !== null && blk < 25) { c.blockedT += dt; if (c.blockedT > 2.2 && now > c.honkT) { c.honkT = now + rand(3, 6); sfx('honk', c.x, c.y); } } else c.blockedT = 0;
   stuckCheck(c, dt);
@@ -2380,7 +2423,7 @@ function markersUpdate() {
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
-    for (const m of G.city.missions) if (dist(T.x, T.y, m.x, m.y) < 26 && G.time > (m.cooldownT || 0) && markerOpen(m)) { startMission(m, T); return; }
+    for (const m of G.city.missions) if (m.id === G.activeId && dist(T.x, T.y, m.x, m.y) < 26 && G.time > (m.cooldownT || 0) && markerOpen(m)) { startMission(m, T); return; }
   }
 }
 const FLANKS = [-0.9, 0, 0.9, 1.7, -1.7];
@@ -3310,14 +3353,17 @@ function drawTerritoriesMini(m, k) {
   m.globalAlpha = 1;
 }
 // ---- v18/v19: Bors crew on your blocks. Solo and multiplayer (host runs them; each player recruits their own, up to 3)
+const CREW_ARMY = 20, ARMY_CALL = 5;
 const CREW = { max: 3, hangPerBlock: 2, hangMax: 8, hp: 160, color: '#3b7bff', names: ['Big Tony', 'Lil Bors', 'Donut Dave', 'Rookie Rick', 'Sgt. Sal', 'Knuckles', 'Vinnie', 'Two-Tone', 'Meatball', 'Slim'] };
 function crewOwner(q) {
   if (!q || !q.recruit || !q.following) return null;
   if (G.mode === 'solo' || q.ownerUid === 'host' || q.ownerUid == null) return q.ownerUid == null && G.mode !== 'solo' ? null : G.player;
   const r = G.remotes[q.ownerUid]; return r ? r.ped : null;
 }
+function crewCap(owner) { owner = owner || G.player; return (owner && owner.isPlayer ? G.cheats.army : (owner && G.armyOf && G.armyOf[owner.uid])) ? CREW_ARMY : CREW.max; }
 function crewCount(owner) { owner = owner || G.player; let n = 0; for (const q of G.peds) if (q.recruit && q.following && q.alive && !q.proxy && crewOwner(q) === owner) n++; return n; }
-function crewDress(q) { q.recruit = true; q.color = CREW.color; q.name = CREW.names[q.id % CREW.names.length]; q.look = Object.assign({}, lookFor('gang', q.id), { shirt: '#2a5bd7', pants: '#16213d' }); q.maxHp = CREW.hp; }
+// v23: crew members share four looks, which keeps the sprite cache small with a big gang army
+function crewDress(q) { q.recruit = true; q.color = CREW.color; q.name = CREW.names[q.id % CREW.names.length]; q.look = Object.assign({}, lookFor('gang', 1 + q.id % 4), { shirt: '#2a5bd7', pants: '#16213d' }); q.maxHp = CREW.hp; }
 function nearCrew(P) {
   if (G.game !== 'roam' || !P || !P.alive || P.car || G.busted) return null;
   let best = null, bd = 44; for (const q of G.peds) { if (!q.recruit || !q.alive || q.car) continue; const d = dist(q.x, q.y, P.x, P.y); if (d < bd) { bd = d; best = q; } }
@@ -3332,9 +3378,9 @@ function toggleRecruit(q, who) {
     if (owner !== who) { tellPlayer(who, q.name + ' rolls with someone else\nFind your own crew on a blue block.'); return; }
     q.following = false; q.ownerUid = null; q.homeTerr = terrAt(q.x, q.y); q.home = { x: q.x, y: q.y }; q.path = null; tellPlayer(who, q.name + ' heads home\nSee you on the block.'); return;
   }
-  if (crewCount(who) >= CREW.max) { tellPlayer(who, 'Your crew is full (' + CREW.max + '/' + CREW.max + ')\nDismiss someone first.'); return; }
+  if (crewCount(who) >= crewCap(who)) { tellPlayer(who, 'Your crew is full (' + crewCap(who) + '/' + crewCap(who) + ')\nDismiss someone first.'); return; }
   q.following = true; q.ownerUid = who.isPlayer ? (G.mode === 'solo' ? 'solo' : 'host') : who.uid; q.homeTerr = null; q.path = null;
-  tellPlayer(who, 'RECRUITED: ' + q.name + '\nCrew ' + crewCount(who) + '/' + CREW.max);
+  tellPlayer(who, 'RECRUITED: ' + q.name + '\nCrew ' + crewCount(who) + '/' + crewCap(who));
   if (who.isPlayer) { sfx('pickup'); banter('recruit'); }
 }
 function spawnCrewMember(x, y, T) {
@@ -3342,6 +3388,22 @@ function spawnCrewMember(x, y, T) {
   crewDress(q); q.following = false; q.ownerUid = null; q.homeTerr = T; q.home = { x, y }; q.ammo.smg = 9999;
   q.shotT = 0; q.burstN = 0; q.tgt = null; q.tgtT = 0; q.stayA = rand(0, TAU); q.a = q.stayA;
   G.peds.push(q); return q;
+}
+function armySet(owner, on) {   // host/solo: switch the army cheat for a player
+  if (!owner) return;
+  if (!owner.isPlayer) { G.armyOf = G.armyOf || {}; if (on) G.armyOf[owner.uid] = 1; else delete G.armyOf[owner.uid]; }
+  if (on) {
+    let n = 0;
+    for (let i = 0; i < ARMY_CALL && crewCount(owner) < CREW_ARMY && G.peds.length < CFG.world.maxPeds - 12; i++) {
+      const pp = posOf(owner), ang = i / ARMY_CALL * TAU, ox = pp.x + Math.cos(ang) * 55, oy = pp.y + Math.sin(ang) * 55, q = spawnCrewMember(ox, oy, null), sp = pedBlocked(q, ox, oy) ? freeSpotNear(q, ox, oy) : { x: ox + rand(-4, 4), y: oy + rand(-4, 4) };
+      q.x = sp.x; q.y = sp.y; q.following = true; q.ownerUid = owner.isPlayer ? (G.mode === 'solo' ? 'solo' : 'host') : owner.uid; n++;
+    }
+    tellPlayer(owner, 'GANG ARMY!\n' + n + ' Bors soldiers report for duty. Crew limit ' + CREW_ARMY + '.');
+  } else {
+    let k = 0;
+    for (const q of G.peds) if (q.recruit && q.following && q.alive && !q.proxy && crewOwner(q) === owner) { if (++k > CREW.max) { q.following = false; q.ownerUid = null; q.homeTerr = terrAt(q.x, q.y); q.home = { x: q.x, y: q.y }; } }
+    tellPlayer(owner, 'Gang army dismissed\nBack to a crew of ' + CREW.max + '.');
+  }
 }
 function crewScatter(owner) {
   let n = 0;
@@ -3682,10 +3744,91 @@ function toggleMute() {
   audioInit(); G.settings.sound = G.settings.sound === false; setSoundEnabled(G.settings.sound); saveSettings(); if (typeof syncSettingsUI === 'function') syncSettingsUI();
   toast(G.settings.sound ? 'SOUND ON' : 'MUTED\nShh. The cops are listening.', 1);
 }
+// ---- v23: Mission app. Missions have stable IDs; finishing one unlocks the next. Only the chosen mission shows on the map.
+const MIS_KEY = 'gb_missions';
+const MISSION_INFO = {
+  story1: { cat: 'story', title: '1. Gang Hit', desc: 'Take out a gang crew holed up in a corner hideout.', need: [] },
+  story2: { cat: 'story', title: '2. Hot Delivery', desc: 'Grab the marked sports car and bring it to the garage in one piece.', need: ['story1'] },
+  story3: { cat: 'story', title: '3. Turf War', desc: 'Hold your ground for 60 seconds while the gangs come in waves.', need: ['story2'] },
+  heist1: { cat: 'heist', title: 'The Bors Heist', desc: 'Guards, a vault, five stars and a drop-off. Unlocks after Turf War.', need: ['story3'] },
+  story4: { cat: 'story', title: '4. Showdown at Bors Arena', desc: 'The rival bosses want their city back. Needs the Heist and half the turf.', need: ['heist1'], turf: true },
+  side1: { cat: 'side', title: 'Donut Duty', desc: 'Five donut shops against the clock. Sugar rush included.', need: [] },
+  chal1: { cat: 'chal', title: 'Rampage (West)', desc: '30 seconds, at least 8 gang kills.', need: [] },
+  chal2: { cat: 'chal', title: 'Rampage (East)', desc: 'Same rules, tougher corner of town.', need: ['chal1'] }
+};
+const MISSION_CATS = [['story', 'Main story'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
+function missionsDone() { if (!G.misDone) G.misDone = {}; return G.misDone; }
+function loadMissions() {
+  G.misDone = {}; G.activeId = null;
+  if (G.mode !== 'solo') return;
+  let d = null; try { d = JSON.parse(localStorage[MIS_KEY] || 'null'); } catch (e) { d = null; }
+  if (!d || d.v !== 1) return;
+  if (d.done && typeof d.done === 'object') for (const id in d.done) if (MISSION_INFO[id]) G.misDone[id] = 1;
+  if (typeof d.active === 'string' && MISSION_INFO[d.active] && missionUnlocked(d.active)) G.activeId = d.active;
+}
+function saveMissions() { if (G.mode !== 'solo') return; try { localStorage[MIS_KEY] = JSON.stringify({ v: 1, done: missionsDone(), active: G.activeId || null }); } catch (e) {} }
+function missionUnlocked(id) { const I = MISSION_INFO[id]; if (!I) return false; if (G.mode === 'mp') return true; return I.need.every(n => missionsDone()[n]); }
+function markerById(id) { return G.city ? G.city.missions.find(m => m.id === id) : null; }
+function activeMarker() { return G.activeId ? markerById(G.activeId) : null; }
+function missionList() {
+  const out = [];
+  for (const id in MISSION_INFO) {
+    const I = MISSION_INFO[id], m = markerById(id); if (!m) continue;
+    let state = 'open', why = '';
+    if (!missionUnlocked(id)) { state = 'locked'; why = 'Finish ' + I.need.filter(n => !missionsDone()[n]).map(n => MISSION_INFO[n].title.replace(/^\d\. /, '')).join(', ') + ' first'; }
+    else if (I.turf && !markerOpen(m)) { state = 'locked'; why = G.finaleDone ? 'Bors City is already yours' : 'Own ' + bossNeed() + ' turf blocks (you have ' + terrOwned() + ')'; }
+    else if (G.time < (m.cooldownT || 0) && !(G.mission && G.mission.marker === m)) { state = 'wait'; why = m.cooldownT > 1e9 ? 'Running right now' : 'Back in ' + Math.ceil(m.cooldownT - G.time) + 's'; }
+    out.push({ id, I, m, state, why, done: !!missionsDone()[id], active: G.activeId === id });
+  }
+  return out;
+}
+function missionDone(id) {
+  if (!MISSION_INFO[id]) return;
+  const before = Object.keys(MISSION_INFO).filter(missionUnlocked);
+  missionsDone()[id] = 1;
+  if (G.activeId === id) G.activeId = null;
+  saveMissions();
+  if (G.mode !== 'solo') return;
+  const fresh = Object.keys(MISSION_INFO).filter(k => missionUnlocked(k) && before.indexOf(k) < 0);
+  if (fresh.length) setTimeout(() => { if (G.phase === 'playing') toast('NEW MISSION UNLOCKED\n' + fresh.map(k => MISSION_INFO[k].title).join(', ') + (isTouch ? '' : '  (press J)'), 2.6); }, 3000);
+}
+function activateMission(id, who) {
+  who = who || G.player;
+  if (!G.isSim) { netEvent({ t: 'activate', id: id || null }); G.activeId = id || null; return; }
+  if (id && G.mission) { tellPlayer(who, 'Finish the current mission first\nOr fail it. We don\'t judge.'); return; }
+  if (id && !missionUnlocked(id)) return;
+  G.activeId = id || null; saveMissions();
+  if (id) { const I = MISSION_INFO[id]; if (G.mode === 'mp') newsAll('NEXT JOB: ' + I.title + '\nchosen by ' + (who.name || 'a player') + '. Follow the arrow.', 2); else toast('NEXT JOB: ' + I.title + '\nFollow the yellow arrow to the marker.', 2); }
+}
+function openMissionApp() {
+  if (G.phase !== 'playing' || G.game !== 'roam') return;
+  if (G.mode === 'solo') G.paused = true;
+  renderMissionApp(); showScreen('missions');
+}
+function closeMissionApp() { showScreen(null); if (G.mode === 'solo') G.paused = false; }
+function renderMissionApp() {
+  const L = missionList(), turf = G.city.territories ? terrOwned() + '/' + G.city.territories.length : '0';
+  $('missionSub').textContent = (G.mode === 'mp' ? 'Shared with everyone in the room. ' : '') + 'Pick one job; only that one shows on the map.';
+  let h = '';
+  for (const [cat, name] of MISSION_CATS) {
+    h += '<p class="mcat">' + esc(name) + '</p>';
+    if (cat === 'gang') { h += '<div class="mrow"><div class="mtxt"><b>Turf ' + turf + '</b><small>Kill 3 gang members on a red, purple or teal block to start a gang war. Win it and the block turns Bors blue.</small></div></div>'; continue; }
+    for (const x of L) {
+      if (x.I.cat !== cat) continue;
+      const label = x.active ? 'Active' : x.state === 'locked' ? 'Locked' : x.done ? 'Replay' : 'Play';
+      const dis = x.state === 'locked' || (!x.active && !!G.mission);
+      h += '<div class="mrow' + (x.active ? ' active' : '') + (x.state === 'locked' ? ' locked' : '') + '"><div class="mtxt"><b>' + (x.done ? '\u2714 ' : '') + esc(x.I.title) + '</b><small>' + esc(x.why || x.I.desc) + '</small></div>' +
+        '<button class="' + (x.active ? 'btn-glass' : 'btn-primary') + ' small" data-id="' + x.id + '"' + (dis ? ' disabled' : '') + '>' + label + '</button></div>';
+    }
+  }
+  $('missionList').innerHTML = h;
+  for (const b of $('missionList').querySelectorAll('button[data-id]')) b.onclick = () => { const id = b.dataset.id; activateMission(G.activeId === id ? null : id); closeMissionApp(); };
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
   G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 180 : 20);
+  if (M.marker.id) missionDone(M.marker.id);
   const ps = allPlayers(), share = ps.length > 1 ? Math.ceil(reward / ps.length / 10) * 10 : reward;
   for (const q of ps) {
     if (q.isPlayer) { addCash(share, q.x, q.y); G.stats.score += 100; G.stats.missions = (G.stats.missions || 0) + 1; addRep(100); }
@@ -3756,6 +3899,7 @@ function inputInit() {
     if (e.code === 'KeyQ') IN.cycle = 1;
     if (e.code === 'KeyF' && !e.repeat) trySkill();
     if (e.code === 'KeyX' && !e.repeat) IN.boom = true;
+    if (e.code === 'KeyJ' && !e.repeat) IN.missions = true;
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -3795,6 +3939,8 @@ function inputInit() {
   $('btnBoom').addEventListener('pointerdown', e => { e.preventDefault(); IN.boom = true; });
   $('btnPause').addEventListener('pointerdown', e => { e.preventDefault(); IN.pause = true; });
   $('btnMute').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); toggleMute(); });
+  $('btnMissions').addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); IN.missions = true; });
+  $('missionClose').onclick = () => closeMissionApp();
 }
 function resize() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -3900,6 +4046,12 @@ function applyCheatCode(code) {
   if (code === CFG.cheats.night) {
     G.settings.night = !G.settings.night;
     toast(G.settings.night ? 'NIGHT SHIFT\nOvertime for the rogues' : 'DAY SHIFT\nRise and grind', 2); sfx('mission'); return true;
+  }
+  if (code === CFG.cheats.army) {
+    if (G.game !== 'roam' || !P || !P.alive) { toast('Not now', 1); return false; }
+    G.cheats.army = !G.cheats.army;
+    if (G.isSim) armySet(P, G.cheats.army); else { netEvent({ t: 'army', on: G.cheats.army ? 1 : 0 }); toast(G.cheats.army ? 'GANG ARMY!\nCalling in the troops' : 'Gang army dismissed', 2); }
+    sfx('mission'); return true;
   }
   if (code === CFG.cheats.rain) {
     if (G.game !== 'roam' || !P) { toast('Not now', 1); return false; }
@@ -4180,7 +4332,7 @@ function drawBuilding(b) {
     ctx.fillStyle = '#2a5bd7'; ctx.fillRect(b.x + 12, cy - 2, b.w - 30, 4);
     ctx.fillStyle = '#1b2a57'; for (let x = b.x + 30; x < b.x + b.w - 30; x += 10) circle(ctx, x, cy - 6, 1.6);
     ctx.fillStyle = '#9fd3ff'; circle(ctx, b.x + b.w - 10, cy, 5);
-    ctx.fillStyle = '#e8c547'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS AIR', cx - 30, cy + 7);
+    ctx.fillStyle = labelOn(b.color); ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS AIR', cx - 30, cy + 7);
     return;
   }
   if (b.kind === 'stall') {
@@ -4281,7 +4433,7 @@ function drawBuilding(b) {
     const pw = (rx - 62) * 1.3, ph = (ry - 62) * 0.9;
     ctx.fillStyle = '#4ba244'; for (let k = -3; k <= 3; k += 2) ctx.fillRect(cx + k * pw / 7, cy - ph / 2, pw / 7, ph);
     ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 2; ctx.strokeRect(cx - pw / 2, cy - ph / 2, pw, ph); line(ctx, cx, cy - ph / 2, cx, cy + ph / 2); ctx.beginPath(); ctx.arc(cx, cy, 18, 0, TAU); ctx.stroke();
-    ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS ARENA', cx, b.y + 10);
+    ctx.fillStyle = labelOn(b.color); ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS ARENA', cx, b.y + 10);
     return;
   }
   if (b.kind === 'pond') {
@@ -4329,6 +4481,8 @@ function drawBuilding(b) {
 function inSafehouse(x, y) { const S = G.city && G.city.safehouse; return !!S && x > S.x && x < S.x + S.w && y > S.y && y < S.y + S.h; }
 function inInterior(x, y) { const C = G.city; return !!C && (inRect(C.bar, x, y) || inRect(C.safehouse, x, y) || inRect(C.bank, x, y) || (C.services || []).some(S => inRect(S, x, y))); }
 function inRect(S, x, y) { return !!S && x > S.x && x < S.x + S.w && y > S.y && y < S.y + S.h; }
+function isLightColor(hex) { if (!hex || hex[0] !== '#') return false; const [r, g, b] = hexToRgb(hex); return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.62; }
+function labelOn(bg) { return isLightColor(bg) ? '#1d3d97' : '#ffffff'; }   // v23: light roofs get blue text, dark roofs white
 function drawRoof(V, S, key, label, c1, c2, neon) {
   if (!S || !inV(V, S.x + S.w / 2, S.y + S.h / 2, 200)) return;
   const pp = G.player ? playerPos() : null, inside = !!pp && inRect(S, pp.x, pp.y) || !!(G.partner && !G.partner.car && inRect(S, G.partner.x, G.partner.y) && pp && dist(pp.x, pp.y, S.x + S.w / 2, S.y + S.h / 2) < 120);
@@ -4340,7 +4494,7 @@ function drawRoof(V, S, key, label, c1, c2, neon) {
   ctx.fillStyle = c2; ctx.fillRect(S.x - 4, S.y - 4, S.w + 8, (S.h + 8) / 2);
   ctx.strokeStyle = 'rgba(0,0,0,.2)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = S.x; x < S.x + S.w; x += 10) { ctx.moveTo(x, S.y - 4); ctx.lineTo(x, S.y + S.h + 4); } ctx.stroke();
   if (neon) { const on = (G.time * 1.5) % 3 > 0.2; ctx.shadowColor = '#ff4fd8'; ctx.shadowBlur = on ? 14 : 0; ctx.fillStyle = on ? '#ff8ae6' : '#7a3a6c'; ctx.font = 'bold 16px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, S.x + S.w / 2, S.y + S.h / 2 + 22); ctx.shadowBlur = 0; }
-  else { ctx.fillStyle = '#fff'; ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, S.x + S.w / 2, S.y + S.h / 2 + 18); }
+  else { ctx.fillStyle = labelOn(c1); ctx.font = 'bold 13px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, S.x + S.w / 2, S.y + S.h / 2 + 18); }
   ctx.globalAlpha = 1;
 }
 function drawSafehouseRoof(V) {
@@ -4402,7 +4556,7 @@ function drawMarkers(V) {
     ctx.globalAlpha = 0.2; ctx.fillStyle = color; circle(ctx, x, y, r); ctx.globalAlpha = 1;
     if (label) { ctx.fillStyle = '#fff'; ctx.font = 'bold 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, x, y); }
   };
-  if (!G.mission) for (const m of C.missions) if (inV(V, m.x, m.y) && t > (m.cooldownT || 0) && markerOpen(m)) { if (m.type === 'boss') { ring(m.x, m.y, 30, '#ffd24d', 'BOSS'); ring(m.x, m.y, 38 + 4 * Math.sin(t * 3), '#ff3b3b', ''); } else if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
+  if (!G.mission) for (const m of C.missions) if (m.id === G.activeId && inV(V, m.x, m.y) && t > (m.cooldownT || 0) && markerOpen(m)) { if (m.type === 'boss') { ring(m.x, m.y, 30, '#ffd24d', 'BOSS'); ring(m.x, m.y, 38 + 4 * Math.sin(t * 3), '#ff3b3b', ''); } else if (m.type === 'heist') ring(m.x, m.y, 24, '#e8c547', 'HEIST'); else if (m.type === 'rampage') { ring(m.x, m.y, 22, '#ff3b3b', ''); drawSkull(m.x, m.y); } else if (m.type === 'donut') { ring(m.x, m.y, 22, '#ff8fc7', ''); drawDonut(m.x, m.y); } else ring(m.x, m.y, 22, '#ffd24d', m.type === 'hit' ? 'HIT' : m.type === 'delivery' ? 'CAR' : 'WAR'); }
   const gs = C.places.gunshop; if (inV(V, gs.x, gs.y)) ring(gs.x, gs.y, 20, '#7dff4d', 'GUNS');
   const S = C.safehouse; if (S && G.mode === 'solo') { if (inV(V, S.garage.x, S.garage.y)) ring(S.garage.x, S.garage.y, 34, '#4dc3ff', 'GARAGE'); if (inV(V, S.bed.x, S.bed.y) && (G.roofA || 0) < 0.5) ring(S.bed.x, S.bed.y, 16, '#7dd3ff', ''); }
   const sp = C.places.spray; if (inV(V, sp.x, sp.y)) ring(sp.x, sp.y, 32, '#d24dff', 'SPRAY');
@@ -4455,10 +4609,11 @@ function drawLabel(x, y, name, col, frac) {
   ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.7)'; ctx.strokeText(name, x, y - 10); ctx.fillStyle = col; ctx.fillText(name, x, y - 10);
 }
 function drawOverheads(V) {
+  { let n = 0; for (const q of G.peds) if (q.recruit && q.following && q.alive) n++; G.bigCrew = n > CREW.max; }
   for (const p of G.peds) {
     if (!p.alive || p.car || !inV(V, p.x, p.y, 40) || p.isPlayer) continue;
     if (p.boss) { drawLabel(p.x, p.y - 26, p.name || 'BOSS', '#ffd24d', p.hp / p.maxHp); continue; }
-    if (p.kind === 'partner') { if (!p.recruit || p.following) drawLabel(p.x, p.y - 22, p.down ? p.name + ' (down)' : p.name, p.color, p.hp / p.maxHp); continue; }
+    if (p.kind === 'partner') { if (!p.recruit || (p.following && (!G.bigCrew || G.time - p.lastHitT < 3))) drawLabel(p.x, p.y - 22, p.down ? p.name + ' (down)' : p.name, p.color, p.hp / p.maxHp); continue; }   // v23: a big gang army only shows tags for members who were just hit
     if (p.kind === 'remote') drawLabel(p.x, p.y - 22, p.name, p.color || '#fff', p.hp / p.maxHp);
     else if (p.state === 'acquire') { ctx.fillStyle = '#ff3b3b'; ctx.font = 'bold 18px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.strokeText('!', p.x, p.y - 28); ctx.fillText('!', p.x, p.y - 28); }
     else if ((p.kind === 'gang' || p.kind === 'cop' || p.kind === 'swat') && G.time - p.lastHitT < 3) { ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(p.x - 14, p.y - 26, 28, 4); ctx.fillStyle = '#ff4d4d'; ctx.fillRect(p.x - 14, p.y - 26, 28 * clamp(p.hp / p.maxHp, 0, 1), 4); }
@@ -4523,7 +4678,8 @@ function drawScreen() {
     let dx = s.x - s.ox, dy = s.y - s.oy; const l = Math.hypot(dx, dy); if (l > STICK_R) { dx *= STICK_R / l; dy *= STICK_R / l; }
     ctx.fillStyle = 'rgba(255,255,255,.45)'; ctx.beginPath(); ctx.arc(s.ox + dx, s.oy + dy, 26, 0, TAU); ctx.fill();
   }
-  const obj = G.mission ? G.mission.objective : null;
+  const am = !G.mission && G.game === 'roam' ? activeMarker() : null;
+  const obj = G.mission ? G.mission.objective : am ? { x: am.x, y: am.y } : null;
   if (obj && P) {
     const pp = playerPos(), dx = obj.x - G.cam.x, dy = obj.y - G.cam.y, sx = cw / 2 + dx * scale, sy = ch / 2 + dy * scale;
     if (sx < 30 || sx > cw - 30 || sy < 70 || sy > ch - 30) {
@@ -4554,7 +4710,7 @@ function drawMini() {
   const R = 4.5 * ms / k, dot = (x, y, color, r) => { m.fillStyle = color; m.beginPath(); m.arc(x, y, r || R, 0, TAU); m.fill(); };
   const pp = playerPos();
   if (G.game === 'roam') {
-    if (!G.mission) for (const mm of C.missions) if (G.time > (mm.cooldownT || 0) && markerOpen(mm)) dot(mm.x, mm.y, mm.type === 'boss' ? '#ffffff' : mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
+    if (!G.mission) for (const mm of C.missions) if (mm.id === G.activeId && G.time > (mm.cooldownT || 0) && markerOpen(mm)) dot(mm.x, mm.y, mm.type === 'boss' ? '#ffffff' : mm.type === 'heist' ? '#e8c547' : mm.type === 'rampage' ? '#ff3b3b' : mm.type === 'donut' ? '#ff8fc7' : '#ffd24d', R * 1.3);
     if (C.safehouse) dot(C.safehouse.x + C.safehouse.w / 2, C.safehouse.y + C.safehouse.h / 2, '#ffffff', R * 1.4);
     for (const S of C.services || []) dot(S.x + S.w / 2, S.y + S.h / 2, SERVICE_LOOK[S.kind].dot, R * 1.4);
     if (C.bar) dot(C.bar.x + C.bar.w / 2, C.bar.y + C.bar.h / 2, '#ff8ae6', R * 1.4);
@@ -4582,7 +4738,7 @@ function drawMini() {
 //  UI: menus, HUD, settings, pause
 // ============================================================
 let toastT = 0, feedMsgs = [], settingsReturn = 'menu';
-function showScreen(id) { for (const s of ['menu', 'settings', 'pause', 'shop', 'results']) $(s).hidden = s !== id; syncMenuScene(); }
+function showScreen(id) { for (const s of ['menu', 'settings', 'pause', 'shop', 'results', 'missions']) $(s).hidden = s !== id; syncMenuScene(); }
 function toast(msg, secs) { const t = $('toast'); t.textContent = msg; t.hidden = false; toastT = G.time + (secs || 1.5); }
 function feed(msg) { feedMsgs.push({ msg, until: G.time + 5 }); if (feedMsgs.length > 5) feedMsgs.shift(); }
 function bigText(text, sub) { $('bigText').textContent = text; $('bigSub').textContent = sub || ''; $('big').hidden = false; }
@@ -4618,7 +4774,7 @@ function uiInit() {
   $('settingsBtn').onclick = () => { settingsReturn = 'menu'; syncSettingsUI(); showScreen('settings'); };
   $('pauseSettings').onclick = () => { settingsReturn = 'pause'; syncSettingsUI(); showScreen('settings'); };
   $('settingsBack').onclick = () => { readSettingsUI(); showScreen(settingsReturn); };
-  $('resetSave').onclick = () => { if (confirm('Delete your saved cash, weapons and territories? Rogue Rep and best score stay.')) { resetProgress(); try { delete localStorage[TERR_KEY]; } catch (e) {} $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
+  $('resetSave').onclick = () => { if (confirm('Delete your saved cash, weapons, territories and mission progress? Rogue Rep and best score stay.')) { resetProgress(); try { delete localStorage[TERR_KEY]; delete localStorage[MIS_KEY]; } catch (e) {} $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
   for (const id of ['setControls', 'setDiff', 'setNight', 'setSound', 'setPartner']) $(id).onchange = readSettingsUI;
   $('helpBtn').onclick = () => showMainPanel('help');
   $('helpBack').onclick = () => showMainPanel('main');
@@ -4648,7 +4804,7 @@ function updateHUD() {
   $('hp').style.background = P.hp > P.maxHp * 0.5 ? '#7dff4d' : P.hp > P.maxHp * 0.25 ? '#ffd24d' : '#ff4d4d';
   $('hpText').textContent = (P.roleCode ? P.roleCode + '  ' : BROTHERS[P.char] ? BROTHERS[P.char].name + '  ' : '') + Math.max(0, Math.ceil(P.hp));
   $('ar').style.width = clamp(P.armor, 0, 100) + '%';
-  $('cheatsOn').textContent = (G.cheats.god ? ' GOD' : '') + (G.cheats.guns ? ' GUNS' : '') + (G.cheats.slow && G.mode === 'solo' ? ' SLOWMO' : '');
+  $('cheatsOn').textContent = (G.cheats.god ? ' GOD' : '') + (G.cheats.guns ? ' GUNS' : '') + (G.cheats.slow && G.mode === 'solo' ? ' SLOWMO' : '') + (G.cheats.army ? ' ARMY' : '');
   const W = WEAPONS[P.weapon];
   $('weapon').textContent = W ? W.name : '';
   $('ammo').textContent = !W || W.infinite || W.melee ? '' : G.cheats.guns ? '∞' : ((P.ammo[P.weapon] || 0) < 5000 ? (P.ammo[P.weapon] || 0) + ' ' + (W.unit || 'rounds') : '');
@@ -4657,7 +4813,7 @@ function updateHUD() {
     { const L2 = G.city && G.city.territories, show = !!(L2 && L2.length && G.game === 'roam'), tt = show ? 'Turf ' + terrOwned() + '/' + L2.length : ''; const el = $('turfHud'); if (el.hidden === show) el.hidden = !show; if (el.textContent !== tt) el.textContent = tt; }
     const s = G.wanted.stars;
     $('stars').innerHTML = s ? '<span>' + '★'.repeat(s) + '</span><span class="off">' + '★'.repeat(Math.max(0, 7 - s)) + '</span>' : '';
-    const M = G.mission; $('objective').hidden = !M; if (M) $('objective').textContent = M.text;
+    const M = G.mission, am = !M ? activeMarker() : null; $('objective').hidden = !M && !am; if (M) $('objective').textContent = M.text; else if (am) $('objective').textContent = MISSION_INFO[am.id].title + ': ' + (G.time > (am.cooldownT || 0) && markerOpen(am) ? 'go to the marker' : 'not available right now');
     $('timer').hidden = true;
   } else { $('cash').textContent = ''; $('stars').innerHTML = ''; $('objective').hidden = true; $('timer').hidden = false; }
   $('board').hidden = G.mode !== 'mp';
@@ -4672,16 +4828,18 @@ function updateHUD() {
     else if (nearBed(P)) hint = isTouch ? '' : 'E: sleep (heal + save)';
     else if (nearStation(P)) hint = isTouch ? '' : 'E: ' + stationHint(nearStation(P));
     else if (nearVault(P)) hint = isTouch ? '' : 'E: drill the vault (sets off the alarm)';
-    else if (nearCrew(P)) hint = isTouch ? '' : (nearCrew(P).following ? 'E: dismiss ' + nearCrew(P).name : 'E: recruit' + (G.isSim ? ' (' + crewCount() + '/' + CREW.max + ')' : ''));
+    else if (nearCrew(P)) hint = isTouch ? '' : (nearCrew(P).following ? 'E: dismiss ' + nearCrew(P).name : 'E: recruit' + (G.isSim ? ' (' + crewCount() + '/' + crewCap() + ')' : ''));
     else if (nearCounter(P)) hint = isTouch ? '' : 'E: Bors Brew ($' + BREW_PRICE + ', +200 HP)';
     else if (nearCar) hint = isTouch ? '' : ((nearCar.driver || nearCar.npcDrv) ? 'E: carjack' : 'E: get in');
     else if (G.game === 'roam' && dist(P.x, P.y, G.city.places.gunshop.x, G.city.places.gunshop.y) < 70) hint = isTouch ? 'Walk in: Guns N\' Bors' : 'E: Guns N\' Bors';
     if (!hint && !isTouch && G.c4 && G.c4.length) hint = 'X: detonate C4 (' + G.c4.length + ')';
+    if (!hint && !isTouch && G.time < 25 && G.game === 'roam' && !G.activeId && !G.mission) hint = 'J or the MISSIONS button: choose your next job';
     if (!hint && G.time < 25) hint = isTouch ? 'Left thumb moves, hold the right side to shoot, tap a car to get in' : (G.settings.controls === 'mouse' ? 'Hold left button to walk, right button shoots, click a car to get in' : 'WASD moves, mouse aims, click shoots, E for cars');
   }
   $('hint').hidden = !hint; $('hint').textContent = hint;
   skillHUD();
   { const mb = $('btnMute'), on = G.settings.sound !== false; if (mb.hidden) mb.hidden = false; if (mb.dataset.on !== String(on)) { mb.dataset.on = String(on); mb.innerHTML = speakerIcon(on); mb.classList.toggle('off', !on); } }
+  { const mb = $('btnMissions'), show = G.game === 'roam' && G.phase === 'playing'; if (mb.hidden === show) mb.hidden = !show; mb.classList.toggle('has', show && !G.mission && !G.activeId && G.isSim && missionList().some(x => x.state === 'open')); }
   const chatOff = G.mode !== 'mp' || G.phase !== 'playing'; if ($('btnChat').hidden !== chatOff) $('btnChat').hidden = chatOff; if (chatOff) $('chatPanel').hidden = true;
   if (isTouch) {
     const inCar = !!P.car;
@@ -5335,6 +5493,8 @@ function hostOnEvent(e) {
   const r = G.remotes[e.u]; const who = r ? r.ped : null; if (!who) return;
   switch (e.t) {
     case 'drill': startDrill(who); break;
+    case 'army': armySet(who, !!e.on); break;
+    case 'activate': if (typeof e.id === 'string' || e.id === null) activateMission(e.id, who); break;
     case 'recruit': { const q = G.peds.find(p => p.id === e.id && p.recruit && p.alive); if (q && dist(q.x, q.y, who.x, who.y) < 80) toggleRecruit(q, who); break; }
     case 'hit': {
       const p = pedById(e.id); if (!p || !p.alive || isPlayerPed(p)) break;
@@ -5406,6 +5566,7 @@ function hostWorldTick(dt) {
   if (M && M.objective) snap.m = { ty: M.type, tx: M.text, ox: Math.round(M.objective.x), oy: Math.round(M.objective.y), ph: M.phase || 0 };
   const shots = G.netShots.filter(s => near(s[0], s[1]) || near(s[2], s[3]));
   if (shots.length) snap.s = shots.slice(-24).map(s => s.map(Math.round).join(',')).join(';');
+  snap.am = G.activeId || '';
   if (G.city.bank) snap.bk = bankState();
   if (G.city.territories) snap.tr = G.city.territories.map(T => T.owner === 'bors' ? 'b' : '0').join('');
   if (G.city.gas) snap.gs = G.city.gas.map(q => q.burntT > G.time ? 1 : 0).join('');
@@ -5440,6 +5601,7 @@ function onWorld(v) {
   G.wanted.stars = stars; G.netStars = w;
   const k = String(v.k || ''); for (let i = 0; i < G.pickups.length; i++) G.pickups[i].taken = k[i] === '1';
   const mk = String(v.mk || ''); G.city.missions.forEach((m, i) => { m.cooldownT = mk[i] === '0' ? 1e12 : 0; });
+  G.activeId = v.am || null;
   G.mission = v.m ? { remote: true, type: v.m.ty, text: v.m.tx, objective: { x: v.m.ox, y: v.m.oy }, phase: v.m.ph || 0 } : null;
 }
 function updateProxies(dt) {
@@ -5590,7 +5752,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = myLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
@@ -5600,10 +5762,10 @@ function setupWorld(seed, mode) {
 function populateWorld() {
   const P = G.player, R = CFG.world, C = G.city;
   for (const blk of C.turfs) { const ts = { blk, n: Math.max(2, Math.round(R.gangPerGroup * D().count)), respawnT: 0 }; G.turfState.push(ts); spawnGangGroup(ts, ts.n); }
-  for (let i = 0; i < 26; i++) { const lp = randomRoadSpawn(P.x, P.y, 0, 9000); if (lp && !carNear(lp.x, lp.y, 130)) { spawnParkedCar(lp); rebuildHash(); } }
-  for (let i = 0; i < 12; i++) { const lp = randomRoadSpawn(P.x, P.y, 110, 260); if (lp && !carNear(lp.x, lp.y, 130)) { spawnParkedCar(lp, 'sedan'); rebuildHash(); break; } }
-  for (let i = 0; i < 20; i++) { const lp = randomRoadSpawn(P.x, P.y, 150, 360); if (lp && !carNear(lp.x, lp.y, 100)) { spawnParkedCar(lp, 'bike'); rebuildHash(); break; } }
-  for (let i = 0, n = 0; i < 30 && n < 6; i++) { const lp = randomRoadSpawn(P.x, P.y, 400, 9000); if (lp && !carNear(lp.x, lp.y, 100)) { spawnParkedCar(lp, 'bike'); rebuildHash(); n++; } }
+  for (let i = 0; i < 26; i++) { const k = pick(['sedan', 'compact', 'sport', 'van', 'taxi']), lp = parkingSlot(P.x, P.y, 0, 9000, k); if (lp) { spawnParkedCar(lp, k); rebuildHash(); } }
+  { const lp = parkingSlot(P.x, P.y, 90, 320, 'sedan') || parkingSlot(P.x, P.y, 90, 700, 'sedan'); if (lp) { spawnParkedCar(lp, 'sedan'); rebuildHash(); } }
+  { const lp = parkingSlot(P.x, P.y, 120, 420, 'bike') || parkingSlot(P.x, P.y, 120, 800, 'bike'); if (lp) { spawnParkedCar(lp, 'bike'); rebuildHash(); } }
+  for (let i = 0, n = 0; i < 12 && n < 6; i++) { const lp = parkingSlot(P.x, P.y, 400, 9000, 'bike'); if (lp) { spawnParkedCar(lp, 'bike'); rebuildHash(); n++; } }
   for (let i = 0; i < R.civTarget; i++) { const pt = randomSidewalkPoint(P.x, P.y, 120, R.spawnRadius); if (pt) spawnCiv(pt.x, pt.y); }
   for (let i = 0, n = 0; i < R.trafficTarget * 3 && n < R.trafficTarget; i++) { const sp = randomRoadSpawn(P.x, P.y, 200, R.spawnRadius); if (sp && !carNear(sp.x, sp.y, 140)) { spawnTrafficCar(sp); rebuildHash(); n++; } }
   placePickups();
@@ -5616,7 +5778,7 @@ function startSolo() {
   G.playerName = getName(); G.playerColor = '#ffd24d';
   setupWorld(Math.floor(Math.random() * 1e9), 'solo');
   populateWorld(); spawnPartner(); rebuildHash();
-  const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); loadTerritories(); rebuildHash();
+  const resumed = loadProgress(); G.saveT = 0; spawnGarageCar(); loadTerritories(); loadMissions(); rebuildHash();
   enterPlay();
   toast(G.mapChangedNote ? 'BORS CITY GREW!\nNew map: your old turf is up for grabs again.' : resumed ? 'Welcome back to Bors City\nYour cash and weapons are still here.' : 'Welcome to Bors City\nBadges on. Rules off.', 3);
   if (G.mapChangedNote) { G.mapChangedNote = false; saveTerritories(); }
@@ -5646,7 +5808,8 @@ function loop() {
   const now = performance.now(); let dt = (now - lastTs) / 1000; lastTs = now; if (dt > 0.05) dt = 0.05;
   if (G.cheats.slow && G.mode === 'solo') dt *= 0.4;
   else if (G.mode === 'solo' && G.player && G.player.char === 'mafl' && skillActive()) dt *= 0.45;
-  if (IN.pause) { IN.pause = false; togglePause(); }
+  if (IN.missions) { IN.missions = false; if ($('missions').hidden) openMissionApp(); else closeMissionApp(); }
+  if (IN.pause) { IN.pause = false; if (!$('missions').hidden) closeMissionApp(); else togglePause(); }
   if (G.paused && G.mode === 'solo') return;
   update(dt); render();
 }
