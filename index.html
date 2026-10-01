@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070b1e">
-<title>Bors Bros V23</title>
+<title>Bors Bros V25</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&display=swap">
@@ -342,7 +342,7 @@ const CFG = {
   netHz: 15, interpDelayMs: 120,
   worldHz: 8, worldInterpMs: 200, interestRadius: 1150,   // free roam: host world snapshots
   pvpDamage: 2.5,             // player vs player damage multiplier (players have 5x health)
-  city: { cols: 14, rows: 12, block: 300, road: 120, sidewalk: 20 },
+  city: { cols: 18, rows: 16, block: 300, road: 120, sidewalk: 20 },
   view: { w: 1120, h: 630 },  // world pixels visible on a desktop screen (roughly)
   ped: { walk: 150, run: 265, accel: 1100, turn: 14, radius: 13, hp: 100 },
   player: { hp: 500, regenAfter: 6, regenTo: 200, regenRate: 20, healthPickup: 200, shopHealth: 250 },
@@ -566,7 +566,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 23;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 25;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -876,7 +876,7 @@ function buildCity(seed) {
   const city = { seed, cols, rows, block, road, sw, pitch, W, H, blocks: [], buildings: [], props: [], nodes: [], turfs: [], places: {}, missions: [] };
   const cc = Math.floor(cols / 2), cr = Math.floor(rows / 2);
   const parks = new Set([1 + ',' + (rows - 2), (cols - 3) + ',' + 1]);
-  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === 9 && r === 7) || (c === 8 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : (rows >= 12 && r === rows - 1 && c <= cols - 3) ? 'beach' : (rows >= 12 && cols >= 14 && r >= rows - 3 && r <= rows - 2 && c >= cols - 5 && c <= cols - 3) ? 'airport' : (rows >= 12 && r >= rows - 3 && r <= rows - 2 && c >= 1 && c <= 4) ? 'littlebors' : 'residential';
+  const districtOf = (c, r) => (Math.abs(c - cc) <= 1 && Math.abs(r - cr) <= 1) ? 'downtown' : (r === 3 && rows >= 9) ? 'river' : parks.has(c + ',' + r) ? 'park' : (cols >= 18 && c === cols - 2 && r === rows - 1) ? 'prison' : (cols >= 18 && r <= 2 && c >= 3 && c <= 6) ? 'richhills' : (cols >= 18 && c === cols - 2 && r >= 4 && r <= rows - 5) ? 'docklands' : (cols >= 18 && c === 0 && r >= 5 && r <= rows - 5) ? 'trailer' : (c >= cols - 2 && r >= rows - 2) ? 'industrial' : (c === cols - 1 && r <= rows - 3) ? 'harbour' : (c <= 2 && r <= 2) ? 'oldtown' : (r <= 1 && c >= 3 && c <= cols - 4) ? 'financial' : (r === rows - 1 && c === cc) ? 'stadium' : (c === cc - 2 && r === cr + 1) ? 'safehouse' : (c === cc + 2 && r === cr) ? 'bar' : (c === cc && r === cr + 2) ? 'bank' : ((c === 2 && r === 6) || (c === cols - 5 && r === rows - 5) || (c === cc - 1 && r === 2)) ? 'gas' : (c === cc - 2 && r === cr && rows >= 9) ? 'hospital' : (c === cc + 3 && r === cr + 1 && cols >= 11) ? 'policehq' : (cols >= 18 && c === cc + 3 && r === cr - 1) ? 'casino' : (cols >= 18 && c === cc - 3 && r === cr + 2) ? 'mall' : (c === 2 && r === 4 && rows >= 9) ? 'barber' : (rows >= 12 && r === rows - 1 && c <= cols - 3) ? 'beach' : (rows >= 12 && cols >= 14 && r >= rows - 3 && r <= rows - 2 && c >= cols - (cols >= 18 ? 7 : 5) && c <= cols - 3) ? 'airport' : (rows >= 12 && r >= rows - 3 && r <= rows - 2 && c >= 1 && c <= 4) ? 'littlebors' : 'residential';
   const addB = (b, blk) => { b.block = blk; blk.buildings.push(b); city.buildings.push(b); return b; };
   const addP = (p, blk) => { blk.props.push(p); city.props.push(p); return p; };
   const ePt = (blk, side, t) => side === 'top' ? { x: blk.x + blk.w * t, y: blk.y - sw / 2 } : side === 'bottom' ? { x: blk.x + blk.w * t, y: blk.y + blk.h + sw / 2 } : side === 'left' ? { x: blk.x - sw / 2, y: blk.y + blk.h * t } : { x: blk.x + blk.w + sw / 2, y: blk.y + blk.h * t };
@@ -979,6 +979,36 @@ function buildCity(seed) {
         vault: { x: x0 + t, y: vy + 10, w: W2 - 2 * t, h: y0 + H2 - t - vy - 10 },
         loot: [0, 1, 2, 3].map(i => ({ x: x0 + 40 + i * ((W2 - 80) / 3), y: ly, taken: false })),
         tellers: [{ x: x0 + 52, y: y0 + 110 }, { x: x0 + 106, y: y0 + 110 }], drill: null, openT: 0, alarm: false };
+    } else if (blk.district === 'casino' || blk.district === 'mall') {
+      // v25: whole-block buildings with several rooms. Shared rules: one street door on top, inner doorways 64 wide, stations 40+ px from walls.
+      const K = blk.district, m = 14, W2 = block - 2 * m, H2 = block - 2 * m, x0 = bx + m, y0 = by + m, t = 8, door = 60, cx = x0 + W2 / 2;
+      const col = K === 'casino' ? '#3a2350' : '#d7dde4';
+      blk.base = K === 'casino' ? '#4a3a2a' : '#9aa1a8';
+      const wallH = (xa, xb, y, gaps) => { let x = xa; for (const [gx, gw] of (gaps || []).slice().sort((a, b) => a[0] - b[0])) { if (gx - gw / 2 > x) addB({ x, y, w: gx - gw / 2 - x, h: t, kind: 'wall', color: col, height: 1 }, blk); x = gx + gw / 2; } if (xb > x) addB({ x, y, w: xb - x, h: t, kind: 'wall', color: col, height: 1 }, blk); };
+      const wallV = (x, ya, yb, gaps) => { let y = ya; for (const [gy, gh] of (gaps || []).slice().sort((a, b) => a[0] - b[0])) { if (gy - gh / 2 > y) addB({ x, y, w: t, h: gy - gh / 2 - y, kind: 'wall', color: col, height: 1 }, blk); y = gy + gh / 2; } if (yb > y) addB({ x, y, w: t, h: yb - y, kind: 'wall', color: col, height: 1 }, blk); };
+      wallH(x0, x0 + W2, y0, [[cx, door]]); wallH(x0, x0 + W2, y0 + H2 - t);
+      wallV(x0, y0 + t, y0 + H2 - t); wallV(x0 + W2 - t, y0 + t, y0 + H2 - t);
+      addP({ x: cx, y: y0 + t / 2, r: 12, type: 'doorstop', carBlock: true }, blk);
+      const R2 = { x: x0, y: y0, w: W2, h: H2, t, kind: K, door: { x: cx, y: y0 - sw / 2 - 20 }, spots: [] };
+      city.services = city.services || []; city.services.push(R2); city.stations = city.stations || [];
+      if (K === 'casino') {
+        // lobby (top) | gaming floor | VIP lounge (back left) + counting room (back right, locked: future heist)
+        const yl = y0 + 90, yb = y0 + 176, vipX = x0 + (cx - x0) / 2;
+        wallH(x0 + t, x0 + W2 - t, yl, [[cx, 64]]);
+        wallH(x0 + t, x0 + W2 - t, yb, [[vipX, 64]]);
+        wallV(cx - t / 2, yb + t, y0 + H2 - t);
+        R2.rooms = { lobby: [x0, y0, W2, yl - y0], floor: [x0, yl, W2, yb - yl], vip: [x0, yb, cx - x0, y0 + H2 - yb], vault: [cx, yb, x0 + W2 - cx, y0 + H2 - yb] };
+        city.stations.push({ type: 'comp', x: x0 + 60, y: y0 + 50, b: R2 }, { type: 'slots', x: x0 + 52, y: yl + 47, b: R2 }, { type: 'roulette', x: cx, y: yl + 50, b: R2 }, { type: 'slots', x: x0 + W2 - 52, y: yl + 47, b: R2 }, { type: 'vip', x: vipX, y: yb + 52, b: R2 });
+        R2.spots = [{ x: x0 + 110, y: yl + 30 }, { x: x0 + W2 - 110, y: yl + 64 }, { x: x0 + W2 - 60, y: y0 + 48 }, { x: vipX + 50, y: yb + 50 }];
+      } else {
+        // concourse (middle) | clothing store (left) | arcade (right) | food court (back, open)
+        const xa = x0 + 96, xb2 = x0 + W2 - 96 - t, yf = y0 + 170;
+        wallV(xa, y0 + t, yf, [[y0 + 90, 64]]); wallV(xb2, y0 + t, yf, [[y0 + 90, 64]]);
+        wallH(x0 + t, xa, yf); wallH(xb2 + t, x0 + W2 - t, yf);
+        R2.rooms = { clothes: [x0, y0, xa - x0, yf - y0], arcade: [xb2, y0, x0 + W2 - xb2, yf - y0], concourse: [xa, y0, xb2 - xa, yf - y0], food: [x0, yf, W2, y0 + H2 - yf] };
+        city.stations.push({ type: 'outfit', x: x0 + 52, y: y0 + 54, b: R2 }, { type: 'arcade', x: x0 + W2 - 52, y: y0 + 54, b: R2 }, { type: 'kiosk', x: cx, y: y0 + 128, b: R2 }, { type: 'food', x: cx, y: yf + 52, b: R2 });
+        R2.spots = [{ x: x0 + 60, y: yf + 40 }, { x: x0 + W2 - 60, y: yf + 44 }, { x: x0 + 70, y: yf + 70 }, { x: cx + 48, y: y0 + 62 }];
+      }
     } else if (blk.district === 'hospital' || blk.district === 'policehq' || blk.district === 'barber') {
       // v21: enterable service buildings with a door on the top street
       const K = blk.district, dims = { hospital: [220, 150], policehq: [230, 170], barber: [170, 124] }[K];
@@ -1019,6 +1049,46 @@ function buildCity(seed) {
       city.bar = { x: x0, y: y0, w: W2, h: H2, t, door: { x: x0 + W2 / 2, y: y0 - sw / 2 - 20 }, counter: { x: x0 + W2 / 2, y: cy - 22 }, tender: { x: x0 + W2 / 2, y: cy + 16 + 17 },
         spots: [{ x: x0 + 40, y: y0 + 46 }, { x: x0 + 62, y: y0 + 72 }, { x: x0 + W2 / 2 - 50, y: cy - 20 }, { x: x0 + W2 / 2 + 52, y: cy - 20 }] };
       for (let k = 0; k < 3; k++) { const tx = bx + rr(20, block - 20), ty = by + rr(block - 70, block - 20); addP({ x: tx, y: ty, r: 7, canopy: rr(12, 16), type: 'tree', pedBlock: true, carBlock: true }, blk); }
+    } else if (blk.district === 'richhills') {
+      // v24: Rich Hills: big villas with pools behind hedges
+      blk.base = '#5f9a4a';
+      const VILLA = ['#e9e4d8', '#d9c9a8', '#f2efe6', '#c9b28a', '#e6d3c0'];
+      const half = block / 2;
+      for (let k = 0; k < 2; k++) {
+        const vx = bx + 24 + k * half, vy = by + 30, vw = half - 48, vh = 120;
+        addB({ x: vx, y: vy, w: vw, h: vh, kind: 'house', color: rp(VILLA), height: 2, seed: rnd(), gable: rc(0.5), villa: true }, blk);
+        addB({ x: vx + 6, y: vy + vh + 26, w: vw - 12, h: 46, kind: 'water', color: '#3fb3e0', height: 0, pool: true }, blk);
+      }
+      for (let k = 0; k < 5; k++) addP({ x: bx + 20 + k * 65, y: by + block - 22, r: 7, canopy: rr(12, 15), type: 'tree', pedBlock: true, carBlock: true }, blk);
+    } else if (blk.district === 'docklands') {
+      // v24: Docklands: container stacks, scrap piles and a dock warehouse
+      blk.base = '#6d6a62';
+      addB({ x: bx + 24, y: by + 24, w: 120, h: 70, kind: 'warehouse', color: '#7d8590', height: 1 }, blk);
+      const CC = ['#b3402e', '#2e6db3', '#c98f2e', '#3f8f4a', '#8a6b3a', '#6a3f8f', '#2a8a8a'];
+      for (let k = 0, t = 0; k < 7 && t < 80; t++) {
+        const rect = rc(0.5) ? { x: bx + rr(24, block - 76), y: by + rr(120, block - 50), w: 52, h: 22 } : { x: bx + rr(170, block - 46), y: by + rr(24, block - 76), w: 22, h: 52 };
+        const grow = (q, g) => ({ x: q.x - g, y: q.y - g, w: q.w + 2 * g, h: q.h + 2 * g });
+        if (!blk.buildings.some(b => rectsOverlap(rect, grow(b, 16)))) { addB({ ...rect, kind: 'container', color: rp(CC), height: 1 }, blk); k++; }
+      }
+    } else if (blk.district === 'trailer') {
+      // v24: trailer park & scrapyard: Raiders home turf
+      blk.base = '#8a7a5a';
+      for (let j = 0; j < 2; j++) for (let k = 0; k < 3; k++) {
+        const tx = bx + 26 + k * 92, ty = by + 34 + j * 130;
+        addB({ x: tx, y: ty, w: 62, h: 26, kind: 'trailer', color: rp(['#e8e2d0', '#d9d2bc', '#c9d4d9', '#e6d6b8']), height: 1 }, blk);
+        if (rc(0.55)) addB({ x: tx + 8, y: ty + 52, w: 34, h: 18, kind: 'scrapcar', color: rp(['#7a3b2a', '#5a5a5a', '#6b4a2a', '#3a4a5a']), height: 0 }, blk);
+      }
+    } else if (blk.district === 'prison') {
+      // v24: Prison Island: walled penitentiary on an island, one footbridge from the top street (interior comes later)
+      blk.base = '#6e7d86';
+      const m = 16, wv = 34, gap = 46, cx = bx + block / 2;
+      addB({ x: bx + m, y: by + m, w: cx - gap / 2 - bx - m, h: wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
+      addB({ x: cx + gap / 2, y: by + m, w: bx + block - m - cx - gap / 2, h: wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
+      addB({ x: bx + m, y: by + block - m - wv, w: block - 2 * m, h: wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
+      addB({ x: bx + m, y: by + m + wv, w: wv, h: block - 2 * m - 2 * wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
+      addB({ x: bx + block - m - wv, y: by + m + wv, w: wv, h: block - 2 * m - 2 * wv, kind: 'water', color: '#2c5f8a', height: 0, moat: true }, blk);
+      addB({ x: bx + m + wv + 30, y: by + m + wv + 46, w: block - 2 * (m + wv + 30), h: block - 2 * (m + wv) - 76, kind: 'prison', color: '#8a939b', height: 2 }, blk);
+      blk.bridge = { x: cx - gap / 2, y: by + m, w: gap, h: wv };
     } else if (blk.district === 'beach') {
       // v22: Bors Beach & Boardwalk: boardwalk up top, sand, palms, umbrellas, a lifeguard tower, sea at the bottom
       blk.base = '#e8d39a';
@@ -1123,14 +1193,18 @@ function buildCity(seed) {
     { ...ePt(blockAt(cols - 2, 2), 'left', 0.5), type: 'rampage', label: 'Rampage', id: 'chal2' },
     { ...ePt(blockAt(cc, cr + 2), 'top', 0.18), type: 'heist', label: 'The Bors Heist', id: 'heist1' },
     { ...ePt(blockAt(cc, rows - 1), 'top', 0.3), type: 'boss', label: 'Showdown at Bors Arena', id: 'story4' }
-  ];
+  ].concat(cols >= 18 ? [
+    { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.25), type: 'clear', label: 'Card Sharks', id: 'side2', bld: 'casino', gang: 'cartel' },
+    { ...ePt(blockAt(cc - 3, cr + 2), 'top', 0.25), type: 'clear', label: 'Mall Rats', id: 'side3', bld: 'mall', gang: 'raiders' }
+  ] : []);
+  for (const b of city.blocks) b.gang = gangForBlock(b, cols, rows, W);
   city.territories = [];
   for (const b of city.blocks) {
-    if (['residential', 'oldtown', 'harbour', 'industrial', 'littlebors'].indexOf(b.district) < 0) continue;
-    if (b.district !== 'littlebors' && (b.c * 3 + b.r * 5) % 4 !== 0) continue;
+    if (['residential', 'oldtown', 'harbour', 'industrial', 'littlebors', 'richhills', 'docklands', 'trailer'].indexOf(b.district) < 0) continue;
+    if (['littlebors', 'docklands', 'trailer'].indexOf(b.district) < 0 && (b.c * 3 + b.r * 5) % (b.district === 'richhills' ? 2 : TURF_MOD) !== 0) continue;
     if ((b.c === 0 || b.c === cols - 1) && (b.r === 0 || b.r === rows - 1)) continue;          // corner gang hideouts stay as they are
     if (Math.abs(b.c - (cc - 1)) <= 1 && Math.abs(b.r - cr) <= 1) continue;                    // not right next to the start
-    city.territories.push({ i: city.territories.length, key: b.c + ',' + b.r, blk: b, x: b.x + b.w / 2, y: b.y + b.h / 2, gang: b.district === 'littlebors' ? 'dragons' : (b.x + b.w / 2) > W / 2 ? 'rats' : 'saints', owner: null, kills: 0, killT: 0, coolT: 0, spawnT: 0 });
+    city.territories.push({ i: city.territories.length, key: b.c + ',' + b.r, blk: b, x: b.x + b.w / 2, y: b.y + b.h / 2, gang: b.gang, owner: null, kills: 0, killT: 0, coolT: 0, spawnT: 0 });
   }
   city.turfs = [blockAt(0, 0), blockAt(cols - 1, 0), blockAt(0, rows - 1), blockAt(cols - 1, rows - 1)];
   city.start = ePt(blockAt(cc - 1, cr), 'bottom', 0.5);
@@ -2419,7 +2493,7 @@ function markersUpdate() {
       } else toast('Respray costs $' + CFG.economy.price.respray, 1.5);
     }
   }
-  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate();
+  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate(); interiorPatrons();
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
@@ -2462,6 +2536,7 @@ function startMission(m, who) {
     M.timer = 30; M.nextWaveT = G.time + 0.5; M.text = 'RAMPAGE: 0 kills';
     M.objective = { x: wp.x, y: wp.y };
   } else if (m.type === 'heist') heistStart(M, nP);
+  else if (m.type === 'clear') clearStart(M, m, nP);
   else if (m.type === 'boss') bossStart(M, nP);
   else if (m.type === 'war') warStart(M, m, nP);
   else if (m.type === 'defend') defendStart(M, m, nP);
@@ -2522,6 +2597,7 @@ function missionUpdate(dt) {
     M.objective = M.route[Math.min(M.idx, M.route.length - 1)];
     M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
   } else if (M.type === 'heist') { heistUpdate(M); return;
+  } else if (M.type === 'clear') { clearUpdate(M); return;
   } else if (M.type === 'boss') { bossUpdate(M); return;
   } else if (M.type === 'war') { warUpdate(M); return;
   } else if (M.type === 'defend') { defendUpdate(M); return;
@@ -3228,16 +3304,23 @@ function applyGasState(v) {
   L.forEach((st, i) => { st.burntT = bits[i] === '1' ? G.time + 5 : 0; });
 }
 // ---- v17: gang territories (San Andreas style). Host/solo decides, everyone sees the blue blocks.
-const GANGS = { rats: { name: 'Harbour Rats', color: '#ff3b3b', shirt: '#b3261e', pants: '#2b1a12' }, saints: { name: 'Old Town Saints', color: '#b04dff', shirt: '#6a2c91', pants: '#1b1b2a' }, dragons: { name: 'Lucky Dragons', color: '#14c8b4', shirt: '#0f8a7c', pants: '#1a1a1a' } };
+const TURF_MOD = 4;
+function gangForBlock(b, cols, rows, W) {   // v24: five gangs by region
+  if (b.district === 'littlebors') return 'dragons';
+  if (b.district === 'trailer' || b.district === 'docklands' || b.district === 'industrial') return 'raiders';
+  if (cols >= 18 && b.c >= cols * 0.5 && b.r >= rows * 0.55) return 'cartel';
+  return (b.x + b.w / 2) > W * (cols >= 18 ? 0.4 : 0.5) ? 'rats' : 'saints';
+}
+const GANGS = { rats: { name: 'Harbour Rats', color: '#ff3b3b', shirt: '#b3261e', pants: '#2b1a12' }, saints: { name: 'Old Town Saints', color: '#b04dff', shirt: '#6a2c91', pants: '#1b1b2a' }, dragons: { name: 'Lucky Dragons', color: '#14c8b4', shirt: '#0f8a7c', pants: '#1a1a1a' }, raiders: { name: 'Industrial Raiders', color: '#ff8c1a', shirt: '#c4600f', pants: '#2b2b2b', weapon: 'shotgun' }, cartel: { name: 'Bors Cartel', color: '#45c24f', shirt: '#1f6e2c', pants: '#e8e2d0', weapon: 'smg' } };
 function gangAt(x, y) {
   const C = G.city; if (!C) return 'saints';
-  const c = clamp(Math.floor(x / C.pitch), 0, C.cols - 1), r = clamp(Math.floor(y / C.pitch), 0, C.rows - 1), b = C.blocks[r * C.cols + c];
-  if (b && b.district === 'littlebors') return 'dragons';
+  const c = clamp(Math.floor((x - C.road / 2) / C.pitch), 0, C.cols - 1), r = clamp(Math.floor((y - C.road / 2) / C.pitch), 0, C.rows - 1), b = C.blocks[r * C.cols + c];   // v24: sidewalks belong to the block they surround
+  if (b && b.gang) return b.gang;
   return x > C.W / 2 ? 'rats' : 'saints';
 }
 const TERR = { killsToStart: 3, killWindow: 90, waves: 3, warSec: 150, leaveDist: 950, reward: 300, income: 50, incomeSec: 120, bankCap: 3000 };
 const TERR_KEY = 'gb_turf';
-function gangDress(p) { const C = G.city; if (!C) return; p.gang = gangAt(p.x, p.y); const g = GANGS[p.gang]; p.look = Object.assign({}, p.look, { shirt: g.shirt, pants: g.pants }); }
+function gangDress(p) { const C = G.city; if (!C) return; p.gang = gangAt(p.x, p.y); const g = GANGS[p.gang]; p.look = Object.assign({}, p.look, { shirt: g.shirt, pants: g.pants }); if (g.weapon && !p.proxy && chance(0.5)) p.weapon = g.weapon; }
 function terrOwned() { const L = G.city && G.city.territories; return L ? L.filter(T => T.owner === 'bors').length : 0; }
 function terrRect(T) { const b = T.blk, sw = G.city.sw; return { x: b.x - sw, y: b.y - sw, w: b.w + 2 * sw, h: b.h + 2 * sw }; }
 function terrAt(x, y) { const L = G.city && G.city.territories; if (!L) return null; for (const T of L) if (inRect(terrRect(T), x, y)) return T; return null; }
@@ -3311,7 +3394,7 @@ function territoryUpdate() {
     for (let i = alive; i < 3; i++) for (let k = 0; k < 20; k++) {
       const pt = edgePoint(T.blk, pick(['top', 'bottom', 'left', 'right']), rand(0.1, 0.9));
       if (G.city.cellCost(pt.x, pt.y) !== 1 || hitStatic(pt.x, pt.y, 13, false) || minPlayerDist(pt.x, pt.y) < 250) continue;
-      const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.terr = T; g.home = { x: pt.x, y: pt.y }; break;
+      const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.terr = T; g.home = { x: pt.x, y: pt.y }; if (g.gang !== T.gang) { g.gang = T.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[T.gang].shirt, pants: GANGS[T.gang].pants }); } break;
     }
   }
 }
@@ -3657,17 +3740,31 @@ function drawBubbles(V) {
 }
 // ---- v21: service buildings (Bors Memorial, Police HQ, Beard Barber)
 const SERVICE_LOOK = {
+  casino:   { label: 'BORS CASINO', c1: '#2a1838', c2: '#341d46', dot: '#ff4fd8', floor: '#5a1c2a', neon: true },
+  mall:     { label: 'BORS MALL', c1: '#d7dde4', c2: '#e3e8ee', dot: '#4dc3ff', floor: '#e6e2d8' },
   hospital: { label: 'BORS MEMORIAL', c1: '#d9dee3', c2: '#e6eaee', dot: '#ff6b6b', floor: '#eef3f6' },
   policehq: { label: 'POLICE HQ', c1: '#2f3b55', c2: '#38466a', dot: '#4d8bff', floor: '#b9bec7' },
   barber:   { label: 'BEARD BARBER', c1: '#7a2522', c2: '#8f2c28', dot: '#ffd24d', floor: '#e8e2d3' }
 };
-const STATION_BTN = { heal: 'HEAL', armor: 'ARMOR', locker: 'SHRED', armory: 'RAID', barber: 'TRIM' };
-const PRICE = { heal: 100, armor: 200, locker: 300, barber: 50 };
+const STATION_BTN = { heal: 'HEAL', armor: 'ARMOR', locker: 'SHRED', armory: 'RAID', barber: 'TRIM', comp: 'DRINK', slots: 'SPIN', roulette: 'BET', vip: 'HIGH', outfit: 'STYLE', arcade: 'PLAY', kiosk: 'GUNS', food: 'EAT' };
+const PRICE = { heal: 100, armor: 200, locker: 300, barber: 50, slots: 50, roulette: 100, vip: 500, outfit: 100, arcade: 20, food: 30 };
 const BEARDS = [['Classic', null], ['Jet black', '#141414'], ['Ginger', '#b5521f'], ['Silver fox', '#bdbdbd'], ['Golden', '#d8b04a'], ['Bors blue', '#2a5bd7']];
+const OUTFITS = [['Classic uniform', null, null], ['Miami vice', '#f4a3c4', '#e8e2d0'], ['Undercover black', '#1b1b1b', '#111111'], ['Hawaiian shirt', '#e8b436', '#2b4a6e'], ['Tracksuit', '#2a5bd7', '#2a5bd7'], ['Casino tux', '#f2f2f2', '#141414']];
 function myLook(ch) {
   const L = brotherLook(ch), i = G.settings.beardIdx | 0;
   if (i > 0 && i < BEARDS.length) L.beard = BEARDS[i][1];
+  const o = OUTFITS[G.settings.outfitIdx | 0]; if (o && o[1]) { L.shirt = o[1]; L.pants = o[2]; }
   return L;
+}
+function arcadeBest(v) {
+  if (v != null) { try { localStorage.gb_arcade = String(v); } catch (e) {} return v; }
+  let b = 0; try { b = parseInt(localStorage.gb_arcade, 10) || 0; } catch (e) {} return Math.max(0, Math.min(999999, b));
+}
+function gambleResult(win, stake, what) {
+  const P = G.player; G.gambleNet = (G.gambleNet || 0) + win - stake;
+  if (win) addCash(win, P.x, P.y);
+  const net = G.gambleNet, tail = 'Tonight: ' + (net >= 0 ? 'up $' + net : 'down $' + (-net));
+  toast((win ? 'WINNER! +$' + win : 'HOUSE WINS') + '\n' + what + '. ' + tail, win ? 2 : 1.6); sfx(win ? 'cash' : 'click');
 }
 function nearStation(P) {
   const L = G.city && G.city.stations; if (!L || G.game !== 'roam' || !P || !P.alive || P.car || G.busted) return null;
@@ -3681,6 +3778,14 @@ function stationHint(st) {
     case 'armor': return 'body armor ($' + PRICE.armor + ')';
     case 'locker': return 'shred your file: clears stars ($' + PRICE.locker + ')' + cd('lockerT');
     case 'armory': return 'raid the armory (4 stars!)' + cd('armoryT');
+    case 'comp': return 'comp drink: +100 HP, on the house' + cd('compT');
+    case 'slots': return 'slot machine ($' + PRICE.slots + ' a spin)';
+    case 'roulette': return 'roulette: $' + PRICE.roulette + ' on red';
+    case 'vip': return 'high-roller table ($' + PRICE.vip + ')';
+    case 'outfit': return 'new outfit: ' + OUTFITS[((G.settings.outfitIdx | 0) + 1) % OUTFITS.length][0] + ' ($' + PRICE.outfit + ')';
+    case 'arcade': return 'Bors Blaster arcade ($' + PRICE.arcade + ', best ' + arcadeBest() + ')';
+    case 'kiosk': return 'Guns N\' Bors kiosk';
+    case 'food': return 'Bors Burger ($' + PRICE.food + ', +150 HP)';
     case 'barber': return 'beard trim: ' + BEARDS[((G.settings.beardIdx | 0) + 1) % BEARDS.length][0] + ' ($' + PRICE.barber + ')';
   }
   return '';
@@ -3709,6 +3814,41 @@ function useStation(st) {
       giveWeapon(P, 'bazooka', 3); giveWeapon(P, 'grenade', 3); giveWeapon(P, 'sniper', 10); giveWeapon(P, 'smg', 60); P.armor = 100;
       { const W = wantedOf(P), need = Math.max(0, 210 - (G.isSim ? W.heat : 0)); addHeat(G.isSim ? need : 210, P); }
       toast('ARMORY RAIDED!\nBazooka, grenades, sniper, armor. SWAT is on the way.', 2.4); sfx('alarm', null, null, 0.8); return;
+    case 'comp':
+      if (G.time < (G.compT || 0)) { toast('The bartender is busy\nNext drink in ' + Math.ceil(G.compT - G.time) + 's', 1.3); return; }
+      if (P.hp >= P.maxHp) { toast('You look fine\nMaybe later, high roller.', 1.3); return; }
+      G.compT = G.time + 120; P.hp = Math.min(P.maxHp, P.hp + 100); toast('COMP DRINK\nOn the house. +100 HP', 1.6); sfx('pickup'); return;
+    case 'slots': {
+      if (!pay(PRICE.slots)) return;
+      const r = Math.random(), win = r < 0.005 ? 2000 : r < 0.045 ? 300 : r < 0.245 ? 100 : 0;   // pays back about 84%: the house wins in the long run
+      gambleResult(win, PRICE.slots, win >= 2000 ? 'JACKPOT!!! \uD83C\uDF52\uD83C\uDF52\uD83C\uDF52' : win ? 'Three of a kind' : 'Two cherries and a lemon'); return;
+    }
+    case 'roulette': {
+      if (!pay(PRICE.roulette)) return;
+      const n = Math.floor(Math.random() * 37), red = n > 0 && [1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36].indexOf(n) >= 0;
+      gambleResult(red ? 200 : 0, PRICE.roulette, n + (n === 0 ? ' green' : red ? ' red' : ' black')); return;
+    }
+    case 'vip': {
+      if (!pay(PRICE.vip)) return;
+      const win = Math.random() < 0.46 ? 1000 : 0;
+      gambleResult(win, PRICE.vip, win ? 'Royal flush. Probably legit.' : 'The dealer had aces. Again.'); return;
+    }
+    case 'outfit':
+      if (!pay(PRICE.outfit)) return;
+      G.settings.outfitIdx = ((G.settings.outfitIdx | 0) + 1) % OUTFITS.length; saveSettings();
+      { const o = OUTFITS[G.settings.outfitIdx]; P.look = Object.assign({}, P.look, o[1] ? { shirt: o[1], pants: o[2] } : (P.char === 'mafl' || P.char === 'bary') ? { shirt: brotherLook(P.char).shirt, pants: brotherLook(P.char).pants } : {}); toast('LOOKING SHARP\n' + o[0], 1.6); }
+      sfx('pickup'); return;
+    case 'arcade': {
+      if (!pay(PRICE.arcade)) return;
+      const sc = Math.round((800 + Math.random() * 9000) * (0.6 + Math.random() * 0.6) / 10) * 10, best = arcadeBest();
+      if (sc > best) { arcadeBest(sc); addCash(150, P.x, P.y); addRep(15); toast('NEW HIGH SCORE: ' + sc + '\nBors Blaster champion. +$150', 2.2); sfx('mission'); }
+      else toast('BORS BLASTER\nScore ' + sc + '. Best ' + best + '. Insert coin.', 1.8);
+      return;
+    }
+    case 'kiosk': openShop(); return;
+    case 'food':
+      if (P.hp >= P.maxHp) { toast('You\'re full\nEven Bors Brothers have limits.', 1.3); return; }
+      if (!pay(PRICE.food)) return; P.hp = Math.min(P.maxHp, P.hp + 150); toast('BORS BURGER\nDouble beef, extra cheese. +150 HP', 1.6); sfx('pickup'); return;
     case 'barber': {
       if ((P.char !== 'mafl' && P.char !== 'bary')) { toast('Grow a beard first\nAssistant Consultants are clean-shaven.', 1.6); return; }
       if (!pay(PRICE.barber)) return;
@@ -3729,12 +3869,31 @@ function drawServiceFloor(S) {
     ctx.fillStyle = '#2b2b2b'; for (let k = 0; k < 4; k++) ctx.fillRect(S.x + 22 + k * 12, S.y + S.h - 30, 9, 18);
     ctx.fillStyle = '#4a4a4a'; ctx.fillRect(S.x + S.w - 80, S.y + S.h - 30, 60, 16); ctx.fillStyle = '#c0392b'; ctx.fillRect(S.x + S.w - 76, S.y + S.h - 26, 10, 8);
     ctx.fillStyle = 'rgba(77,139,255,.25)'; ctx.fillRect(S.x + S.w / 2 - 30, S.y + 20, 60, 26); ctx.fillStyle = '#1d3d97'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('TO SERVE & PROTECT', S.x + S.w / 2, S.y + 34);
+  } else if (S.kind === 'casino') {
+    const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
+    rf(Rm.lobby, '#3a2a1e'); rf(Rm.floor, '#5a1c2a'); rf(Rm.vip, '#2a1a3a'); rf(Rm.vault, '#4c535c');
+    ctx.strokeStyle = 'rgba(232,197,71,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = Rm.floor[0] + t; x < Rm.floor[0] + Rm.floor[2] - t; x += 18) { ctx.moveTo(x, Rm.floor[1] + t); ctx.lineTo(x + 9, Rm.floor[1] + Rm.floor[3] - t); } ctx.stroke();
+    ctx.fillStyle = '#6b4226'; ctx.fillRect(Rm.lobby[0] + 22, Rm.lobby[1] + 22, 80, 12);
+    for (const st of G.city.stations) if (st.b === S && st.type === 'slots') for (let k = -1; k <= 1; k++) { ctx.fillStyle = '#2b2b2b'; ctx.fillRect(st.x + k * 16 - 6, st.y - 26, 12, 14); ctx.fillStyle = ['#ff3b3b', '#ffd24d', '#3aa655'][(k + 1 + Math.floor(G.time * 4)) % 3]; ctx.fillRect(st.x + k * 16 - 3, st.y - 23, 6, 6); }
+    { const st = G.city.stations.find(q => q.b === S && q.type === 'roulette'); if (st) { ctx.fillStyle = '#1e6b3a'; roundRect(ctx, st.x - 46, st.y - 40, 92, 22, 10); ctx.fill(); ctx.save(); ctx.translate(st.x + 30, st.y - 29); ctx.rotate(G.time * 3); for (let k = 0; k < 8; k++) { ctx.fillStyle = k % 2 ? '#c0392b' : '#111'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, 9, k * Math.PI / 4, (k + 1) * Math.PI / 4); ctx.fill(); } ctx.restore(); } }
+    { const st = G.city.stations.find(q => q.b === S && q.type === 'vip'); if (st) { ctx.fillStyle = '#1e6b3a'; circle(ctx, st.x, st.y - 30, 16); ctx.strokeStyle = '#e8c547'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(st.x, st.y - 30, 16, 0, TAU); ctx.stroke(); } }
+    const v = Rm.vault; ctx.fillStyle = '#9aa3ad'; ctx.fillRect(v[0] + v[2] / 2 - 22, v[1] + 2, 44, 6); ctx.fillStyle = '#e8c547'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('COUNTING ROOM', v[0] + v[2] / 2, v[1] + v[3] / 2 - 6); ctx.fillStyle = '#ff6b6b'; ctx.fillText('STAFF ONLY', v[0] + v[2] / 2, v[1] + v[3] / 2 + 8);
+    ctx.fillStyle = '#3aa655'; for (let k = 0; k < 6; k++) { ctx.fillRect(v[0] + 20 + (k % 3) * 34, v[1] + v[3] - 26 - Math.floor(k / 3) * 10, 22, 7); }
+  } else if (S.kind === 'mall') {
+    const Rm = S.rooms, rf = (r, c) => { ctx.fillStyle = c; ctx.fillRect(r[0] + t, r[1] + t, r[2] - 2 * t, r[3] - 2 * t); };
+    rf(Rm.concourse, '#ece8de'); rf(Rm.clothes, '#f3d9e4'); rf(Rm.arcade, '#1b1d3a'); rf(Rm.food, '#e9dcc4');
+    ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.lineWidth = 1; ctx.beginPath(); for (let y = Rm.concourse[1] + t; y < Rm.concourse[1] + Rm.concourse[3]; y += 16) { ctx.moveTo(Rm.concourse[0] + t, y); ctx.lineTo(Rm.concourse[0] + Rm.concourse[2] - t, y); } ctx.stroke();
+    for (let k = 0; k < 3; k++) { ctx.fillStyle = '#2b2b2b'; ctx.fillRect(Rm.clothes[0] + 18 + k * 22, Rm.clothes[1] + Rm.clothes[3] - 34, 4, 22); ctx.fillStyle = ['#f4a3c4', '#e8b436', '#2a5bd7'][k]; ctx.fillRect(Rm.clothes[0] + 14 + k * 22, Rm.clothes[1] + Rm.clothes[3] - 30, 12, 14); }
+    for (let k = 0; k < 3; k++) { const ax = Rm.arcade[0] + 20 + k * 22, ay = Rm.arcade[1] + Rm.arcade[3] - 36; ctx.fillStyle = '#2b2b2b'; ctx.fillRect(ax, ay, 16, 22); ctx.fillStyle = ['#ff4fd8', '#4dc3ff', '#7dff4d'][(k + Math.floor(G.time * 2)) % 3]; ctx.fillRect(ax + 3, ay + 3, 10, 8); }
+    for (let k = 0; k < 4; k++) { const tx = Rm.food[0] + 40 + k * 64, ty = Rm.food[1] + Rm.food[3] - 34; ctx.fillStyle = '#b5651d'; circle(ctx, tx, ty, 11); }
+    ctx.fillStyle = '#d62828'; ctx.fillRect(Rm.food[0] + Rm.food[2] / 2 - 40, Rm.food[1] + t + 2, 80, 10); ctx.fillStyle = '#fff'; ctx.font = 'bold 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS BURGER', Rm.food[0] + Rm.food[2] / 2, Rm.food[1] + t + 7);
+    ctx.fillStyle = '#1d3d97'; ctx.font = 'bold 10px system-ui, sans-serif'; ctx.fillText('STYLE', Rm.clothes[0] + Rm.clothes[2] / 2, Rm.clothes[1] + t + 12); ctx.fillStyle = '#ff4fd8'; ctx.fillText('ARCADE', Rm.arcade[0] + Rm.arcade[2] / 2, Rm.arcade[1] + t + 12);
   } else {
     ctx.fillStyle = '#c9c2b0'; ctx.fillRect(S.x + t + 4, S.y + t + 4, S.w - 2 * t - 8, 10);
     for (let k = 0; k < 2; k++) { const cx = S.x + 58 + k * 60, cy = S.y + 78; ctx.fillStyle = '#2b2b2b'; circle(ctx, cx, cy - 18, 10); ctx.fillStyle = '#7a2522'; circle(ctx, cx, cy - 18, 7); }
     ctx.fillStyle = '#e8e8e8'; ctx.fillRect(S.x + S.w - 34, S.y + 20, 10, 40); ctx.fillStyle = '#d62828'; for (let y = S.y + 22; y < S.y + 58; y += 8) ctx.fillRect(S.x + S.w - 34, y, 10, 3);
   }
-  for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
+  for (const st of G.city.stations) if (st.b === S) { const c = { heal: '#2ea44f', armor: '#4dc3ff', locker: '#8a8a8a', armory: '#c0392b', barber: '#d8b04a', comp: '#2ea44f', slots: '#e8b436', roulette: '#c0392b', vip: '#8e44ad', outfit: '#ff8fc7', arcade: '#4dc3ff', kiosk: '#3aa655', food: '#e67e22' }[st.type]; ctx.globalAlpha = 0.55 + 0.25 * Math.sin(G.time * 3); mark(st.x, st.y, c, STATION_BTN[st.type]); ctx.globalAlpha = 1; }
 }
 function speakerIcon(on) {   // drawn icon (no emoji font needed)
   return '<svg viewBox="0 0 24 24" width="60%" height="60%" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h4l5-4v14l-5-4H4z" fill="#fff"/>' +
@@ -3754,7 +3913,9 @@ const MISSION_INFO = {
   story4: { cat: 'story', title: '4. Showdown at Bors Arena', desc: 'The rival bosses want their city back. Needs the Heist and half the turf.', need: ['heist1'], turf: true },
   side1: { cat: 'side', title: 'Donut Duty', desc: 'Five donut shops against the clock. Sugar rush included.', need: [] },
   chal1: { cat: 'chal', title: 'Rampage (West)', desc: '30 seconds, at least 8 gang kills.', need: [] },
-  chal2: { cat: 'chal', title: 'Rampage (East)', desc: 'Same rules, tougher corner of town.', need: ['chal1'] }
+  chal2: { cat: 'chal', title: 'Rampage (East)', desc: 'Same rules, tougher corner of town.', need: ['chal1'] },
+  side2: { cat: 'side', title: 'Card Sharks', desc: 'Cartel card cheats are cleaning out Bors Casino. Clear the floor, VIP lounge included.', need: [] },
+  side3: { cat: 'side', title: 'Mall Rats', desc: 'Raiders are looting Bors Mall. Shop them out of business.', need: [] }
 };
 const MISSION_CATS = [['story', 'Main story'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
 function missionsDone() { if (!G.misDone) G.misDone = {}; return G.misDone; }
@@ -3812,7 +3973,7 @@ function renderMissionApp() {
   let h = '';
   for (const [cat, name] of MISSION_CATS) {
     h += '<p class="mcat">' + esc(name) + '</p>';
-    if (cat === 'gang') { h += '<div class="mrow"><div class="mtxt"><b>Turf ' + turf + '</b><small>Kill 3 gang members on a red, purple or teal block to start a gang war. Win it and the block turns Bors blue.</small></div></div>'; continue; }
+    if (cat === 'gang') { h += '<div class="mrow"><div class="mtxt"><b>Turf ' + turf + '</b><small>Kill 3 gang members on a rival gang block (red, purple, teal, orange or green) to start a gang war. Win it and the block turns Bors blue.</small></div></div>'; continue; }
     for (const x of L) {
       if (x.I.cat !== cat) continue;
       const label = x.active ? 'Active' : x.state === 'locked' ? 'Locked' : x.done ? 'Replay' : 'Play';
@@ -3823,6 +3984,53 @@ function renderMissionApp() {
   }
   $('missionList').innerHTML = h;
   for (const b of $('missionList').querySelectorAll('button[data-id]')) b.onclick = () => { const id = b.dataset.id; activateMission(G.activeId === id ? null : id); closeMissionApp(); };
+}
+// ---- v25: 'clear' missions (Card Sharks, Mall Rats) and interior patrons for the big buildings
+function serviceOf(kind) { return (G.city.services || []).find(s => s.kind === kind); }
+function clearStart(M, m, nP) {
+  const S = serviceOf(m.bld); if (!S) { failMission('Building closed'); return; }
+  M.S = S; M.timer = 150; M.gang = m.gang;
+  const rooms = Object.values(S.rooms).filter((r, i) => !(S.kind === 'casino' && i === 3));   // nobody spawns inside the locked counting room
+  const n = Math.max(4, Math.round(4 * D().count * (1 + 0.35 * (nP - 1))));
+  for (let i = 0; i < n; i++) {
+    const r = rooms[i % rooms.length];
+    for (let k = 0; k < 30; k++) {
+      const x = r[0] + 30 + Math.random() * (r[2] - 60), y = r[1] + 30 + Math.random() * (r[3] - 60);
+      if (pedBlocked({ r: 13 }, x, y) || G.city.cellCost(x, y) !== 1) continue;
+      const g = spawnGang(x, y, null, FLANKS[i % 5], GANGS[m.gang].weapon || null);
+      g.gang = m.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[m.gang].shirt, pants: GANGS[m.gang].pants });
+      g.home = { x, y }; g.mission = M; g.sight = 420; M.targets.push(g); break;
+    }
+  }
+  M.objective = { x: S.door.x, y: S.door.y };
+  M.text = M.marker.label + ': ' + M.targets.length + ' ' + GANGS[m.gang].name + ' inside';
+  newsAll(M.marker.label.toUpperCase() + '\n' + (S.kind === 'casino' ? 'Cartel card cheats on the casino floor. Clean them out.' : 'Raiders are looting the mall. Ring them up.'), 2.4, 'mission');
+}
+function clearUpdate(M) {
+  const alive = M.targets.filter(g => g.alive);
+  if (!alive.length) { completeMission(M.S.kind === 'casino' ? 900 : 700, M.S.kind === 'casino' ? 'The house thanks you. Comp drinks for life (every 2 minutes).' : 'Mall security wants to hire you. You said no.'); return; }
+  const q0 = missionPlayersUp()[0]; const qp = q0 ? posOf(q0) : M.S.door;
+  const inside = q0 && inRect(M.S, qp.x, qp.y);
+  if (!inside) M.objective = { x: M.S.door.x, y: M.S.door.y };
+  else { const n = alive.slice().sort((a, b) => dist(a.x, a.y, qp.x, qp.y) - dist(b.x, b.y, qp.x, qp.y))[0]; M.objective = { x: n.x, y: n.y }; }
+  M.text = M.marker.label + ': ' + alive.length + ' left' + (inside ? '' : ' (get inside)') + ' (' + Math.ceil(M.timer) + 's)';
+}
+function interiorPatrons() {
+  const L = G.city.services; if (!L || !G.isSim || G.game !== 'roam' || G.time < (G.patronT || 0)) return;
+  G.patronT = G.time + 2;
+  for (const S of L) {
+    if (!S.spots || !S.spots.length) continue;
+    const cx = S.x + S.w / 2, cy = S.y + S.h / 2; let near = false, inside = false;
+    for (const q of allPlayers()) { const qp = posOf(q); if (dist(qp.x, qp.y, cx, cy) < 900) near = true; if (inRect(S, qp.x, qp.y)) inside = true; }
+    if (!near || inside || (G.mission && G.mission.S === S) || G.peds.length > CFG.world.maxPeds - 8) continue;
+    let n = 0; for (const p of G.peds) if (p.alive && p.patronOf === S) n++;
+    if (n >= S.spots.length) continue;
+    const free = S.spots.filter(sp => !G.peds.some(p => p.alive && dist(p.x, p.y, sp.x, sp.y) < 20));
+    if (!free.length) continue;
+    const sp = free[Math.floor(Math.random() * free.length)], p = spawnCiv(sp.x, sp.y);
+    p.patronOf = S; p.stay = true; p.stayA = rand(0, TAU); p.a = p.stayA;
+    if (S.kind === 'casino') p.look = Object.assign({}, p.look, { shirt: pick(['#141414', '#f2f2f2', '#6b1f5c', '#1d3d97']) });
+  }
 }
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
@@ -4243,6 +4451,10 @@ function drawGround(V) {
       if (!burnt) { ctx.fillStyle = '#d62828'; ctx.fillRect(b.x + 30, b.y + 42, b.w - 60, 9); ctx.fillStyle = '#fff'; ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS FUEL', b.x + b.w / 2, b.y + 47); }
       ctx.strokeStyle = 'rgba(0,0,0,.15)'; ctx.lineWidth = 1; ctx.strokeRect(b.x + 30, b.y + 42, b.w - 60, 84);
     }
+    else if (b.district === 'richhills') { ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let k = 0; k < 2; k++) ctx.fillRect(b.x + 24 + k * b.w / 2, b.y + 150, b.w / 2 - 48, 26); ctx.fillStyle = '#3e6e30'; ctx.fillRect(b.x, b.y + b.h - 30, b.w, 14); }
+    else if (b.district === 'docklands') { ctx.strokeStyle = 'rgba(232,197,71,.6)'; ctx.lineWidth = 3; ctx.setLineDash([16, 10]); line(ctx, b.x + 10, b.y + 108, b.x + b.w - 10, b.y + 108); ctx.setLineDash([]); }
+    else if (b.district === 'trailer') { ctx.fillStyle = 'rgba(60,40,20,.18)'; for (let k = 0; k < 30; k++) ctx.fillRect(b.x + ((k * 67) % b.w), b.y + ((k * 113) % b.h), 6, 3); }
+    else if (b.district === 'prison' && b.bridge) { const br = b.bridge; ctx.fillStyle = '#7a5a34'; ctx.fillRect(br.x, br.y, br.w, br.h); ctx.strokeStyle = 'rgba(0,0,0,.3)'; ctx.lineWidth = 1; ctx.beginPath(); for (let y = br.y + 4; y < br.y + br.h; y += 6) { ctx.moveTo(br.x, y); ctx.lineTo(br.x + br.w, y); } ctx.stroke(); }
     else if (b.district === 'beach') {
       ctx.fillStyle = 'rgba(160,120,60,.12)'; for (let k = 0; k < 40; k++) { const x = b.x + ((k * 73) % b.w), y = b.y + 60 + ((k * 131) % (b.h - 160)); ctx.fillRect(x, y, 3, 2); }
       ctx.fillStyle = '#8a5a34'; ctx.fillRect(b.x, b.y + 30, b.w, 26); ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = b.x + 6; x < b.x + b.w; x += 9) { ctx.moveTo(x, b.y + 30); ctx.lineTo(x, b.y + 56); } ctx.stroke();
@@ -4269,7 +4481,7 @@ function drawGround(V) {
       ctx.strokeStyle = 'rgba(255,255,255,.07)'; ctx.lineWidth = 1; ctx.beginPath(); for (let x = V2.x; x < V2.x + V2.w; x += 12) { ctx.moveTo(x, V2.y); ctx.lineTo(x, V2.y + V2.h); } ctx.stroke();
       for (const L of S.loot) if (!L.taken) { ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(L.x - 12, L.y - 6, 26, 16); ctx.fillStyle = '#3f9a45'; ctx.fillRect(L.x - 14, L.y - 9, 26, 16); ctx.fillStyle = '#7dff4d'; ctx.fillRect(L.x - 12, L.y - 6, 22, 3); ctx.fillStyle = '#e8c547'; ctx.fillRect(L.x - 2, L.y - 9, 3, 16); }
     }
-    else if ((b.district === 'hospital' || b.district === 'policehq' || b.district === 'barber') && G.city.services) {
+    else if ((b.district === 'hospital' || b.district === 'policehq' || b.district === 'barber' || b.district === 'casino' || b.district === 'mall') && G.city.services) {
       const S = G.city.services.find(q => q.kind === b.district); if (S) drawServiceFloor(S);
     }
     else if (b.district === 'bar' && G.city.bar) {
@@ -4323,6 +4535,28 @@ function drawGroundProps(V) {
   }
 }
 function drawBuilding(b) {
+  if (b.kind === 'trailer') {
+    ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.fillRect(b.x + 4, b.y + 5, b.w, b.h);
+    ctx.fillStyle = b.color; roundRect(ctx, b.x, b.y, b.w, b.h, 6); ctx.fill();
+    ctx.fillStyle = '#b5651d'; ctx.fillRect(b.x + 4, b.y + b.h / 2 - 2, b.w - 8, 4);
+    ctx.fillStyle = '#5a6b7a'; for (let x = b.x + 8; x < b.x + b.w - 8; x += 14) ctx.fillRect(x, b.y + 4, 7, 5);
+    return;
+  }
+  if (b.kind === 'scrapcar') {
+    ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.fillRect(b.x + 3, b.y + 3, b.w, b.h);
+    ctx.fillStyle = b.color; roundRect(ctx, b.x, b.y, b.w, b.h, 4); ctx.fill();
+    ctx.fillStyle = 'rgba(30,20,10,.55)'; ctx.fillRect(b.x + 6, b.y + 3, b.w - 12, b.h - 6); ctx.fillStyle = '#8a4a1a'; circle(ctx, b.x + 8, b.y + 4, 3); circle(ctx, b.x + b.w - 6, b.y + b.h - 4, 2.5);
+    return;
+  }
+  if (b.kind === 'prison') {
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(b.x + 10, b.y + 10, b.w, b.h);
+    ctx.fillStyle = b.color; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.strokeStyle = '#4a5158'; ctx.lineWidth = 5; ctx.strokeRect(b.x + 2.5, b.y + 2.5, b.w - 5, b.h - 5);
+    ctx.fillStyle = '#5c646b'; for (const [tx, ty] of [[b.x, b.y], [b.x + b.w, b.y], [b.x, b.y + b.h], [b.x + b.w, b.y + b.h]]) { ctx.fillRect(tx - 9, ty - 9, 18, 18); ctx.fillStyle = (G.time * 2) % 2 < 1 ? '#ffd24d' : '#5c646b'; circle(ctx, tx, ty, 3); ctx.fillStyle = '#5c646b'; }
+    ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = b.y + 14; y < b.y + b.h - 8; y += 12) ctx.fillRect(b.x + 12, y, b.w - 24, 4);
+    ctx.fillStyle = labelOn(b.color); ctx.font = 'bold 12px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('BORS PENITENTIARY', b.x + b.w / 2, b.y + b.h / 2);
+    return;
+  }
   if (b.kind === 'plane') {
     const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
     ctx.fillStyle = 'rgba(0,0,0,.22)'; ctx.beginPath(); ctx.moveTo(cx - 10 + 12, cy - 80 + 14); ctx.lineTo(cx + 20 + 12, cy + 14); ctx.lineTo(cx - 10 + 12, cy + 80 + 14); ctx.lineTo(cx - 30 + 12, cy + 14); ctx.closePath(); ctx.fill();
@@ -4398,7 +4632,7 @@ function drawBuilding(b) {
     return;
   }
   if (b.kind === 'water') {
-    ctx.fillStyle = '#2c5f8a'; ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = b.pool ? '#3fb3e0' : '#2c5f8a'; ctx.fillRect(b.x, b.y, b.w, b.h);
     ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 2; const t = G.time;
     for (let y = b.y + 10; y < b.y + b.h - 4; y += 18) { ctx.beginPath(); for (let x = b.x + 4; x < b.x + b.w - 4; x += 8) { const yy = y + Math.sin(x * 0.08 + t * 1.8 + y) * 2; if (x === b.x + 4) ctx.moveTo(x, yy); else ctx.lineTo(x, yy); } ctx.stroke(); }
     ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 3; ctx.strokeRect(b.x + 1.5, b.y + 1.5, b.w - 3, b.h - 3);
@@ -4467,7 +4701,8 @@ function drawBuilding(b) {
     const horiz = b.w >= b.h;
     ctx.fillStyle = shade(b.color, -0.22); if (horiz) ctx.fillRect(b.x, b.y + b.h / 2, b.w, b.h / 2); else ctx.fillRect(b.x + b.w / 2, b.y, b.w / 2, b.h);
     ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.lineWidth = 1.5; if (horiz) line(ctx, b.x, b.y + b.h / 2, b.x + b.w, b.y + b.h / 2); else line(ctx, b.x + b.w / 2, b.y, b.x + b.w / 2, b.y + b.h);
-    if (!b.narrow) { ctx.fillStyle = '#5a4a44'; ctx.fillRect(b.x + b.w * 0.7, b.y + b.h * 0.22, 8, 8); }
+    if (!b.narrow && !b.villa) { ctx.fillStyle = '#5a4a44'; ctx.fillRect(b.x + b.w * 0.7, b.y + b.h * 0.22, 8, 8); }
+    if (b.villa) { ctx.fillStyle = 'rgba(255,255,255,.35)'; ctx.fillRect(b.x + 6, b.y + b.h - 8, b.w - 12, 4); }
     if (b.pagoda) { ctx.fillStyle = '#e8c547'; if (horiz) { ctx.fillRect(b.x - 2, b.y + b.h / 2 - 1.5, b.w + 4, 3); ctx.fillRect(b.x - 3, b.y, 3, 5); ctx.fillRect(b.x + b.w, b.y, 3, 5); } else { ctx.fillRect(b.x + b.w / 2 - 1.5, b.y - 2, 3, b.h + 4); ctx.fillRect(b.x, b.y - 3, 5, 3); ctx.fillRect(b.x, b.y + b.h, 5, 3); } }
   } else if (b.kind === 'warehouse') {
     ctx.strokeStyle = 'rgba(0,0,0,.18)'; ctx.lineWidth = 2; ctx.beginPath(); for (let x = b.x + 20; x < b.x + b.w; x += 20) { ctx.moveTo(x, b.y + 4); ctx.lineTo(x, b.y + b.h - 4); } ctx.stroke();
@@ -4500,7 +4735,7 @@ function drawRoof(V, S, key, label, c1, c2, neon) {
 function drawSafehouseRoof(V) {
   drawRoof(V, G.city.safehouse, 'roofA', 'BORS HQ', '#6b3a2a', '#7e4632', false);
   drawRoof(V, G.city.bar, 'barRoofA', 'THE BORS BAR', '#2b2b33', '#35353f', true);
-  for (const S of G.city.services || []) { const L2 = SERVICE_LOOK[S.kind]; drawRoof(V, S, 'roof_' + S.kind, L2.label, L2.c1, L2.c2, false); }
+  for (const S of G.city.services || []) { const L2 = SERVICE_LOOK[S.kind]; drawRoof(V, S, 'roof_' + S.kind, L2.label, L2.c1, L2.c2, !!L2.neon); }
   drawRoof(V, G.city.bank, 'bankRoofA', 'BORS NATIONAL BANK', '#6d7078', '#7c8089', false);
   drawBankOverlay(V);
 }
@@ -5752,7 +5987,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = myLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.compT = 0; G.gambleNet = 0; G.patronT = 0; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
