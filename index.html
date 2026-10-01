@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#070b1e">
-<title>Bors Bros V25</title>
+<title>Bors Bros V26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Russo+One&display=swap">
@@ -207,6 +207,12 @@
   .mrow .mtxt b { display: block; font-size: 14px; color: #fff; } .mrow .mtxt small { display: block; font-size: 12px; opacity: .8; line-height: 1.3; }
   .mrow button { min-height: 34px; padding: 6px 12px; font-size: 13px; flex: none; }
   body.phoneL #missionPanel { padding: 12px 12px 8px; gap: 6px; } body.phoneL .mrow { padding: 5px 8px; } body.phoneL .mrow .mtxt b { font-size: 12px; } body.phoneL .mrow .mtxt small { font-size: 10.5px; } body.phoneL .mrow button { min-height: 28px; padding: 3px 9px; font-size: 11px; }
+  #dialog { position: fixed; left: 0; right: 0; bottom: 70px; z-index: 30; display: flex; justify-content: center; pointer-events: none; }
+  #dialog .dlg { pointer-events: auto; width: min(640px, 92vw); background: rgba(8,12,30,.93); border: 1px solid rgba(255,207,63,.55); border-radius: 14px; padding: 14px 18px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.6); font-family: system-ui, -apple-system, sans-serif; color: #fff; }
+  #dlgWho { display: block; font-family: var(--display); letter-spacing: 1px; color: var(--gold); font-size: 15px; margin-bottom: 4px; }
+  #dlgText { margin: 0 0 10px; font-size: 15px; line-height: 1.4; }
+  #dlgBtns { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; } #dlgBtns button { min-height: 36px; padding: 6px 14px; font-size: 14px; }
+  body.phoneL #dialog { bottom: 8px; } body.phoneL #dialog .dlg { padding: 8px 12px 6px; width: min(560px, 70vw); } body.phoneL #dlgText { font-size: 12.5px; margin-bottom: 6px; } body.phoneL #dlgWho { font-size: 12px; } body.phoneL #dlgBtns button { min-height: 28px; font-size: 12px; padding: 3px 10px; }
   #rotate { position: absolute; top: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 6px 12px; border-radius: 8px; font-size: 13px; }
 </style>
 </head>
@@ -291,6 +297,7 @@
       <label>Controls</label><select id="setControls"><option value="mouse">Mouse: point to move</option><option value="classic">Classic: WASD + mouse aim</option></select>
       <label>Difficulty</label><select id="setDiff"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select>
       <label>Time of day</label><select id="setNight"><option value="day">Day</option><option value="night">Night</option></select>
+      <label>Rain</label><select id="setRain"><option value="on">On</option><option value="off">Off (faster on old phones)</option></select>
       <label>Partner (solo)</label><select id="setPartner"><option value="on">On</option><option value="off">Off</option></select>
       <label>Sound</label><select id="setSound"><option value="on">On</option><option value="off">Off</option></select>
     </div>
@@ -311,6 +318,7 @@
   </div>
 </div>
 
+<div id="dialog" hidden><div class="dlg"><b id="dlgWho"></b><p id="dlgText"></p><div id="dlgBtns"></div></div></div>
 <div id="missions" class="screen dim" hidden>
   <div class="panel" id="missionPanel"><h2>Missions</h2><p class="help" id="missionSub"></p><div id="missionList"></div><button id="missionClose" class="btn-glass">Close</button></div>
 </div>
@@ -371,7 +379,7 @@ const CFG = {
     hard:   { acc: 1.5, react: 0.6, dmg: 1.4, count: 1.4 }
   },
   economy: { killGang: 40, killCop: 20, mission: { hit: 500, delivery: 400, survive: 600 }, price: { smgAmmo: 150, shotgun: 200, armor: 250, health: 100, respray: 200 } },
-  cheats: { god: 'BORSGOD', guns: 'BORSGUNS', donuts: 'DONUTS', rogue: 'ROGUE', clean: 'CLEANSLATE', beard: 'BIGBEARD', slow: 'SLOWMO', rush: 'RUSHHOUR', night: 'NIGHTSHIFT', rain: 'BORSRAIN', army: 'GANGARMY' },   // type during play, or enter in the pause menu
+  cheats: { god: 'BORSGOD', guns: 'BORSGUNS', donuts: 'DONUTS', rogue: 'ROGUE', clean: 'CLEANSLATE', beard: 'BIGBEARD', slow: 'SLOWMO', rush: 'RUSHHOUR', night: 'NIGHTSHIFT', rain: 'BORSRAIN', army: 'GANGARMY', storm: 'RAINDANCE' },   // type during play, or enter in the pause menu
   colors: ['#ff4d4d', '#4dc3ff', '#7dff4d', '#ffd24d', '#d24dff', '#ff9a4d', '#4dffd2', '#ff4da6']
 };
 
@@ -566,7 +574,7 @@ function roleToast() {
   if (P.char === 'ac') toast('Welcome aboard, ' + P.roleCode + '\nAssistant Consultant. Coffee is in the back.', 3);
   else if (P.char !== G.settings.char) toast((G.settings.char === 'bary' ? 'BARY' : 'MaFl') + ' was taken\nYou are ' + P.roleCode + ' now', 2.6);
 }
-const GAME_VERSION = 25;   // rooms remember which version created them; different versions cannot share a city
+const GAME_VERSION = 26;   // rooms remember which version created them; different versions cannot share a city
 const CAR_KIND_LIST = ['sedan', 'compact', 'sport', 'van', 'taxi', 'police', 'tank', 'bike'];
 const WEAPON_LIST = ['none', 'bat', 'pistol', 'smg', 'shotgun'];
 const PED_KINDS = ['civ', 'gang', 'cop', 'swat'];
@@ -1197,6 +1205,17 @@ function buildCity(seed) {
     { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.25), type: 'clear', label: 'Card Sharks', id: 'side2', bld: 'casino', gang: 'cartel' },
     { ...ePt(blockAt(cc - 3, cr + 2), 'top', 0.25), type: 'clear', label: 'Mall Rats', id: 'side3', bld: 'mall', gang: 'raiders' }
   ] : []);
+  if (cols >= 18) {   // v26: Story Act I markers (solo campaign)
+    const by = k => city.blocks.find(b => b.district === k) || blockAt(cc, cr);
+    const dk = city.blocks.filter(b => b.district === 'docklands'), lb = city.blocks.filter(b => b.district === 'littlebors'), rh = city.blocks.filter(b => b.district === 'richhills');
+    city.missions.push(
+      { ...ePt(blockAt(cc + 3, cr + 1), 'top', 0.18), type: 'story', label: 'Bad Day at the Docks', id: 'act1' },
+      { ...ePt(dk[2] || by('docklands'), 'left', 0.5), type: 'story', label: 'Follow the Money', id: 'act2' },
+      { ...ePt(lb[3] || by('littlebors'), 'top', 0.5), type: 'story', label: 'Tiny Lou', id: 'act3' },
+      { ...ePt(blockAt(cc + 3, cr + 1), 'top', 0.82), type: 'story', label: 'Internal Affairs', id: 'act4' },
+      { ...ePt(blockAt(cc + 3, cr - 1), 'top', 0.75), type: 'story', label: 'The House Always Wins', id: 'act5' },
+      { ...ePt(rh[4] || by('richhills'), 'bottom', 0.5), type: 'story', label: "Velvet's Offer", id: 'act6' });
+  }
   for (const b of city.blocks) b.gang = gangForBlock(b, cols, rows, W);
   city.territories = [];
   for (const b of city.blocks) {
@@ -1495,7 +1514,7 @@ function damageCar(c, dmg, src) {
   c.hp -= dmg; c.lastHitT = G.time;
   if (c.driver && !isPlayerPed(c.driver) && c.driver.kind === 'civ' && c.hp < c.maxHp * 0.7) c.panicked = true;
   if (c.hp <= 0) {
-    c.hp = 0; c.dead = true; c.burnT = G.time + 2.6; c.byKill = src.by || null;
+    c.hp = 0; c.dead = true; c.deadT = G.time; c.burnT = G.time + 2.6; c.byKill = src.by || null;
     if (c.driver && !isPlayerPed(c.driver)) ejectDriver(c, true);
     addParticles('fire', c.x, c.y, 8);
     if (isPlayerPed(src.by)) addHeat(c.kind === 'police' ? 30 : 12, src.by);
@@ -1730,6 +1749,21 @@ function updateParticles(dt) {
     if (p.rot != null) p.rot += p.spin * dt;
   }
 }
+const WRECK_MAX = 60;                                   // seconds a wrecked car may stay before it is towed away
+const DECAL_LIFE = { blood: 300, scorch: 300, skid: 120 }, DECAL_HIDE = 180;   // seconds; after DECAL_HIDE they vanish as soon as they are off screen
+function wreckGone(c) {
+  if (c.driver && isPlayerPed(c.driver)) { const d = c.driver; d.car = null; c.driver = null; const sp = freeSpotNear(d, c.x, c.y); d.x = sp.x; d.y = sp.y; }
+  if (nearPlayerView(c.x, c.y, 60)) { addParticles('smoke', c.x, c.y, 10); addParticles('debris', c.x, c.y, 4); }
+}
+function decalsTick() {
+  if (G.time < (G.decalT || 0)) return; G.decalT = G.time + 2;
+  const D2 = G.decals; let j = 0;
+  for (let i = 0; i < D2.length; i++) { const d = D2[i], age = G.time - d.t, life = DECAL_LIFE[d.kind] || 300;
+    if (age > life || age < -1) continue;
+    if (age > DECAL_HIDE && d.kind !== 'skid' && !nearPlayerView(d.x, d.y, 80)) continue;
+    D2[j++] = d; }
+  D2.length = j;
+}
 function addDecal(kind, x, y, a, size, x2, y2) { const Dd = G.decals; if (Dd.length > 340) Dd.shift(); Dd.push({ kind, x, y, a, size, x2, y2, t: G.time }); }
 function addText(text, x, y, color) { G.texts.push({ text, x, y, color: color || '#fff', life: 1.2 }); if (G.texts.length > 30) G.texts.shift(); }
 function addTracer(x, y, x2, y2, w) { G.tracers.push({ x, y, x2, y2, t: G.time, w }); if (G.tracers.length > 60) G.tracers.shift(); }
@@ -1908,7 +1942,9 @@ function spawnerUpdate(dt) {
     else if (p.kind === 'gang' && !p.turf && !p.mission && d > R.despawnRadius && !seen) G.peds.splice(i, 1);
   }
   for (let i = G.cars.length - 1; i >= 0; i--) {
-    const c = G.cars[i]; if (c === P.car || (c.driver && isPlayerPed(c.driver))) continue;
+    const c = G.cars[i];
+    if (c.dead && !c.burnT) { if (c.deadT == null) c.deadT = G.time; if (G.time - c.deadT > WRECK_MAX) { wreckGone(c); removeCar(i); continue; } }   // v26: wrecks never block a road for more than a minute
+    if (c === P.car || (c.driver && isPlayerPed(c.driver))) continue;
     const d = minD(c.x, c.y), seen = nearPlayerView(c.x, c.y, 100), far = d > R.despawnRadius && !seen;
     if (c.dead && !c.burnT && G.time > c.wreckT && !seen) { removeCar(i); continue; }
     if (c.ai === 'traffic' && c.driver) { if (far || (c.blockedT > 10 && !seen)) removeCar(i); continue; }
@@ -2493,7 +2529,7 @@ function markersUpdate() {
       } else toast('Respray costs $' + CFG.economy.price.respray, 1.5);
     }
   }
-  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate(); interiorPatrons();
+  garageUpdate(); barUpdate(); bankUpdate(); gasUpdate(); territoryUpdate(); interiorPatrons(); decalsTick(); weatherTick();
   if (!G.isSim || G.mission) return;
   for (const T of allPlayers()) {
     if (!T.alive || T.car || isBusted(T)) continue;
@@ -2537,6 +2573,7 @@ function startMission(m, who) {
     M.objective = { x: wp.x, y: wp.y };
   } else if (m.type === 'heist') heistStart(M, nP);
   else if (m.type === 'clear') clearStart(M, m, nP);
+  else if (m.type === 'story') storyStart(M, m);
   else if (m.type === 'boss') bossStart(M, nP);
   else if (m.type === 'war') warStart(M, m, nP);
   else if (m.type === 'defend') defendStart(M, m, nP);
@@ -2550,7 +2587,7 @@ function missionUpdate(dt) {
   const P = G.player;
   if (G.mode === 'solo') { if (!P.alive || G.busted) { failMission(P.alive ? 'You got busted' : 'You died'); return; } }
   else if (!missionPlayersUp().length) { failMission('Everyone is down'); return; }
-  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else if (M.type === 'defend' && M.terr) failMission('The ' + GANGS[M.terr.gang].name + ' took your block'); else failMission('Out of time'); return; } }
+  if (M.timer > 0) { M.timer -= dt; if (M.timer <= 0 && M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'survive') { M.timer = 0; M.surviveDone = true; } else if (M.timer <= 0) { if (M.type === 'rampage') finishRampage(M); else if (M.type === 'story' && M.steps[M.si] && M.steps[M.si].t === 'lose') failMission('Varga\'s men caught up with you'); else if (M.type === 'defend' && M.terr) failMission('The ' + GANGS[M.terr.gang].name + ' took your block'); else failMission('Out of time'); return; } }
   if (M.type === 'hit') {
     const alive = M.targets.filter(g => g.alive);
     M.text = 'Take out the gang crew: ' + alive.length + ' left';
@@ -2598,6 +2635,7 @@ function missionUpdate(dt) {
     M.text = 'Donut Duty: shop ' + (M.idx + 1) + '/' + M.route.length + ' (' + Math.ceil(M.timer) + 's)';
   } else if (M.type === 'heist') { heistUpdate(M); return;
   } else if (M.type === 'clear') { clearUpdate(M); return;
+  } else if (M.type === 'story') { storyUpdate(M); return;
   } else if (M.type === 'boss') { bossUpdate(M); return;
   } else if (M.type === 'war') { warUpdate(M); return;
   } else if (M.type === 'defend') { defendUpdate(M); return;
@@ -3381,7 +3419,7 @@ function territoryUpdate() {
   if (!G.isSim) return;
   if (G.mode === 'solo') {                                     // protection money, collected at BORS HQ
     const own = terrOwned();
-    if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + own * TERR.income); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
+    if (own && G.time > (G.incomeT || 0)) { if (G.incomeT) { G.terrBank = Math.min(TERR.bankCap, (G.terrBank || 0) + Math.round(own * TERR.income * (storyAlign().rogue >= 2 ? 1.25 : 1))); saveTerritories(); } G.incomeT = G.time + TERR.incomeSec; }
     if (P && P.alive && !P.car && G.terrBank > 0 && G.city.safehouse && inRect(G.city.safehouse, P.x, P.y)) { const n = Math.round(G.terrBank); G.terrBank = 0; addCash(n, P.x, P.y); toast('PROTECTION MONEY\n+$' + n + ' from your ' + own + ' blocks', 2.2); sfx('cash'); saveTerritories(); }
   }
   counterAttackTick();
@@ -3776,7 +3814,7 @@ function stationHint(st) {
   switch (st.type) {
     case 'heal': return 'full check-up ($' + PRICE.heal + ')';
     case 'armor': return 'body armor ($' + PRICE.armor + ')';
-    case 'locker': return 'shred your file: clears stars ($' + PRICE.locker + ')' + cd('lockerT');
+    case 'locker': return 'shred your file: clears stars ($' + shredPrice() + ')' + cd('lockerT');
     case 'armory': return 'raid the armory (4 stars!)' + cd('armoryT');
     case 'comp': return 'comp drink: +100 HP, on the house' + cd('compT');
     case 'slots': return 'slot machine ($' + PRICE.slots + ' a spin)';
@@ -3804,7 +3842,7 @@ function useStation(st) {
     case 'locker':
       if (G.time < (G.lockerT || 0)) { toast('The shredder is overheating\nReady in ' + Math.ceil(G.lockerT - G.time) + 's', 1.4); return; }
       if (G.wanted.stars === 0) { toast('Your file is spotless\nFor once.', 1.4); return; }
-      if (!pay(PRICE.locker)) return; G.lockerT = G.time + 240;
+      if (!pay(shredPrice())) return; G.lockerT = G.time + 240;
       if (G.isSim) { clearWanted(P); for (const p of G.peds) if ((p.kind === 'cop' || p.kind === 'swat') && p.alive && p.target === P) { p.state = 'idle'; p.stateT = G.time + 3; p.path = null; p.home = { x: p.x, y: p.y }; } }
       else { netEvent({ t: 'respray' }); G.wanted.stars = 0; }
       toast('EVIDENCE SHREDDED\nReturn to sender. Stars cleared.', 2.2); sfx('mission'); return;
@@ -3906,28 +3944,35 @@ function toggleMute() {
 // ---- v23: Mission app. Missions have stable IDs; finishing one unlocks the next. Only the chosen mission shows on the map.
 const MIS_KEY = 'gb_missions';
 const MISSION_INFO = {
-  story1: { cat: 'story', title: '1. Gang Hit', desc: 'Take out a gang crew holed up in a corner hideout.', need: [] },
-  story2: { cat: 'story', title: '2. Hot Delivery', desc: 'Grab the marked sports car and bring it to the garage in one piece.', need: ['story1'] },
-  story3: { cat: 'story', title: '3. Turf War', desc: 'Hold your ground for 60 seconds while the gangs come in waves.', need: ['story2'] },
+  act1: { cat: 'story', solo: true, title: 'Act I.1 Bad Day at the Docks', desc: 'Captain Briggs has a tip: the Harbour Rats are moving stolen police rifles through the docks.', need: [] },
+  act2: { cat: 'story', solo: true, title: 'Act I.2 Follow the Money', desc: 'A Rats courier is driving the cash away. Stop that car.', need: ['act1'] },
+  act3: { cat: 'story', solo: true, title: 'Act I.3 Tiny Lou', desc: 'Your old informant in Little Bors knows whose ledger this is. Your call how you get it.', need: ['act2'] },
+  act4: { cat: 'story', solo: true, title: 'Act I.4 Internal Affairs', desc: 'Someone ratted you out. Shake off your own colleagues.', need: ['act3'] },
+  act5: { cat: 'story', solo: true, title: 'Act I.5 The House Always Wins', desc: 'Velvet\'s money men count the dirty cash at Bors Casino. Crash the party.', need: ['act4'] },
+  act6: { cat: 'story', solo: true, title: "Act I.6 Velvet's Offer", desc: 'Councilman Victor Velvet invites you to his villa in Rich Hills. Bring a decision.', need: ['act5'] },
+  story1: { cat: 'street', title: '1. Gang Hit', desc: 'Take out a gang crew holed up in a corner hideout.', need: [] },
+  story2: { cat: 'street', title: '2. Hot Delivery', desc: 'Grab the marked sports car and bring it to the garage in one piece.', need: ['story1'] },
+  story3: { cat: 'street', title: '3. Turf War', desc: 'Hold your ground for 60 seconds while the gangs come in waves.', need: ['story2'] },
   heist1: { cat: 'heist', title: 'The Bors Heist', desc: 'Guards, a vault, five stars and a drop-off. Unlocks after Turf War.', need: ['story3'] },
-  story4: { cat: 'story', title: '4. Showdown at Bors Arena', desc: 'The rival bosses want their city back. Needs the Heist and half the turf.', need: ['heist1'], turf: true },
+  story4: { cat: 'street', title: '4. Showdown at Bors Arena', desc: 'The rival bosses want their city back. Needs the Heist and half the turf.', need: ['heist1'], turf: true },
   side1: { cat: 'side', title: 'Donut Duty', desc: 'Five donut shops against the clock. Sugar rush included.', need: [] },
   chal1: { cat: 'chal', title: 'Rampage (West)', desc: '30 seconds, at least 8 gang kills.', need: [] },
   chal2: { cat: 'chal', title: 'Rampage (East)', desc: 'Same rules, tougher corner of town.', need: ['chal1'] },
   side2: { cat: 'side', title: 'Card Sharks', desc: 'Cartel card cheats are cleaning out Bors Casino. Clear the floor, VIP lounge included.', need: [] },
   side3: { cat: 'side', title: 'Mall Rats', desc: 'Raiders are looting Bors Mall. Shop them out of business.', need: [] }
 };
-const MISSION_CATS = [['story', 'Main story'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
+const MISSION_CATS = [['story', 'Story: Act I - Badge & Burn'], ['street', 'Street cases'], ['heist', 'Heists'], ['gang', 'Gang turf'], ['side', 'Side jobs'], ['chal', 'Challenges']];
 function missionsDone() { if (!G.misDone) G.misDone = {}; return G.misDone; }
 function loadMissions() {
-  G.misDone = {}; G.activeId = null;
+  G.misDone = {}; G.activeId = null; G.story = { badge: 0, rogue: 0, picks: {} };
   if (G.mode !== 'solo') return;
   let d = null; try { d = JSON.parse(localStorage[MIS_KEY] || 'null'); } catch (e) { d = null; }
   if (!d || d.v !== 1) return;
   if (d.done && typeof d.done === 'object') for (const id in d.done) if (MISSION_INFO[id]) G.misDone[id] = 1;
   if (typeof d.active === 'string' && MISSION_INFO[d.active] && missionUnlocked(d.active)) G.activeId = d.active;
+  if (d.story && typeof d.story === 'object') { const b = Number(d.story.badge), r = Number(d.story.rogue); G.story = { badge: isFinite(b) ? clamp(Math.round(b), 0, 99) : 0, rogue: isFinite(r) ? clamp(Math.round(r), 0, 99) : 0, picks: {} }; if (d.story.picks && typeof d.story.picks === 'object') for (const k in d.story.picks) if (MISSION_INFO[k] && (d.story.picks[k] === 'badge' || d.story.picks[k] === 'rogue')) G.story.picks[k] = d.story.picks[k]; }
 }
-function saveMissions() { if (G.mode !== 'solo') return; try { localStorage[MIS_KEY] = JSON.stringify({ v: 1, done: missionsDone(), active: G.activeId || null }); } catch (e) {} }
+function saveMissions() { if (G.mode !== 'solo') return; try { localStorage[MIS_KEY] = JSON.stringify({ v: 1, done: missionsDone(), active: G.activeId || null, story: G.story || null }); } catch (e) {} }
 function missionUnlocked(id) { const I = MISSION_INFO[id]; if (!I) return false; if (G.mode === 'mp') return true; return I.need.every(n => missionsDone()[n]); }
 function markerById(id) { return G.city ? G.city.missions.find(m => m.id === id) : null; }
 function activeMarker() { return G.activeId ? markerById(G.activeId) : null; }
@@ -3936,7 +3981,8 @@ function missionList() {
   for (const id in MISSION_INFO) {
     const I = MISSION_INFO[id], m = markerById(id); if (!m) continue;
     let state = 'open', why = '';
-    if (!missionUnlocked(id)) { state = 'locked'; why = 'Finish ' + I.need.filter(n => !missionsDone()[n]).map(n => MISSION_INFO[n].title.replace(/^\d\. /, '')).join(', ') + ' first'; }
+    if (I.solo && G.mode === 'mp') { state = 'locked'; why = 'Story missions are solo only (for now)'; }
+    else if (!missionUnlocked(id)) { state = 'locked'; why = 'Finish ' + I.need.filter(n => !missionsDone()[n]).map(n => MISSION_INFO[n].title.replace(/^\d\. /, '')).join(', ') + ' first'; }
     else if (I.turf && !markerOpen(m)) { state = 'locked'; why = G.finaleDone ? 'Bors City is already yours' : 'Own ' + bossNeed() + ' turf blocks (you have ' + terrOwned() + ')'; }
     else if (G.time < (m.cooldownT || 0) && !(G.mission && G.mission.marker === m)) { state = 'wait'; why = m.cooldownT > 1e9 ? 'Running right now' : 'Back in ' + Math.ceil(m.cooldownT - G.time) + 's'; }
     out.push({ id, I, m, state, why, done: !!missionsDone()[id], active: G.activeId === id });
@@ -3957,7 +4003,7 @@ function activateMission(id, who) {
   who = who || G.player;
   if (!G.isSim) { netEvent({ t: 'activate', id: id || null }); G.activeId = id || null; return; }
   if (id && G.mission) { tellPlayer(who, 'Finish the current mission first\nOr fail it. We don\'t judge.'); return; }
-  if (id && !missionUnlocked(id)) return;
+  if (id && (!missionUnlocked(id) || (MISSION_INFO[id].solo && G.mode === 'mp'))) return;
   G.activeId = id || null; saveMissions();
   if (id) { const I = MISSION_INFO[id]; if (G.mode === 'mp') newsAll('NEXT JOB: ' + I.title + '\nchosen by ' + (who.name || 'a player') + '. Follow the arrow.', 2); else toast('NEXT JOB: ' + I.title + '\nFollow the yellow arrow to the marker.', 2); }
 }
@@ -3969,7 +4015,8 @@ function openMissionApp() {
 function closeMissionApp() { showScreen(null); if (G.mode === 'solo') G.paused = false; }
 function renderMissionApp() {
   const L = missionList(), turf = G.city.territories ? terrOwned() + '/' + G.city.territories.length : '0';
-  $('missionSub').textContent = (G.mode === 'mp' ? 'Shared with everyone in the room. ' : '') + 'Pick one job; only that one shows on the map.';
+  const al = storyAlign();
+  $('missionSub').textContent = (G.mode === 'mp' ? 'Shared with everyone in the room. ' : '') + 'Pick one job; only that one shows on the map.' + (G.mode === 'solo' && (al.badge || al.rogue) ? '  Badge ' + al.badge + ' \u00b7 Rogue ' + al.rogue : '');
   let h = '';
   for (const [cat, name] of MISSION_CATS) {
     h += '<p class="mcat">' + esc(name) + '</p>';
@@ -4032,6 +4079,185 @@ function interiorPatrons() {
     if (S.kind === 'casino') p.look = Object.assign({}, p.look, { shirt: pick(['#141414', '#f2f2f2', '#6b1f5c', '#1d3d97']) });
   }
 }
+// ---- v26: weather. Light rain from time to time (visual only); the host decides and everyone sees it.
+function weatherTick() {
+  const W = G.wx; if (!W) return;
+  const dt = clamp(G.time - (W.lastT == null ? G.time : W.lastT), 0, 0.25); W.lastT = G.time;
+  if (G.isSim && G.game === 'roam') {
+    if (W.target > 0 && G.time > W.until) { W.target = 0; W.next = G.time + 120 + Math.random() * 180; }
+    else if (W.target === 0 && G.time > W.next) { if (Math.random() < 0.4) { W.target = 0.5 + Math.random() * 0.5; W.until = G.time + 90 + Math.random() * 90; } else W.next = G.time + 90 + Math.random() * 120; }
+  }
+  W.level = approach(W.level, W.target, dt * 0.2);
+}
+function drawRain() {
+  const W = G.wx, k = W ? W.level : 0; if (k < 0.02 || G.settings.rain === false || G.phase !== 'playing') return;
+  ctx.fillStyle = 'rgba(18,28,48,' + (0.22 * k).toFixed(3) + ')'; ctx.fillRect(0, 0, cw, ch);
+  const n = Math.round((isTouch ? 70 : 140) * k), t = performance.now() / 1000;
+  ctx.strokeStyle = 'rgba(200,220,255,' + (0.45 + 0.25 * k).toFixed(2) + ')'; ctx.lineWidth = 1.5; ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const sx = ((i * 97.13) % 1) || ((i * 0.6180339) % 1), sp = 0.8 + ((i * 37) % 10) / 25;
+    const y = ((((i * 0.371) % 1) + t * 1.1 * sp) % 1) * (ch + 40) - 20, x = (((i * 0.6180339) % 1) * (cw + 60) + y * 0.18) % (cw + 60) - 30;
+    ctx.moveTo(x, y); ctx.lineTo(x - 5, y + 22 * sp);
+  }
+  ctx.stroke();
+}
+// ---- v26: dialog box (story briefings and choices). Pauses solo play.
+let dlgQueue = null;
+function closeDialog(silent) {
+  if ($('dialog').hidden) return;
+  $('dialog').hidden = true; dlgQueue = null;
+  if (G.mode === 'solo' && G.phase === 'playing' && $('pause').hidden && $('missions').hidden && $('shop').hidden) G.paused = false;
+}
+function showDialog(lines, choice, done) {
+  dlgQueue = { lines: lines.slice(), choice, done };
+  if (G.mode === 'solo') G.paused = true;
+  $('dialog').hidden = false; dlgStep();
+}
+function dlgStep() {
+  const Q = dlgQueue; if (!Q) return;
+  const box = $('dlgBtns');
+  if (Q.lines.length) {
+    const [who, txt] = Q.lines.shift(); $('dlgWho').textContent = who; $('dlgText').textContent = txt;
+    box.innerHTML = '<button class="btn-primary small" data-k="next">' + (Q.lines.length || Q.choice ? 'Next' : 'OK') + (isTouch ? '' : ' (E)') + '</button>';
+    box.querySelector('button').onclick = () => { if (!Q.lines.length && !Q.choice) { const d = Q.done; closeDialog(); if (d) d(null); } else dlgStep(); };
+    return;
+  }
+  const C = Q.choice; $('dlgWho').textContent = C.who; $('dlgText').textContent = C.q;
+  box.innerHTML = C.opts.map((o, i) => '<button class="' + (i ? 'btn-glass' : 'btn-primary') + ' small" data-i="' + i + '">' + esc(o[0]) + '</button>').join('');
+  for (const b of box.querySelectorAll('button')) b.onclick = () => { const k = C.opts[+b.dataset.i][1], d = Q.done; closeDialog(); if (d) d(k); };
+}
+// ---- v26: Story Act I "Badge & Burn". Original characters; solo campaign driven by a small step runner.
+function storyAlign() { return G.story || { badge: 0, rogue: 0, picks: {} }; }
+function shredPrice() { return storyAlign().badge >= 2 ? Math.round(PRICE.locker / 2) : PRICE.locker; }
+function blockOf(kind, i) { const L = G.city.blocks.filter(b => b.district === kind); return L[Math.min(L.length - 1, i || 0)] || null; }
+const BRIGGS = 'Captain Rhonda Briggs', VARGA = 'IA Detective Nico Varga', VELVET = 'Councilman Victor Velvet', LOU = 'Tiny Lou';
+function bro() { return G.player && G.player.char === 'bary' ? 'BARY' : 'MaFl'; }
+function sib() { return G.player && G.player.char === 'bary' ? 'MaFl' : 'BARY'; }
+function storyScript(id) {
+  switch (id) {
+    case 'act1': return [
+      { t: 'say', lines: [[BRIGGS, 'Boys. Somebody is moving stolen police rifles through the docks. OUR rifles.'], [sib(), 'Rifles? We still have to sign for every donut.'], [BRIGGS, 'Harbour Rats. East docks. Bring me a crate and try not to blow up the harbour.']] },
+      { t: 'kill', at: () => { const b = blockOf('docklands', 2); return edgePoint(b, 'left', 0.5); }, n: 5, gang: 'rats', label: 'Clear the Rats at the docks' },
+      { t: 'say', lines: [[bro(), 'Crate secured. Look at the stamp: V.V. Shipping.'], [sib(), 'V.V. Like... Victor Velvet? The councilman who shakes every hand in Bors City?'], [BRIGGS, 'Keep that to yourselves. A courier just left with their cash. Go.']] },
+      { t: 'reward', cash: 600, rep: 40 }];
+    case 'act2': return [
+      { t: 'say', lines: [[BRIGGS, 'The courier is driving the money out of town. Stop that car. Gently. Or not.']] },
+      { t: 'chase', label: 'Stop the courier' },
+      { t: 'say', lines: [[sib(), 'No cash, but a ledger. Payments to a cop... signed "T.L.".'], [bro(), 'T.L. Tiny Lou. Our favourite informant.'], [sib(), 'Little Bors. Let\'s ask him nicely. Probably.']] },
+      { t: 'reward', cash: 800, rep: 40 }];
+    case 'act3': return [
+      { t: 'goto', at: () => { const b = blockOf('littlebors', 3); return edgePoint(b, 'top', 0.5); }, npc: LOU, label: 'Find Tiny Lou in Little Bors' },
+      { t: 'say', lines: [[LOU, 'Bors Brothers! I didn\'t write the ledger, I swear. I only CARRY it.'], [LOU, 'Velvet pays a cop inside your precinct. I can tell you who... but the Dragons will kill me for it.']] },
+      { t: 'choice', key: 'act3', who: bro(), q: 'Lou is scared. What do you do?', opts: [['Protect him (Badge)', 'badge'], ['Squeeze him for cash (Rogue)', 'rogue']] },
+      { t: 'branch', key: 'act3',
+        badge: [{ t: 'say', lines: [[sib(), 'Nobody touches our snitch. Dragons incoming!']] }, { t: 'survive', secs: 40, gang: 'dragons', label: 'Protect Tiny Lou' }, { t: 'say', lines: [[LOU, 'You saved me. The cop is... someone in Internal Affairs. Watch your backs.']] }, { t: 'reward', cash: 500, rep: 60 }],
+        rogue: [{ t: 'say', lines: [[bro(), 'Talk is cheap, Lou. Pay up.'], [LOU, 'Fine! $900 and a name: someone in Internal Affairs. Now leave me alone!']] }, { t: 'reward', cash: 900, rep: 20 }] }];
+    case 'act4': return [
+      { t: 'say', lines: [[VARGA, 'Bors Brothers. Internal Affairs. You stole evidence, beat up an informant and drove like maniacs.'], [VARGA, 'You are suspended. Every unit in the city is coming for you.'], [sib(), 'Varga. The IA guy on Velvet\'s payroll. Run!']] },
+      { t: 'lose', label: 'Lose the cops' },
+      { t: 'say', lines: [[BRIGGS, 'I buried Varga\'s report. For now. Velvet\'s men count his dirty cash at Bors Casino tonight.']] },
+      { t: 'reward', cash: 700, rep: 50 }];
+    case 'act5': return [
+      { t: 'say', lines: [[BRIGGS, 'Velvet\'s money men are in the casino. Old Town Saints muscle. Take them down and grab the books.']] },
+      { t: 'clearB', bld: 'casino', gang: 'saints', n: 6, label: 'Crash the casino count' },
+      { t: 'say', lines: [[sib(), 'The books! Velvet launders everything through the casino... and pays Varga monthly.'], [bro(), 'And now Velvet wants to meet. At his villa. Tonight.']] },
+      { t: 'reward', cash: 1200, rep: 60 }];
+    case 'act6': return [
+      { t: 'goto', at: () => { const b = blockOf('richhills', 4); return edgePoint(b, 'bottom', 0.5); }, npc: VELVET, label: 'Meet Velvet at his villa' },
+      { t: 'say', lines: [[VELVET, 'Gentlemen. Such energy. Such... beards.'], [VELVET, 'Here is $5,000. Forget the docks, forget the casino, and Varga forgets you. Everybody wins.']] },
+      { t: 'choice', key: 'act6', who: bro(), q: 'Velvet holds out an envelope.', opts: [['Refuse and arrest him (Badge)', 'badge'], ['Take the money (Rogue)', 'rogue']] },
+      { t: 'branch', key: 'act6',
+        badge: [{ t: 'say', lines: [[bro(), 'Councilman, you have the right to remain fabulous.'], [VELVET, 'Guards!']] }, { t: 'kill', at: () => playerPos(), n: 6, gang: 'saints', boss: 'VELVET\'S BODYGUARD', label: 'Take down Velvet\'s bodyguards' }, { t: 'say', lines: [[BRIGGS, 'Velvet is in a cell. Varga ran. This is far from over, boys.'], [sib(), 'Act II: find Varga. Bring donuts.']] }, { t: 'reward', cash: 2500, rep: 150 }],
+        rogue: [{ t: 'say', lines: [[bro(), 'Pleasure doing business, Councilman.'], [sib(), '...I hope you know what you\'re doing, partner.'], [VELVET, 'Wise men. We will be in touch.']] }, { t: 'reward', cash: 5000, rep: 80 }] }];
+  }
+  return [{ t: 'reward', cash: 100 }];
+}
+function storyStart(M, m) {
+  M.steps = storyScript(m.id); M.si = -1; M.timer = 0; M.text = MISSION_INFO[m.id].title;
+  M.objective = null; storyNext(M);
+}
+function storyNext(M) {
+  M.si++; M.stepInit = false; M.timer = 0;
+}
+function storyUpdate(M) {
+  const P = G.player;
+  if (M.si >= M.steps.length) return;
+  const S = M.steps[M.si];
+  if (!M.stepInit) {
+    M.stepInit = true;
+    switch (S.t) {
+      case 'say': M.waiting = true; showDialog(S.lines, null, () => { M.waiting = false; storyNext(M); }); return;
+      case 'choice': M.waiting = true; showDialog([], { who: S.who, q: S.q, opts: S.opts }, k => { M.waiting = false; const st = G.story; st.picks[S.key] = k; if (k === 'badge') st.badge++; else st.rogue++; saveMissions(); toast(k === 'badge' ? 'BADGE +1\nBy the book. Mostly.' : 'ROGUE +1\nThe rulebook is on fire.', 1.6); storyNext(M); }); return;
+      case 'branch': { const k = storyAlign().picks[S.key] || 'badge'; M.steps.splice(M.si + 1, 0, ...(S[k] || [])); storyNext(M); return; }
+      case 'kill': case 'goto': { const a = S.at(); M.goal = { x: a.x, y: a.y }; M.spawned = false; break; }
+      case 'chase': {
+        let sp = null; for (let i = 0; i < 40 && !sp; i++) { const r = randomRoadSpawn(P.x, P.y, 450, 800); if (r && !carNear(r.x, r.y, 100)) sp = r; }
+        if (!sp) sp = randomRoadSpawn(P.x, P.y, 300, 3000);
+        const c = makeCar('sport', sp.x, sp.y, sp.a, { ai: 'traffic' }); c.prevNode = sp.from; c.nextNode = sp.to; c.cruise = 330; c.marked = true; c.hp = c.maxHp = 260;
+        const d = makePed('gang', sp.x, sp.y, { weapon: 'pistol' }); gangDress(d); d.gang = 'rats'; d.look = Object.assign({}, d.look, { shirt: GANGS.rats.shirt, pants: GANGS.rats.pants }); d.car = c; d.state = 'drive'; d.mission = M; c.driver = d;
+        G.peds.push(d); G.cars.push(c); M.car = c; M.courier = d; M.targets.push(d); M.farT = 0; break;
+      }
+      case 'survive': M.timer = S.secs; M.waveT = G.time + 1; break;
+      case 'lose': addHeat(Math.max(0, 115 - wantedOf(P).heat), P); M.timer = 150; break;
+      case 'clearB': { const B = serviceOf(S.bld); M.S = B; const rooms = Object.values(B.rooms).filter((r, i) => !(B.kind === 'casino' && i === 3));
+        for (let i = 0; i < S.n; i++) { const r = rooms[i % rooms.length]; for (let k = 0; k < 30; k++) { const x = r[0] + 30 + Math.random() * (r[2] - 60), y = r[1] + 30 + Math.random() * (r[3] - 60); if (pedBlocked({ r: 13 }, x, y) || G.city.cellCost(x, y) !== 1) continue; const g = spawnGang(x, y, null, FLANKS[i % 5]); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.home = { x, y }; g.mission = M; g.sight = 420; M.targets.push(g); break; } }
+        M.timer = 180; break; }
+      case 'reward': { if (S.rep) addRep(S.rep); M.steps.length = M.si + 1; completeMission(S.cash || 0, 'STORY: ' + MISSION_INFO[M.marker.id].title.replace(/^Act I\.\d /, '') + ' complete'); return; }
+    }
+  }
+  if (M.waiting) return;
+  switch (S.t) {
+    case 'kill': {
+      if (!M.spawned && dist(P.x, P.y, M.goal.x, M.goal.y) < 520) {
+        M.spawned = true; M.group = [];
+        for (let i = 0; i < S.n; i++) { const pt = randomSidewalkPoint(M.goal.x, M.goal.y, 120, 320) || { x: M.goal.x + rand(-60, 60), y: M.goal.y }; if (pedBlocked({ r: 13 }, pt.x, pt.y)) continue;
+          const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.home = { x: pt.x, y: pt.y }; g.mission = M; g.sight = 620;
+          if (S.boss && i === 0) { g.boss = true; g.name = S.boss; g.hp = g.maxHp = 500; g.weapon = 'shotgun'; }
+          M.targets.push(g); M.group.push(g); }
+      }
+      const alive = (M.group || []).filter(g => g.alive);
+      if (M.spawned && !alive.length) { storyNext(M); return; }
+      M.objective = alive.length ? (() => { const n = alive.slice().sort((a, b) => dist(a.x, a.y, P.x, P.y) - dist(b.x, b.y, P.x, P.y))[0]; return { x: n.x, y: n.y }; })() : M.goal;
+      M.text = S.label + (M.spawned ? ': ' + alive.length + ' left' : ''); return;
+    }
+    case 'goto': {
+      if (!M.npc && dist(P.x, P.y, M.goal.x, M.goal.y) < 700) { const q0 = { r: 13 }, sp = freeSpotNear(q0, M.goal.x + 34, M.goal.y); const p = spawnCiv(sp.x, sp.y); p.stay = true; p.name = S.npc; p.storyNpc = true; p.look = Object.assign({}, p.look, S.npc === VELVET ? { shirt: '#f2f2f2', pants: '#141414' } : { shirt: '#e8b436' }); M.npc = p; }
+      M.objective = M.goal; M.text = S.label;
+      if (M.npc && !M.npc.alive) { failMission(S.npc + ' is dead. That\'s not how interviews work.'); return; }
+      if (dist(P.x, P.y, M.goal.x, M.goal.y) < 60 && !P.car) { storyNext(M); return; }
+      return;
+    }
+    case 'chase': {
+      const c = M.car, d = M.courier;
+      if (!c || c.dead || !d || !d.alive || (d.car !== c)) { if (c) c.marked = false; storyNext(M); return; }
+      M.objective = { x: c.x, y: c.y };
+      const dd = dist(P.x, P.y, c.x, c.y); if (dd > 2400) { M.farT += 1 / 60; if (M.farT > 8) { failMission('The courier got away'); return; } } else M.farT = 0;
+      M.text = S.label + (dd > 1500 ? ' (he is getting away!)' : ''); return;
+    }
+    case 'survive': {
+      const ups = missionPlayersUp();
+      if (G.time > M.waveT) { M.waveT = G.time + 9; const n = Math.max(2, Math.round(2 * D().count));
+        for (let i = 0; i < n; i++) { const pt = randomSidewalkPoint(P.x, P.y, 320, 560); if (!pt) continue; const g = spawnGang(pt.x, pt.y, null, FLANKS[i % 5]); g.gang = S.gang; g.look = Object.assign({}, g.look, { shirt: GANGS[S.gang].shirt, pants: GANGS[S.gang].pants }); g.mission = M; g.state = 'engage'; g.target = ups[0] || P; g.lastSeenT = G.time; g.lastTargetPos = { x: P.x, y: P.y }; g.sight = 800; M.targets.push(g); } }
+      if (M.npc && !M.npc.alive) { failMission('Tiny Lou didn\'t make it'); return; }
+      M.objective = M.npc ? { x: M.npc.x, y: M.npc.y } : null; M.text = S.label + ' (' + Math.ceil(M.timer) + 's)';
+      if (M.surviveDone) { M.surviveDone = false; for (const g of M.targets) if (g.alive) g.mission = null; storyNext(M); }
+      return;
+    }
+    case 'lose': {
+      const st = wantedOf(P).stars;
+      M.text = S.label + ': ' + (st ? '\u2605'.repeat(st) + ' (' + Math.ceil(M.timer) + 's)' : 'clear!'); M.objective = null;
+      if (st === 0 && M.timer < 148) { storyNext(M); return; }
+      return;
+    }
+    case 'clearB': {
+      const alive = M.targets.filter(g => g.alive && g.mission === M);
+      if (!alive.length) { storyNext(M); return; }
+      const inside = inRect(M.S, P.x, P.y);
+      M.objective = inside ? (() => { const n = alive.slice().sort((a, b) => dist(a.x, a.y, P.x, P.y) - dist(b.x, b.y, P.x, P.y))[0]; return { x: n.x, y: n.y }; })() : { x: M.S.door.x, y: M.S.door.y };
+      M.text = S.label + ': ' + alive.length + ' left' + (inside ? '' : ' (get inside)') + ' (' + Math.ceil(M.timer) + 's)'; return;
+    }
+  }
+}
 function sugarRush() { G.sugarT = G.time + 12; toast('SUGAR RUSH!', 0.9); }
 function completeMission(reward, extra) {
   const M = G.mission; if (!M) return;
@@ -4047,6 +4273,7 @@ function completeMission(reward, extra) {
 }
 function failMission(why) {
   const M = G.mission; if (!M) return;
+  closeDialog(true);
   if (M.type === 'war' && M.terr) { M.terr.kills = 0; M.terr.coolT = G.time + 30; }
   G.mission = null; M.marker.cooldownT = G.time + (M.type === 'heist' ? 30 : M.type === 'boss' ? 45 : 8);
   if (M.type === 'defend' && M.terr) turfLost(M.terr, why); else newsAll('MISSION FAILED\n' + why + '\nThat goes in the Bors report.', 2.5, 'fail');
@@ -4108,6 +4335,7 @@ function inputInit() {
     if (e.code === 'KeyF' && !e.repeat) trySkill();
     if (e.code === 'KeyX' && !e.repeat) IN.boom = true;
     if (e.code === 'KeyJ' && !e.repeat) IN.missions = true;
+    if (!$('dialog').hidden && !e.repeat && (e.code === 'KeyE' || e.code === 'Enter' || e.code === 'Space')) { const b = $('dlgBtns').querySelector('button[data-k="next"]'); if (b) b.click(); }
     if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].indexOf(e.code) >= 0) e.preventDefault();
   });
   window.addEventListener('keyup', e => { keys[e.code] = false; });
@@ -4260,6 +4488,12 @@ function applyCheatCode(code) {
     G.cheats.army = !G.cheats.army;
     if (G.isSim) armySet(P, G.cheats.army); else { netEvent({ t: 'army', on: G.cheats.army ? 1 : 0 }); toast(G.cheats.army ? 'GANG ARMY!\nCalling in the troops' : 'Gang army dismissed', 2); }
     sfx('mission'); return true;
+  }
+  if (code === CFG.cheats.storm) {
+    if (G.game !== 'roam') { toast('Not now', 1); return false; }
+    if (G.isSim) { const on = !(G.wx && G.wx.target > 0); G.wx = { level: G.wx ? G.wx.level : 0, target: on ? 1 : 0, until: G.time + (on ? 150 : 0), next: G.time + 240 }; toast(on ? 'RAIN DANCE\nThe sky opens up.' : 'SUN DANCE\nThe rain stops.', 1.8); }
+    else toast('Only the host controls the weather', 1.4);
+    return true;
   }
   if (code === CFG.cheats.rain) {
     if (G.game !== 'roam' || !P) { toast('Not now', 1); return false; }
@@ -4753,10 +4987,13 @@ function drawBuildings(V) {
 function drawDecals(V) {
   for (const d of G.decals) {
     if (!inV(V, d.x, d.y, 60)) continue;
+    const left = (DECAL_LIFE[d.kind] || 300) - (G.time - d.t); if (left <= 0) continue;
+    ctx.globalAlpha = left < 20 ? left / 20 : 1;   // v26: old marks fade out
     if (d.kind === 'blood') { ctx.fillStyle = 'rgba(120,10,15,.65)'; ctx.save(); ctx.translate(d.x, d.y); ctx.rotate(d.a); ellipse(ctx, 0, 0, d.size, d.size * 0.7); ellipse(ctx, d.size * 0.5, d.size * 0.3, d.size * 0.5, d.size * 0.35); ctx.restore(); }
     else if (d.kind === 'skid') { ctx.strokeStyle = 'rgba(0,0,0,.35)'; ctx.lineWidth = 4; line(ctx, d.x, d.y, d.x2, d.y2); }
     else if (d.kind === 'scorch') { ctx.fillStyle = 'rgba(0,0,0,.5)'; circle(ctx, d.x, d.y, d.size); }
   }
+  ctx.globalAlpha = 1;
 }
 function drawCorpses(V) {
   for (const p of G.peds) {
@@ -4904,6 +5141,7 @@ function drawNight(V) {
 function drawScreen() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const P = G.player;
+  drawRain();
   if (G.time < G.fx.flash) { ctx.fillStyle = 'rgba(255,40,40,.16)'; ctx.fillRect(0, 0, cw, ch); }
   if (P && P.alive && P.hp < 30) { const g = ctx.createRadialGradient(cw / 2, ch / 2, ch * 0.35, cw / 2, ch / 2, ch * 0.8); g.addColorStop(0, 'rgba(120,0,0,0)'); g.addColorStop(1, 'rgba(120,0,0,' + (0.55 * (1 - P.hp / 30)).toFixed(2) + ')'); ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch); }
   for (const k of ['left', 'right']) {
@@ -4982,8 +5220,8 @@ function loadSettings() { try { Object.assign(G.settings, JSON.parse(localStorag
 function saveSettings() { try { localStorage.gb_settings = JSON.stringify(G.settings); } catch (e) {} }
 function saveBest() { if (G.mode === 'solo' && G.stats.score > G.stats.best) { G.stats.best = G.stats.score; try { localStorage.gb_best = G.stats.best; } catch (e) {} } }
 function syncPartnerSeg() { for (const b of $('partnerSeg').querySelectorAll('button')) b.classList.toggle('on', (b.dataset.p === 'on') === (G.settings.partner === true)); }
-function syncSettingsUI() { $('setControls').value = G.settings.controls; $('setDiff').value = G.settings.difficulty; $('setNight').value = G.settings.night ? 'night' : 'day'; $('setSound').value = G.settings.sound ? 'on' : 'off'; $('setPartner').value = G.settings.partner === false ? 'off' : 'on'; }
-function readSettingsUI() { G.settings.controls = $('setControls').value; G.settings.difficulty = $('setDiff').value; G.settings.night = $('setNight').value === 'night'; G.settings.sound = $('setSound').value === 'on'; setSoundEnabled(G.settings.sound); G.settings.partner = $('setPartner').value !== 'off'; G.settings.pv = 1; saveSettings(); syncPartnerSeg();
+function syncSettingsUI() { $('setControls').value = G.settings.controls; $('setDiff').value = G.settings.difficulty; $('setNight').value = G.settings.night ? 'night' : 'day'; $('setSound').value = G.settings.sound ? 'on' : 'off'; $('setPartner').value = G.settings.partner === false ? 'off' : 'on'; $('setRain').value = G.settings.rain === false ? 'off' : 'on'; }
+function readSettingsUI() { G.settings.controls = $('setControls').value; G.settings.difficulty = $('setDiff').value; G.settings.night = $('setNight').value === 'night'; G.settings.sound = $('setSound').value === 'on'; setSoundEnabled(G.settings.sound); G.settings.partner = $('setPartner').value !== 'off'; G.settings.pv = 1; G.settings.rain = $('setRain').value !== 'off'; saveSettings(); syncPartnerSeg();
   if (G.phase === 'playing' && G.mode === 'solo') { if (!G.settings.partner && G.partner) removePartner(); else if (G.settings.partner && !G.partner) spawnPartner(); } }
 function getName() { const n = $('name').value.trim().slice(0, 12) || (BROTHERS[G.settings.char] || BROTHERS.mafl).name; try { localStorage.gb_name = n; } catch (e) {} return n; }
 function showMainPanel(which) { $('mainPanel').hidden = which !== 'main'; $('helpPanel').hidden = which !== 'help'; $('roomPanel').hidden = which !== 'room'; }
@@ -5010,7 +5248,7 @@ function uiInit() {
   $('pauseSettings').onclick = () => { settingsReturn = 'pause'; syncSettingsUI(); showScreen('settings'); };
   $('settingsBack').onclick = () => { readSettingsUI(); showScreen(settingsReturn); };
   $('resetSave').onclick = () => { if (confirm('Delete your saved cash, weapons, territories and mission progress? Rogue Rep and best score stay.')) { resetProgress(); try { delete localStorage[TERR_KEY]; delete localStorage[MIS_KEY]; } catch (e) {} $('bestLine').textContent = G.stats.best ? 'Best solo score: ' + G.stats.best : ''; } };
-  for (const id of ['setControls', 'setDiff', 'setNight', 'setSound', 'setPartner']) $(id).onchange = readSettingsUI;
+  for (const id of ['setControls', 'setDiff', 'setNight', 'setSound', 'setPartner', 'setRain']) $(id).onchange = readSettingsUI;
   $('helpBtn').onclick = () => showMainPanel('help');
   $('helpBack').onclick = () => showMainPanel('main');
   $('resumeBtn').onclick = () => togglePause(false);
@@ -5023,6 +5261,7 @@ function uiInit() {
 }
 function togglePause(on) {
   if (G.phase !== 'playing') return;
+  if (!$('dialog').hidden && on !== false) return;
   const open = on == null ? $('pause').hidden : on;
   if (G.mode === 'solo') G.paused = open;
   if (open) {
@@ -5765,7 +6004,7 @@ function hostOnEvent(e) {
       if (e.ci != null && e.ci >= 0) { c.colorIdx = e.ci; c.color = CAR_KINDS[c.kind].colors[e.ci] || c.color; }
       if (c.driver === who) c.driver = null; if (who.car === c) who.car = null; r.hadCar = false;
       c.abandonedT = G.time; c.parked = false; c.ai = null;
-      if (e.dead && !c.dead) { c.dead = true; c.hp = 0; c.burnT = G.time + 2.2; c.byKill = who; }
+      if (e.dead && !c.dead) { c.dead = true; c.deadT = G.time; c.hp = 0; c.burnT = G.time + 2.2; c.byKill = who; }
       break;
     }
     case 'heat': addHeat(e.n, who); break;
@@ -5804,6 +6043,7 @@ function hostWorldTick(dt) {
   snap.am = G.activeId || '';
   if (G.city.bank) snap.bk = bankState();
   if (G.city.territories) snap.tr = G.city.territories.map(T => T.owner === 'bors' ? 'b' : '0').join('');
+  snap.wx = Math.round((G.wx ? G.wx.level : 0) * 100);
   if (G.city.gas) snap.gs = G.city.gas.map(q => q.burntT > G.time ? 1 : 0).join('');
   if (G.helis.length) snap.h = G.helis.map(h => h.id + ',' + Math.round(h.x) + ',' + Math.round(h.y) + ',' + Math.round(h.a * 100) + ',' + Math.round(clamp(h.hp / h.maxHp, 0, 1) * 100)).join(';');
   if (G.netBooms.length) snap.b = G.netBooms.map(b => b.map(Math.round).join(',')).join(';');
@@ -5828,7 +6068,7 @@ function onWorld(v) {
     addTracer(x, y, x2, y2, wk); addFlash(x, y, Math.atan2(y2 - y, x2 - x)); sfx((WEAPONS[wk] || WEAPONS.pistol).sfx, x, y);
     addParticles(h === 1 ? 'blood' : h === 2 ? 'spark' : 'dust', x2, y2, h === 0 ? 2 : 3);
   }
-  heliSnapshot(v.h); applyBankState(v.bk); applyGasState(v.gs); applyTerrState(v.tr);
+  heliSnapshot(v.h); applyBankState(v.bk); applyGasState(v.gs); applyTerrState(v.tr); if (!G.isSim) { const w = Number(v.wx); G.wx = G.wx || { level: 0, target: 0 }; G.wx.target = isFinite(w) ? clamp(w / 100, 0, 1) : 0; }
   if (v.b) for (const e of String(v.b).split(';')) { const [x, y, r] = e.split(',').map(Number); explosionFx(x, y, r); }
   const w = v.w || {}, stars = w[uid] || 0;
   if (stars > G.wanted.stars) { toast('WANTED ' + '★'.repeat(stars) + starLine(stars), 2); banter(stars >= 5 ? 'rogue5' : 'wanted', stars >= 5); addRep(10); sfx('alarm', null, null, 1); }
@@ -5911,7 +6151,7 @@ function becomeHost() {
     c.proxy = false;
     if (c.npcDrv && !c.dead) { const kind = c.kind === 'police' ? 'cop' : 'civ'; const d = makePed(kind, c.x, c.y, { weapon: kind === 'cop' ? 'pistol' : 'none' }); d.car = c; d.state = 'drive'; c.driver = d; c.ai = 'traffic'; c.siren = false; G.peds.push(d); }
     else if (!c.dead && !c.pdrv) c.parked = true;
-    if (c.dead) { c.burnT = 0; c.wreckT = G.time + 20; }
+    if (c.dead) { c.burnT = 0; c.wreckT = G.time + 20; if (c.deadT == null || c.deadT > G.time) c.deadT = G.time; }
     c.npcDrv = false;
   }
   if (G.player.car) { G.player.car.driver = G.player; G.player.car.proxy = false; }
@@ -5987,7 +6227,7 @@ function setupWorld(seed, mode) {
   const P = makePed('player', st.x, st.y, { color: G.playerColor || '#ffd24d', weapon: 'pistol' });
   P.isPlayer = true; P.owned = { pistol: true, bat: true }; P.name = G.playerName || 'You'; P.color = G.playerColor || '#ffd24d';
   P.char = G.settings.char === 'bary' ? 'bary' : 'mafl'; P.look = myLook(P.char);
-  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.compT = 0; G.gambleNet = 0; G.patronT = 0; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
+  G.skill = { readyT: 0, endT: 0, hit: [] }; G.streak = { n: 0, t: -99 }; G.radioT = 0; G.lastDmKills = 0; G.roleWriteT = null; G.sugarT = 0; G.partner = null; G.finaleDone = false; G.finaleCheat = false; G.projs = []; G.fires = []; G.decoys = []; G.helis = []; G.heavyOkT = 0; G.spawnProtT = 0; G.c4 = []; G.bubbles = {}; G.chatT = 0; G.activeId = null; G.armyOf = {}; G.compT = 0; G.gambleNet = 0; G.patronT = 0; G.decalT = 0; G.wx = { level: 0, target: 0, until: 0, next: 60 + Math.random() * 120 }; G.attackT = 0; G.shopCooldownT = 0; G.lockerT = 0; G.armoryT = 0; G.terrToastT = 0; G.stationT = 0; G.sprayT = 0; G.heavyMsgT = 0; G.garageT = 0; G.c4MsgT = 0; G.brewT = 0; G.barT = 0; G.spawnT = 0;   // game time restarts at 0: clear all leftover timers
   P.maxHp = Math.round(CFG.player.hp * perkOf(P).hp); P.hp = P.maxHp;
   if (G.cheats.guns) giveAllWeapons(P);
   G.player = P; G.peds.push(P);
@@ -6119,6 +6359,7 @@ function backToLobby() {
   $('hud').hidden = true; hideBig(); showScreen('menu'); renderLobby(); engineUpdate(0, 0, false); sirenUpdate(0, false, 0);
 }
 function quitToMenu() {
+  closeDialog(true);
   if (G.mode === 'mp') { leaveRoom(); return; }
   saveProgress(); saveBest(); running = false; G.phase = 'menu'; G.paused = false;
   $('hud').hidden = true; hideBig(); showScreen('menu'); showMainPanel('main');
